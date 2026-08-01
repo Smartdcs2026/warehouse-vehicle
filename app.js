@@ -30,6 +30,7 @@ async function login(event) {
 
 function openApp() {
   $("loginView").hidden = true; $("appView").hidden = false; $("accountName").textContent = state.user.name; $("accountRole").textContent = roleLabel(state.user.accessRights);
+  window.scrollTo(0, 0);
   state.view = state.user.accessRights === "INBOUND" ? "inbound" : "operations"; renderNavigation(); navigate(state.view);
 }
 
@@ -47,7 +48,7 @@ function renderNavigation() {
 
 async function navigate(view) {
   state.view = view; const titles = { operations:"งานรับสินค้า", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", admin:"ตั้งค่าระบบ" };
-  $("pageTitle").textContent = titles[view]; document.querySelectorAll(".nav-button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  $("pageTitle").textContent = titles[view]; document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   $("pageContent").innerHTML = `<div class="loading">กำลังโหลดข้อมูล</div>`;
   if (view === "admin") return renderAdmin();
   try { const data = await api("/api/vehicles/active"); state.vehicles = data.items || []; renderCurrentView(); }
@@ -67,20 +68,20 @@ function renderJobCards(items) {
 }
 
 function renderInbound() {
-  $("pageContent").innerHTML = `<section class="scanner-panel"><div class="scanner"><div class="scan-frame">⌗<span>กล้องสแกนจะเปิดใช้ในรอบถัดไป</span></div></div><div class="scan-side"><h2>ค้นหา Auto ID</h2><p>รอบนี้เปิดดูข้อมูลจริงจาก D1 ยังไม่บันทึกสถานะ</p><div class="auto-input"><input id="autoSearch" placeholder="กรอก Auto ID"><button id="autoButton" class="primary">ค้นหา</button></div></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span>${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
+  $("pageContent").innerHTML = `<section class="scanner-panel"><div class="scanner"><div class="scan-frame">⌗<span>พื้นที่สแกน QR Code</span></div></div><div class="scan-side"><h2>ค้นหา Auto ID</h2><p>ค้นหารายการรถด้วยรหัสประจำรถ</p><div class="auto-input"><input id="autoSearch" placeholder="กรอก Auto ID"><button id="autoButton" class="primary">ค้นหา</button></div></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span>${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
   renderInboundRows(state.vehicles); const filter = () => { const q=$("autoSearch").value.trim().toLowerCase(); renderInboundRows(state.vehicles.filter(v => searchable(v).includes(q))); }; $("autoButton").addEventListener("click",filter); $("autoSearch").addEventListener("input",filter);
 }
 
 function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
 
 function renderDashboard() {
-  $("pageContent").innerHTML = `<div class="dashboard-tools"><button class="outline-button">วันนี้</button><button class="outline-button">ทุกกะ</button></div><section class="dashboard-grid">${dashboardCard("รถอยู่ในพื้นที่",state.vehicles.length)}${dashboardCard("รอยื่นเอกสาร",countStatus("WAITING_DOCUMENT_SUBMISSION"))}${dashboardCard("พร้อมตรวจรับ",countStatus("READY_FOR_RECEIVING"))}${dashboardCard("กำลังตรวจรับ",countStatus("RECEIVING_IN_PROGRESS"))}${dashboardCard("รอรับเอกสารคืน",countStatus("WAITING_DOCUMENT_RETURN"))}${dashboardCard("รอออกจากพื้นที่",countStatus("WAITING_GATE_OUT"))}</section><section class="list-card"><header><h2>สถานะปัจจุบัน</h2><span>ข้อมูลจาก D1</span></header>${state.vehicles.slice(0,20).map(v => `<div class="list-row"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(v.door_code || "-")}</span><span>${statusLabel(v.current_status)}</span><span>${formatDate(v.gate_in_at)}</span></div>`).join("") || `<div class="empty-state"><b>ไม่มีรถอยู่ในพื้นที่</b></div>`}</section>`;
+  $("pageContent").innerHTML = `<div class="dashboard-tools"><button class="outline-button">วันนี้</button><button class="outline-button">ทุกกะ</button></div><section class="dashboard-grid">${dashboardCard("รถอยู่ในพื้นที่",state.vehicles.length)}${dashboardCard("รอยื่นเอกสาร",countStatus("WAITING_DOCUMENT_SUBMISSION"))}${dashboardCard("พร้อมตรวจรับ",countStatus("READY_FOR_RECEIVING"))}${dashboardCard("กำลังตรวจรับ",countStatus("RECEIVING_IN_PROGRESS"))}${dashboardCard("รอรับเอกสารคืน",countStatus("WAITING_DOCUMENT_RETURN"))}${dashboardCard("รอออกจากพื้นที่",countStatus("WAITING_GATE_OUT"))}</section><section class="list-card"><header><h2>สถานะปัจจุบัน</h2><span>รายการล่าสุด</span></header>${state.vehicles.slice(0,20).map(v => `<div class="list-row"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(v.door_code || "-")}</span><span>${statusLabel(v.current_status)}</span><span>${formatDate(v.gate_in_at)}</span></div>`).join("") || `<div class="empty-state"><b>ไม่มีรถอยู่ในพื้นที่</b></div>`}</section>`;
 }
 
-function renderAdmin() { $("pageContent").innerHTML = `<section class="settings-grid"><article class="settings-card"><h2>การเชื่อมต่อข้อมูล</h2><p>เข้าสู่ระบบสำเร็จและอ่านข้อมูลผ่าน Worker โดย Worker ตรวจสิทธิ์ก่อนทุกครั้ง</p><span class="badge">พร้อมตรวจรอบถัดไป</span></article><article class="settings-card"><h2>ขั้นตอนถัดไป</h2><p>เพิ่มการตั้งค่า Workflow, กะ, ประตู และเงื่อนไขเวลาเมื่อเส้นทาง Login และข้อมูลผ่านการตรวจแล้ว</p></article></section>`; }
+function renderAdmin() { $("pageContent").innerHTML = `<section class="settings-grid"><article class="settings-card"><h2>สถานะระบบ</h2><p>ระบบพร้อมใช้งานและตรวจสอบสิทธิ์ก่อนแสดงข้อมูลทุกครั้ง</p><span class="badge">พร้อมใช้งาน</span></article><article class="settings-card"><h2>การตั้งค่าการทำงาน</h2><p>จัดการขั้นตอนการทำงาน กะ ประตูรับสินค้า และเงื่อนไขการแจ้งเตือน</p></article></section>`; }
 
 async function logout() { try { await api("/api/auth/logout",{method:"POST"}); } catch {} clearSession(); }
-function clearSession() { sessionStorage.removeItem("wvf_token"); state.token=""; state.user=null; $("appView").hidden=true; $("loginView").hidden=false; $("loginPassword").value=""; }
+function clearSession() { sessionStorage.removeItem("wvf_token"); state.token=""; state.user=null; $("appView").hidden=true; $("loginView").hidden=false; $("loginPassword").value=""; window.scrollTo(0, 0); }
 function togglePassword() { const input=$("loginPassword"); input.type=input.type==="password"?"text":"password"; $("togglePassword").textContent=input.type==="password"?"ดู":"ซ่อน"; }
 
 async function api(path, options={}) {

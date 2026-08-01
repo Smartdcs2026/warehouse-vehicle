@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#072b61">
+  <meta name="theme-color" content="#416fc3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>ระบบบริหารรถขนส่ง</title>
@@ -16,7 +16,7 @@
   <div id="connectionBanner" class="connection-banner" hidden>การเชื่อมต่อขัดข้อง กำลังลองใหม่</div>
 
   <main id="loginView" class="login-view">
-    <section class="login-hero" aria-hidden="true"><div class="warehouse-art"><span>W</span></div><h1>ระบบบริหารรถขนส่ง</h1><p>ติดตามงานภายในคลังตั้งแต่รถเข้าจนออกจากพื้นที่</p></section>
+    <section class="login-hero" aria-hidden="true"><div class="warehouse-art"><span class="spectrum-mark spectrum-mark-large"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><h1>ระบบบริหารรถขนส่ง</h1><p>ติดตามงานภายในคลังตั้งแต่รถเข้าจนออกจากพื้นที่</p></section>
     <form id="loginForm" class="login-card">
       <header><h2>เข้าสู่ระบบ</h2><p id="thaiClock">--/--/---- --:--:--</p></header>
       <label>ชื่อผู้ใช้<input id="loginName" name="name" autocomplete="username" required maxlength="120" placeholder="กรอกชื่อผู้ใช้"></label>
@@ -28,7 +28,7 @@
 
   <div id="appView" class="app-shell" hidden>
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">W</span><div><strong id="brandName">ระบบบริหารรถขนส่ง</strong><small>คลังสินค้า</small></div></div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><span class="spectrum-mark"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><div><strong id="brandName">ระบบบริหารรถขนส่ง</strong><small>คลังสินค้า</small></div></div>
       <nav id="sideNav"></nav>
       <div class="account"><b id="accountName">-</b><small id="accountRole">-</small><button id="logoutButton">ออกจากระบบ</button></div>
     </aside>
