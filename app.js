@@ -2,7 +2,9 @@
 
 const cfg = window.APP_CONFIG;
 const state = { token: sessionStorage.getItem("wvf_token") || "", user: null, view: "operations", vehicles: [], online: navigator.onLine };
-const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false };
+const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false, canvas:null, context:null, lastValue:"", lastSeenAt:0, repeatCount:0 };
+const submitState = { busy:false };
+let audioContext = null;
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", init);
@@ -78,59 +80,99 @@ function renderJobCards(items) {
 
 function renderInbound() {
   const waiting=countStatus("WAITING_DOCUMENT_SUBMISSION");
-  $("pageContent").innerHTML = `<section class="inbound-summary"><div><small>รอยื่นเอกสาร</small><b>${waiting}</b></div><div><small>รถในพื้นที่</small><b>${state.vehicles.length}</b></div></section><section class="scanner-panel"><div class="scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-side"><h2>บันทึกยื่นเอกสาร</h2><p>สแกน QR Code หรือกรอก Auto ID</p><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" placeholder="กรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">ตรวจสอบ Auto ID ก่อนยืนยันทุกครั้ง</small></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span>${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
+  $("pageContent").innerHTML = `<section class="inbound-summary"><div><small>รอยื่นเอกสาร</small><b>${waiting}</b></div><div><small>รถในพื้นที่</small><b>${state.vehicles.length}</b></div></section><section class="scanner-panel"><div class="scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-side"><h2>บันทึกยื่นเอกสาร</h2><p>ใช้เครื่องสแกน กล้อง หรือกรอก Auto ID</p><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">เครื่องสแกนที่ส่ง Enter จะเปิดรายการยืนยันอัตโนมัติ</small></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span>${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
   renderInboundRows(state.vehicles);
   const filter=()=>{const q=$("autoSearch").value.trim().toLowerCase();renderInboundRows(state.vehicles.filter(v=>searchable(v).includes(q)))};
   $("autoSearch").addEventListener("input",filter);
-  $("autoSearch").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();submitManualAutoId()}});
-  $("autoButton").addEventListener("click",submitManualAutoId);
+  $("autoSearch").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();if(submitState.busy)return;playFeedbackSound("scan");submitManualAutoId("scanner")}});
+  $("autoButton").addEventListener("click",()=>submitManualAutoId("manual"));
   $("startCamera").addEventListener("click",startCamera);
   $("stopCamera").addEventListener("click",stopCamera);
+  window.setTimeout(()=>$("autoSearch")?.focus({preventScroll:true}),50);
 }
 
 function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
 
-function submitManualAutoId(){const input=$("autoSearch");const autoId=input?.value.trim();if(!autoId){showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}confirmInboundSubmit(autoId,"manual")}
+function submitManualAutoId(source="manual"){const input=$("autoSearch");const autoId=normalizeAutoId(input?.value);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(input)input.value=autoId;if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
 
 async function startCamera(){
   if(scannerState.active)return;
-  if(!navigator.mediaDevices?.getUserMedia||!("BarcodeDetector" in window)){showNotice("info","อุปกรณ์นี้ยังไม่รองรับการอ่าน QR ผ่านกล้อง กรุณากรอก Auto ID");return}
+  unlockAudio();
+  if(!navigator.mediaDevices?.getUserMedia){showNotice("info","อุปกรณ์นี้ยังไม่พร้อมใช้งานกล้อง กรุณาใช้เครื่องสแกนหรือกรอก Auto ID");return}
   try{
-    if(typeof BarcodeDetector.getSupportedFormats==="function"){const formats=await BarcodeDetector.getSupportedFormats();if(!formats.includes("qr_code")){showNotice("info","อุปกรณ์นี้ยังไม่รองรับ QR Code กรุณากรอก Auto ID");return}}
-    scannerState.detector=new BarcodeDetector({formats:["qr_code"]});
-    scannerState.stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}});
-    const video=$("qrVideo");if(!video){stopCamera();return}video.srcObject=scannerState.stream;video.hidden=false;$("scanPlaceholder").hidden=true;$("scanBeam").hidden=false;$("startCamera").hidden=true;$("stopCamera").hidden=false;$("scanFrame").classList.add("camera-on");await video.play();scannerState.active=true;scannerState.reading=false;scanCameraFrame();
+    scannerState.detector=null;
+    if("BarcodeDetector" in window){
+      const formats=typeof BarcodeDetector.getSupportedFormats==="function"?await BarcodeDetector.getSupportedFormats():["qr_code"];
+      if(formats.includes("qr_code"))scannerState.detector=new BarcodeDetector({formats:["qr_code"]});
+    }
+    if(!scannerState.detector&&typeof window.jsQR!=="function"){showNotice("info","อุปกรณ์นี้ยังไม่พร้อมอ่าน QR Code กรุณาใช้เครื่องสแกนหรือกรอก Auto ID");return}
+    scannerState.stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}}});
+    const track=scannerState.stream.getVideoTracks()[0];
+    try{const capabilities=track?.getCapabilities?.();if(capabilities?.focusMode?.includes("continuous"))await track.applyConstraints({advanced:[{focusMode:"continuous"}]})}catch{}
+    const video=$("qrVideo"),canvas=$("qrCanvas");if(!video||!canvas){stopCamera();return}
+    scannerState.canvas=canvas;scannerState.context=canvas.getContext("2d",{willReadFrequently:true});scannerState.lastValue="";scannerState.lastSeenAt=0;scannerState.repeatCount=0;
+    video.srcObject=scannerState.stream;video.hidden=false;$("scanPlaceholder").hidden=true;$("scanBeam").hidden=false;$("startCamera").hidden=true;$("stopCamera").hidden=false;$("scanFrame").classList.add("camera-on");await video.play();scannerState.active=true;scannerState.reading=false;scanCameraFrame();
   }catch(error){stopCamera();const denied=error?.name==="NotAllowedError"||error?.name==="PermissionDeniedError";showNotice("error",denied?"ไม่ได้รับอนุญาตให้เปิดกล้อง กรุณาอนุญาตกล้องแล้วลองใหม่":"เปิดกล้องไม่สำเร็จ กรุณากรอก Auto ID")}
 }
 
 async function scanCameraFrame(){
   if(!scannerState.active||scannerState.reading)return;
   const video=$("qrVideo");if(!video)return;
-  try{const codes=await scannerState.detector.detect(video);const value=String(codes?.[0]?.rawValue||"").trim();if(value){scannerState.reading=true;stopCamera();if($("autoSearch"))$("autoSearch").value=value;await confirmInboundSubmit(value,"camera");return}}catch{}
-  scannerState.timer=window.setTimeout(scanCameraFrame,180);
+  try{
+    let rawValue="";
+    if(scannerState.detector){const codes=await scannerState.detector.detect(video);rawValue=String(codes?.[0]?.rawValue||"")}
+    if(!rawValue&&typeof window.jsQR==="function"&&video.readyState>=2&&scannerState.context){
+      const width=video.videoWidth,height=video.videoHeight;
+      if(width&&height){scannerState.canvas.width=width;scannerState.canvas.height=height;scannerState.context.drawImage(video,0,0,width,height);const pixels=scannerState.context.getImageData(0,0,width,height);rawValue=window.jsQR(pixels.data,width,height,{inversionAttempts:"attemptBoth"})?.data||""}
+    }
+    const value=normalizeAutoId(rawValue),now=Date.now();
+    if(value){
+      if(value===scannerState.lastValue&&now-scannerState.lastSeenAt<1500)scannerState.repeatCount+=1;else scannerState.repeatCount=1;
+      scannerState.lastValue=value;scannerState.lastSeenAt=now;
+      if(scannerState.repeatCount>=2){scannerState.reading=true;playFeedbackSound("scan");stopCamera();if($("autoSearch"))$("autoSearch").value=value;await confirmInboundSubmit(value,"camera");return}
+    }
+  }catch{}
+  scannerState.timer=window.setTimeout(scanCameraFrame,120);
 }
 
 function stopCamera(){
   scannerState.active=false;scannerState.reading=false;if(scannerState.timer)window.clearTimeout(scannerState.timer);scannerState.timer=0;
-  if(scannerState.stream)scannerState.stream.getTracks().forEach(track=>track.stop());scannerState.stream=null;scannerState.detector=null;
+  if(scannerState.stream)scannerState.stream.getTracks().forEach(track=>track.stop());scannerState.stream=null;scannerState.detector=null;scannerState.canvas=null;scannerState.context=null;scannerState.lastValue="";scannerState.lastSeenAt=0;scannerState.repeatCount=0;
   const video=$("qrVideo");if(video){video.pause();video.srcObject=null;video.hidden=true}
   if($("scanPlaceholder"))$("scanPlaceholder").hidden=false;if($("scanBeam"))$("scanBeam").hidden=true;if($("startCamera"))$("startCamera").hidden=false;if($("stopCamera"))$("stopCamera").hidden=true;if($("scanFrame"))$("scanFrame").classList.remove("camera-on");
 }
 
 async function confirmInboundSubmit(autoId,source){
-  const rawValue=String(autoId||"").trim();if(!rawValue)return;
+  const rawValue=normalizeAutoId(autoId);if(!rawValue||submitState.busy)return;
   const vehicle=state.vehicles.find(item=>String(item.auto_id).toLowerCase()===rawValue.toLowerCase()),value=vehicle?String(vehicle.auto_id):rawValue;
   if(!window.Swal){if(!window.confirm(`ยืนยันยื่นเอกสาร Auto ID: ${value}`))return;try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});window.alert(result.message||"บันทึกเรียบร้อย");await navigate("inbound")}catch(error){window.alert(error.message)}return}
-  const details=vehicle?`<div class="confirm-grid"><span>Auto ID</span><b>${escapeHtml(value)}</b><span>เลขนัดหมาย</span><b>${escapeHtml(vehicle.appointment_no||"ไม่ระบุ")}</b><span>บริษัท</span><b>${escapeHtml(vehicle.company_name||"ไม่ระบุ")}</b><span>ทะเบียนรถ</span><b>${escapeHtml(joinText(vehicle.vehicle_plate,vehicle.province))}</b></div>`:`<div class="confirm-grid"><span>Auto ID</span><b>${escapeHtml(value)}</b></div>`;
+  const details=vehicleDetailsHtml(vehicle,value);
+  submitState.busy=true;
   const confirmation=await Swal.fire({title:"ยืนยันยื่นเอกสาร",html:details,icon:"question",showCancelButton:true,confirmButtonText:"ยืนยันบันทึก",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:420});
-  if(!confirmation.isConfirmed)return;
+  if(!confirmation.isConfirmed){submitState.busy=false;$("autoSearch")?.focus();return}
   Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});
   const idempotencyKey=createIdempotencyKey();
   try{
     const result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});
-    await Swal.fire({icon:"success",title:result.duplicate?"บันทึกไว้แล้ว":"บันทึกเรียบร้อย",text:result.message||"บันทึกเวลายื่นเอกสารแล้ว",timer:1500,showConfirmButton:false,customClass:swalClasses(),width:350});
+    playFeedbackSound("success");
+    await Swal.fire({icon:"success",title:result.duplicate?"บันทึกไว้แล้ว":"บันทึกเรียบร้อย",html:`<p class="swal-message">${escapeHtml(result.message||"บันทึกเวลายื่นเอกสารแล้ว")}</p>${vehicleDetailsHtml(result.vehicle||vehicle,value)}`,timer:1800,showConfirmButton:false,customClass:swalClasses(),width:420});
     await navigate("inbound");
-  }catch(error){await Swal.fire({icon:"error",title:"บันทึกไม่สำเร็จ",text:error.message,confirmButtonText:"ตกลง",customClass:swalClasses(),buttonsStyling:false,width:370})}
+  }catch(error){playFeedbackSound("error");const errorVehicle=error.data?.vehicle||vehicle;await Swal.fire({icon:"error",title:"บันทึกไม่สำเร็จ",html:`<p class="swal-message">${escapeHtml(error.message)}</p>${vehicleDetailsHtml(errorVehicle,value)}`,confirmButtonText:"ตกลง",customClass:swalClasses(),buttonsStyling:false,width:420})}
+  finally{submitState.busy=false;$("autoSearch")?.focus()}
+}
+
+function vehicleDetailsHtml(vehicle,autoId){
+  const read=(snake,camel)=>vehicle?.[snake]??vehicle?.[camel]??"";
+  const driver=read("driver_name","driverName")||joinText(read("driver_title","driverTitle"),read("driver_first_name","driverFirstName"),read("driver_last_name","driverLastName"));
+  return `<div class="confirm-grid"><span>Auto ID</span><b>${escapeHtml(autoId||read("auto_id","autoId")||"ไม่ระบุ")}</b><span>เลขนัดหมาย</span><b>${escapeHtml(read("appointment_no","appointmentNo")||"ไม่พบข้อมูล")}</b><span>บริษัท</span><b>${escapeHtml(read("company_name","companyName")||"ไม่พบข้อมูล")}</b><span>ชื่อคนขับรถ</span><b>${escapeHtml(driver||"ไม่พบข้อมูล")}</b><span>ทะเบียนรถ</span><b>${escapeHtml(joinText(read("vehicle_plate","vehiclePlate"),read("province","province")))}</b></div>`;
+}
+
+function normalizeAutoId(value){return String(value??"").replace(/[\r\n\t]/g,"").trim()}
+function unlockAudio(){try{audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==="suspended")audioContext.resume()}catch{}}
+function playFeedbackSound(kind){
+  unlockAudio();if(!audioContext)return;
+  const notes=kind==="success"?[[660,0,.09],[880,.11,.13]]:kind==="error"?[[220,0,.12],[180,.15,.16]]:[[940,0,.09]];
+  notes.forEach(([frequency,delay,duration])=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),start=audioContext.currentTime+delay;oscillator.type="sine";oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.13,start+.012);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);oscillator.connect(gain).connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+duration+.02)});
 }
 
 function showNotice(icon,text){if(window.Swal)return Swal.fire({icon,title:text,confirmButtonText:"ตกลง",customClass:swalClasses(),buttonsStyling:false,width:360});window.alert(text)}
@@ -151,7 +193,7 @@ async function api(path, options={}) {
   if (!cfg.apiBaseUrl || cfg.apiBaseUrl.includes("PUT-YOUR-WORKER")) throw new Error("ระบบยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแล");
   const headers={"content-type":"application/json",...(options.headers||{})}; if (options.auth !== false && state.token) headers.authorization=`Bearer ${state.token}`;
   let response; try { response=await fetch(cfg.apiBaseUrl.replace(/\/$/,"")+path,{method:options.method||"GET",headers,body:options.body?JSON.stringify(options.body):undefined}); setConnection(true); } catch { setConnection(false); throw new Error("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง"); }
-  const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"})); if (!response.ok || data.success===false) { if(response.status===401&&path!=="/api/auth/login") clearSession(); throw new Error(data.message||"ดำเนินการไม่สำเร็จ"); } return data;
+  const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"})); if (!response.ok || data.success===false) { if(response.status===401&&path!=="/api/auth/login") clearSession(); const error=new Error(data.message||"ดำเนินการไม่สำเร็จ");error.status=response.status;error.data=data;throw error; } return data;
 }
 
 function setConnection(online) { state.online=online; $("connectionBanner").hidden=online; if($("syncStatus")) { $("syncStatus").textContent=online?"● พร้อมใช้งาน":"● รอเชื่อมต่อ"; $("syncStatus").style.color=online?"#08783a":"#a82020"; } }
@@ -159,4 +201,4 @@ function updateClocks() { const value=formatDate(Math.floor(Date.now()/1000)); i
 function formatDate(seconds) { if(!seconds)return"-"; const parts=new Intl.DateTimeFormat("en-GB",{timeZone:cfg.timezone,day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date(Number(seconds)*1000)); const p=Object.fromEntries(parts.map(x=>[x.type,x.value])); return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}:${p.second}`; }
 function countStatus(status){return state.vehicles.filter(v=>v.current_status===status).length} function summary(label,value){return `<div class="summary-card"><small>${label}</small><b>${value}</b></div>`} function dashboardCard(label,value){return `<article class="dashboard-card"><small>${label}</small><b>${value}</b></article>`}
 function statusLabel(status){return ({WAITING_DOCUMENT_SUBMISSION:"รอยื่นเอกสาร",DOCUMENT_SUBMITTED:"ยื่นเอกสารแล้ว",READY_FOR_RECEIVING:"พร้อมตรวจรับ",RECEIVING_IN_PROGRESS:"กำลังตรวจรับ",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",DOCUMENT_RETURNED:"รับเอกสารคืนแล้ว",WAITING_GATE_OUT:"รอออกจากพื้นที่",CLOSED:"ปิดงาน"})[status]||"กำลังดำเนินงาน"}
-function roleLabel(role){return ({ADMIN:"ผู้ดูแลระบบ",USER:"แผนกรับสินค้า",INBOUND:"แผนก Inbound"})[role]||role} function joinText(a,b){return [a,b].filter(Boolean).join(" ")||"ไม่ระบุ"} function searchable(v){return [v.auto_id,v.appointment_no,v.company_name,v.vehicle_plate,v.province,v.door_code].filter(Boolean).join(" ").toLowerCase()} function escapeHtml(value){return String(value??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c])}
+function roleLabel(role){return ({ADMIN:"ผู้ดูแลระบบ",USER:"แผนกรับสินค้า",INBOUND:"แผนก Inbound"})[role]||role} function joinText(...parts){return parts.filter(Boolean).join(" ")||"ไม่ระบุ"} function searchable(v){return [v.auto_id,v.appointment_no,v.company_name,v.driver_name,v.vehicle_plate,v.province,v.door_code].filter(Boolean).join(" ").toLowerCase()} function escapeHtml(value){return String(value??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[c])}
