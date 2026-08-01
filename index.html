@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#072b61">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ระบบบริหารรถขนส่ง</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="connectionBanner" class="connection-banner" hidden>การเชื่อมต่อขัดข้อง กำลังลองใหม่</div>
+
+  <main id="loginView" class="login-view">
+    <section class="login-hero" aria-hidden="true"><div class="warehouse-art"><span>W</span></div><h1>ระบบบริหารรถขนส่ง</h1><p>ติดตามงานภายในคลังตั้งแต่รถเข้าจนออกจากพื้นที่</p></section>
+    <form id="loginForm" class="login-card">
+      <header><h2>เข้าสู่ระบบ</h2><p id="thaiClock">--/--/---- --:--:--</p></header>
+      <label>ชื่อผู้ใช้<input id="loginName" name="name" autocomplete="username" required maxlength="120" placeholder="กรอกชื่อผู้ใช้"></label>
+      <label>รหัสผ่าน<div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="กรอกรหัสผ่าน"><button type="button" id="togglePassword" aria-label="แสดงหรือซ่อนรหัสผ่าน">ดู</button></div></label>
+      <button class="primary login-button" type="submit">เข้าสู่ระบบ</button>
+      <p id="loginMessage" class="form-message" role="alert"></p>
+    </form>
+  </main>
+
+  <div id="appView" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">W</span><div><strong id="brandName">ระบบบริหารรถขนส่ง</strong><small>คลังสินค้า</small></div></div>
+      <nav id="sideNav"></nav>
+      <div class="account"><b id="accountName">-</b><small id="accountRole">-</small><button id="logoutButton">ออกจากระบบ</button></div>
+    </aside>
+
+    <section class="content">
+      <header class="topbar"><button id="menuButton" class="menu-button" aria-label="เปิดเมนู">☰</button><div><h1 id="pageTitle">งานรับสินค้า</h1><p id="headerClock">--/--/---- --:--:--</p></div><span id="syncStatus" class="sync-status">● พร้อมใช้งาน</span></header>
+      <div id="pageContent" class="page-content" aria-live="polite"></div>
+    </section>
+    <nav id="mobileNav" class="mobile-nav"></nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden><b>✓</b><span></span></div>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
