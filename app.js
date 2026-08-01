@@ -144,21 +144,30 @@ function stopCamera(){
 
 async function confirmInboundSubmit(autoId,source){
   const rawValue=normalizeAutoId(autoId);if(!rawValue||submitState.busy)return;
-  const vehicle=state.vehicles.find(item=>String(item.auto_id).toLowerCase()===rawValue.toLowerCase()),value=vehicle?String(vehicle.auto_id):rawValue;
-  if(!window.Swal){if(!window.confirm(`ยืนยันยื่นเอกสาร Auto ID: ${value}`))return;try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});window.alert(result.message||"บันทึกเรียบร้อย");await navigate("inbound")}catch(error){window.alert(error.message)}return}
+  const vehicle=state.vehicles.find(item=>String(item.auto_id).toLowerCase()===rawValue.toLowerCase()),value=vehicle?String(vehicle.auto_id):rawValue,automatic=["scanner","camera"].includes(source);
+  if(!window.Swal){
+    if(!automatic&&!window.confirm(`ยืนยันยื่นเอกสาร Auto ID: ${value}`))return;
+    submitState.busy=true;
+    try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});playFeedbackSound("success");showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await navigate("inbound")}
+    catch(error){playFeedbackSound("error");showKioskMessage(error.message,false)}
+    finally{submitState.busy=false;if(automatic&&$("autoSearch"))$("autoSearch").value="";$("autoSearch")?.focus()}
+    return;
+  }
   const details=vehicleDetailsHtml(vehicle,value);
   submitState.busy=true;
-  const confirmation=await Swal.fire({title:"ยืนยันยื่นเอกสาร",html:details,icon:"question",showCancelButton:true,confirmButtonText:"ยืนยันบันทึก",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:420});
-  if(!confirmation.isConfirmed){submitState.busy=false;$("autoSearch")?.focus();return}
+  if(!automatic){
+    const confirmation=await Swal.fire({title:"ยืนยันยื่นเอกสาร",html:details,icon:"question",showCancelButton:true,confirmButtonText:"ยืนยันบันทึก",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:420});
+    if(!confirmation.isConfirmed){submitState.busy=false;$("autoSearch")?.focus();return}
+  }
   Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});
   const idempotencyKey=createIdempotencyKey();
   try{
     const result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});
     playFeedbackSound("success");
-    await Swal.fire({icon:"success",title:result.duplicate?"บันทึกไว้แล้ว":"บันทึกเรียบร้อย",html:`<p class="swal-message">${escapeHtml(result.message||"บันทึกเวลายื่นเอกสารแล้ว")}</p>${vehicleDetailsHtml(result.vehicle||vehicle,value)}`,timer:1800,showConfirmButton:false,customClass:swalClasses(),width:420});
+    await Swal.fire({icon:"success",title:result.duplicate?"บันทึกไว้แล้ว":"บันทึกเรียบร้อย",html:`<p class="swal-message">${escapeHtml(result.message||"บันทึกเวลายื่นเอกสารแล้ว")}</p>${vehicleDetailsHtml(result.vehicle||vehicle,value)}`,timer:automatic?2600:2200,timerProgressBar:automatic,showConfirmButton:false,allowOutsideClick:!automatic,allowEscapeKey:!automatic,customClass:swalClasses(),width:420});
     await navigate("inbound");
-  }catch(error){playFeedbackSound("error");const errorVehicle=error.data?.vehicle||vehicle;await Swal.fire({icon:"error",title:"บันทึกไม่สำเร็จ",html:`<p class="swal-message">${escapeHtml(error.message)}</p>${vehicleDetailsHtml(errorVehicle,value)}`,confirmButtonText:"ตกลง",customClass:swalClasses(),buttonsStyling:false,width:420})}
-  finally{submitState.busy=false;$("autoSearch")?.focus()}
+  }catch(error){playFeedbackSound("error");const errorVehicle=error.data?.vehicle||vehicle;await Swal.fire({icon:"error",title:"บันทึกไม่สำเร็จ",html:`<p class="swal-message">${escapeHtml(error.message)}</p>${vehicleDetailsHtml(errorVehicle,value)}`,timer:automatic?5000:undefined,timerProgressBar:automatic,showConfirmButton:!automatic,confirmButtonText:"ตกลง",allowOutsideClick:!automatic,allowEscapeKey:!automatic,customClass:swalClasses(),buttonsStyling:false,width:420})}
+  finally{submitState.busy=false;if(automatic&&$("autoSearch"))$("autoSearch").value="";$("autoSearch")?.focus()}
 }
 
 function vehicleDetailsHtml(vehicle,autoId){
@@ -174,6 +183,7 @@ function playFeedbackSound(kind){
   const notes=kind==="success"?[[660,0,.09],[880,.11,.13]]:kind==="error"?[[220,0,.12],[180,.15,.16]]:[[940,0,.09]];
   notes.forEach(([frequency,delay,duration])=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),start=audioContext.currentTime+delay;oscillator.type="sine";oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.13,start+.012);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);oscillator.connect(gain).connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+duration+.02)});
 }
+function showKioskMessage(text,success){const toast=$("toast");if(!toast)return;toast.hidden=false;toast.classList.toggle("toast-error",!success);const label=toast.querySelector("span"),mark=toast.querySelector("b");if(label)label.textContent=text;if(mark)mark.textContent=success?"✓":"!";window.setTimeout(()=>{toast.hidden=true;toast.classList.remove("toast-error")},success?2600:5000)}
 
 function showNotice(icon,text){if(window.Swal)return Swal.fire({icon,title:text,confirmButtonText:"ตกลง",customClass:swalClasses(),buttonsStyling:false,width:360});window.alert(text)}
 function swalClasses(){return{popup:"wfv-swal",confirmButton:"wfv-swal-confirm",cancelButton:"wfv-swal-cancel"}}
