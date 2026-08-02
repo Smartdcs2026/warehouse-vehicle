@@ -4,6 +4,7 @@ const cfg = window.APP_CONFIG;
 const state = { token: sessionStorage.getItem("wvf_token") || "", user: null, view: "operations", vehicles: [], online: navigator.onLine };
 const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false, canvas:null, context:null, lastValue:"", lastSeenAt:0, repeatCount:0 };
 const submitState = { busy:false };
+const uiState = { detailsOpen:false };
 let audioContext = null;
 const $ = (id) => document.getElementById(id);
 
@@ -17,6 +18,7 @@ async function init() {
   $("loginForm").addEventListener("submit", login);
   $("logoutButton").addEventListener("click", logout);
   $("togglePassword").addEventListener("click", togglePassword);
+  document.addEventListener("fullscreenchange",updateFullscreenButton);
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => undefined);
@@ -35,6 +37,7 @@ async function login(event) {
 
 function openApp() {
   $("loginView").hidden = true; $("appView").hidden = false; $("accountName").textContent = state.user.name; $("accountRole").textContent = roleLabel(state.user.accessRights);
+  $("appView").classList.toggle("inbound-kiosk-shell",state.user.accessRights==="INBOUND");
   window.scrollTo(0, 0);
   state.view = state.user.accessRights === "INBOUND" ? "inbound" : "operations"; renderNavigation(); navigate(state.view);
 }
@@ -81,7 +84,8 @@ function renderJobCards(items) {
 
 function renderInbound() {
   const waiting=countStatus("WAITING_DOCUMENT_SUBMISSION");
-  $("pageContent").innerHTML = `<section class="inbound-summary"><div><small>รอยื่นเอกสาร</small><b id="inboundWaitingCount">${waiting}</b></div><div><small>รถในพื้นที่</small><b id="inboundVehicleCount">${state.vehicles.length}</b></div></section><section class="scanner-panel"><div class="scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-side"><h2>บันทึกยื่นเอกสาร</h2><p>ใช้เครื่องสแกน กล้อง หรือกรอก Auto ID</p><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">เครื่องสแกนที่ส่ง Enter จะบันทึกอัตโนมัติ</small></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span id="inboundListCount">${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
+  const kioskLogout=state.user.accessRights==="INBOUND"?`<button id="kioskLogout" class="quiet-button">ออกจากระบบ</button>`:"";
+  $("pageContent").innerHTML = `<section class="inbound-controlbar"><div class="inbound-summary"><div><small>รอยื่นเอกสาร</small><b id="inboundWaitingCount">${waiting}</b></div><div><small>รถในพื้นที่</small><b id="inboundVehicleCount">${state.vehicles.length}</b></div></div><div class="inbound-page-actions"><button id="fullscreenButton" class="quiet-button">เต็มหน้าจอ</button>${kioskLogout}</div></section><section class="scanner-panel"><div class="scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-side"><h2>บันทึกยื่นเอกสาร</h2><p>ใช้เครื่องสแกน กล้อง หรือกรอก Auto ID</p><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">เครื่องสแกนที่ส่ง Enter จะบันทึกอัตโนมัติ</small></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span id="inboundListCount">${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
   renderInboundRows(state.vehicles);
   const filter=()=>{const q=$("autoSearch").value.trim().toLowerCase();renderInboundRows(state.vehicles.filter(v=>searchable(v).includes(q)))};
   $("autoSearch").addEventListener("input",filter);
@@ -89,10 +93,15 @@ function renderInbound() {
   $("autoButton").addEventListener("click",()=>submitManualAutoId("manual"));
   $("startCamera").addEventListener("click",startCamera);
   $("stopCamera").addEventListener("click",stopCamera);
+  $("fullscreenButton").addEventListener("click",toggleFullscreen);
+  $("kioskLogout")?.addEventListener("click",logout);
+  $("inboundRows").addEventListener("click",event=>{const row=event.target.closest("[data-auto-id]");if(row)showInboundVehicleDetails(row.dataset.autoId)});
+  $("inboundRows").addEventListener("keydown",event=>{if(event.key!=="Enter"&&event.key!==" ")return;const row=event.target.closest("[data-auto-id]");if(row){event.preventDefault();showInboundVehicleDetails(row.dataset.autoId)}});
+  updateFullscreenButton();
   window.setTimeout(()=>$("autoSearch")?.focus({preventScroll:true}),50);
 }
 
-function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row status-row ${statusTone(v.current_status)}"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge status-badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
+function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row status-row ${statusTone(v.current_status)}" data-auto-id="${escapeHtml(v.auto_id)}" role="button" tabindex="0" aria-label="เปิดรายละเอียด ${escapeHtml(v.appointment_no||v.auto_id)}"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge status-badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
 
 function submitManualAutoId(source="manual"){const input=$("autoSearch");const autoId=normalizeAutoId(input?.value);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(input)input.value=autoId;if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
 
@@ -118,6 +127,7 @@ async function startCamera(){
 
 async function scanCameraFrame(){
   if(!scannerState.active||scannerState.reading)return;
+  if(uiState.detailsOpen){scannerState.timer=window.setTimeout(scanCameraFrame,250);return}
   const video=$("qrVideo");if(!video)return;
   try{
     let rawValue="";
@@ -126,6 +136,7 @@ async function scanCameraFrame(){
       const width=video.videoWidth,height=video.videoHeight;
       if(width&&height){scannerState.canvas.width=width;scannerState.canvas.height=height;scannerState.context.drawImage(video,0,0,width,height);const pixels=scannerState.context.getImageData(0,0,width,height);rawValue=window.jsQR(pixels.data,width,height,{inversionAttempts:"attemptBoth"})?.data||""}
     }
+    if(uiState.detailsOpen){scannerState.timer=window.setTimeout(scanCameraFrame,250);return}
     const value=normalizeAutoId(rawValue),now=Date.now();
     if(value){
       if(value===scannerState.lastValue&&now-scannerState.lastSeenAt<1500)scannerState.repeatCount+=1;else scannerState.repeatCount=1;
@@ -181,6 +192,23 @@ function vehicleDetailsHtml(vehicle,autoId){
   const driver=read("driver_name","driverName")||joinText(read("driver_title","driverTitle"),read("driver_first_name","driverFirstName"),read("driver_last_name","driverLastName"));
   return `<div class="confirm-grid"><span>Auto ID</span><b>${escapeHtml(autoId||read("auto_id","autoId")||"ไม่ระบุ")}</b><span>เลขนัดหมาย</span><b>${escapeHtml(read("appointment_no","appointmentNo")||"ไม่พบข้อมูล")}</b><span>บริษัท</span><b>${escapeHtml(read("company_name","companyName")||"ไม่พบข้อมูล")}</b><span>ชื่อคนขับรถ</span><b>${escapeHtml(driver||"ไม่พบข้อมูล")}</b><span>ทะเบียนรถ</span><b>${escapeHtml(joinText(read("vehicle_plate","vehiclePlate"),read("province","province")))}</b></div>`;
 }
+
+async function showInboundVehicleDetails(autoId){
+  if(uiState.detailsOpen||submitState.busy)return;
+  const vehicle=state.vehicles.find(item=>String(item.auto_id)===String(autoId));if(!vehicle)return;
+  uiState.detailsOpen=true;
+  const driver=vehicle.driver_name||"ไม่ระบุ",status=statusLabel(vehicle.current_status);
+  const html=`<div class="vehicle-detail-status ${statusTone(vehicle.current_status)}"><span></span><b>${escapeHtml(status)}</b></div><div class="confirm-grid vehicle-detail-grid"><span>Auto ID</span><b>${escapeHtml(vehicle.auto_id)}</b><span>เลขนัดหมาย</span><b>${escapeHtml(vehicle.appointment_no||"ไม่ระบุ")}</b><span>บริษัท</span><b>${escapeHtml(vehicle.company_name||"ไม่ระบุ")}</b><span>ชื่อคนขับรถ</span><b>${escapeHtml(driver)}</b><span>ทะเบียนรถ</span><b>${escapeHtml(joinText(vehicle.vehicle_plate,vehicle.province))}</b><span>ประเภทรถ</span><b>${escapeHtml(vehicle.vehicle_type||"ไม่ระบุ")}</b><span>ประตู</span><b>${escapeHtml(vehicle.door_code||"ไม่ระบุ")}</b><span>Gate In</span><b>${escapeHtml(formatDate(vehicle.gate_in_at))}</b><span>ยื่นเอกสาร</span><b>${escapeHtml(formatDate(vehicle.document_submitted_at))}</b></div>`;
+  try{if(window.Swal)await Swal.fire({title:"รายละเอียดรถ",html,confirmButtonText:"ปิด",customClass:swalClasses(),buttonsStyling:false,width:440});else window.alert(`${vehicle.appointment_no||vehicle.auto_id} — ${status}`)}
+  finally{uiState.detailsOpen=false}
+}
+
+async function toggleFullscreen(){
+  try{if(!document.fullscreenElement){if(!document.documentElement.requestFullscreen)throw new Error("unsupported");await document.documentElement.requestFullscreen()}else await document.exitFullscreen()}
+  catch{showNotice("info","เบราว์เซอร์นี้ไม่รองรับการเปิดเต็มหน้าจอ")}
+  updateFullscreenButton();
+}
+function updateFullscreenButton(){const button=$("fullscreenButton");if(button)button.textContent=document.fullscreenElement?"ออกจากเต็มหน้าจอ":"เต็มหน้าจอ"}
 
 function normalizeAutoId(value){return String(value??"").replace(/[\r\n\t]/g,"").trim()}
 function unlockAudio(){try{audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==="suspended")audioContext.resume()}catch{}}
