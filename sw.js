@@ -1,4 +1,4 @@
-const CACHE="wvf-static-v11-revision2-dashboard-balance-20260803";
+const CACHE="wvf-static-v11-revision3-dashboard-refinement-20260803";
 const SHELL=["./","./index.html","./styles.css","./config.js","./app.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest","./favicon.svg","./icon-192.png","./icon-512.png","./apple-touch-icon.png"];
 self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
