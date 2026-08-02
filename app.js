@@ -24,7 +24,7 @@ async function init() {
   $("loginForm").addEventListener("submit", login);
   $("logoutButton").addEventListener("click", logout);
   $("togglePassword").addEventListener("click", togglePassword);
-  document.addEventListener("fullscreenchange",updateFullscreenButton);
+  document.addEventListener("fullscreenchange",()=>{updateFullscreenButton();syncDashboardFullscreenShell()});
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
@@ -273,7 +273,7 @@ async function showInboundVehicleDetails(autoId){
 async function toggleFullscreen(){
   try{if(!document.fullscreenElement){if(!document.documentElement.requestFullscreen)throw new Error("unsupported");await document.documentElement.requestFullscreen()}else await document.exitFullscreen()}
   catch{showNotice("info","เบราว์เซอร์นี้ไม่รองรับการเปิดเต็มหน้าจอ")}
-  updateFullscreenButton();
+  updateFullscreenButton();syncDashboardFullscreenShell();
 }
 function updateFullscreenButton(){[$("fullscreenButton"),$("dashboardFullscreen")].filter(Boolean).forEach(button=>button.textContent=document.fullscreenElement?"ออกจากเต็มหน้าจอ":"เต็มหน้าจอ")}
 
@@ -297,7 +297,7 @@ function createIdempotencyKey(){return crypto.randomUUID?crypto.randomUUID():`${
 
 function renderDashboard() {
   if(!["ADMIN","USER"].includes(state.user?.accessRights))return navigate("inbound");
-  $("pageContent").innerHTML=`<section class="dashboard-head"><div class="dashboard-title-group"><button id="dashboardMenuButton" class="dashboard-menu-button" aria-label="เปิดเมนู">☰</button><div><span class="eyebrow">ศูนย์ควบคุมการปฏิบัติงาน</span><h2>Executive Operations Dashboard</h2><p id="dashboardRangeLabel">กำลังโหลดข้อมูล</p></div></div><div class="dashboard-filter"><div class="range-buttons"><button data-dashboard-range="today">วันนี้</button><button data-dashboard-range="7d">7 วัน</button><button data-dashboard-range="30d">30 วัน</button></div><select id="dashboardShift"><option value="">ทุกกะ</option></select><button id="dashboardFullscreen" class="outline-button">เต็มหน้าจอ</button></div></section><div id="dashboardBody" class="loading">กำลังสรุปข้อมูล</div>`;
+  $("pageContent").innerHTML=`<section class="dashboard-head"><div class="dashboard-title-group"><button id="dashboardMenuButton" class="dashboard-menu-button" aria-label="เปิดเมนู" aria-expanded="false">☰</button><div><span class="eyebrow">ภาพรวมคลังสินค้า</span><h2>ศูนย์ควบคุมการปฏิบัติงาน</h2><p id="dashboardRangeLabel">กำลังโหลดข้อมูล</p></div></div><div class="dashboard-filter"><div class="range-buttons"><button data-dashboard-range="today">วันนี้</button><button data-dashboard-range="7d">7 วัน</button><button data-dashboard-range="30d">30 วัน</button></div><select id="dashboardShift"><option value="">ทุกกะ</option></select><button id="dashboardFullscreen" class="outline-button">เต็มหน้าจอ</button></div></section><div id="dashboardBody" class="loading">กำลังสรุปข้อมูล</div>`;
   document.querySelectorAll("[data-dashboard-range]").forEach(button=>{button.classList.toggle("active",button.dataset.dashboardRange===dashboardState.range);button.addEventListener("click",()=>{dashboardState.range=button.dataset.dashboardRange;renderDashboard()})});
   $("dashboardMenuButton").addEventListener("click",toggleDashboardMenu);$("dashboardFullscreen").addEventListener("click",toggleFullscreen);loadDashboard(true);
 }
@@ -329,8 +329,10 @@ function performanceRows(rows){return`<div class="performance-rows">${(rows||[])
 function doorRows(rows){const max=Math.max(1,...(rows||[]).map(row=>Number(row.total)||0));return`<div class="door-capacity-rows">${(rows||[]).map(row=>`<div><b>${escapeHtml(row.label)}</b><i><em style="width:${Number(row.total)/max*100}%"></em></i><span>${Number(row.total)} คัน</span><small>ปิด ${Number(row.closed||0)} · เฉลี่ย ${formatDuration(row.avg_seconds)}</small></div>`).join("")||`<div class="empty-state">ไม่มีข้อมูลประตู</div>`}</div>`}
 function qualityRows(q){return dashboardBars([{label:"ไม่มีเลขนัดหมาย",total:q?.missing_appointment},{label:"ไม่มีทะเบียนรถ",total:q?.missing_plate},{label:"ไม่ระบุกะ",total:q?.missing_shift},{label:"ขาดประตูที่บังคับ",total:q?.missing_required_door}])}
 function recentTable(rows){return`<div class="dashboard-table-head"><span>เลขนัดหมาย</span><span>ทะเบียนรถ</span><span>ประตู</span><span>Gate Out</span><span>เวลารวม</span></div>${(rows||[]).map(row=>`<div class="dashboard-table-row"><b>${escapeHtml(row.appointment_no||row.auto_id)}</b><span>${escapeHtml(joinText(row.vehicle_plate,row.province))}</span><span>${escapeHtml(row.door_code||"–")}</span><span>${formatDate(row.gate_out_at)}</span><b>${formatDuration(row.total_seconds)}</b></div>`).join("")||`<div class="empty-state">ยังไม่มีงานที่ปิด</div>`}`}
-function setDashboardShell(view){const shell=$("appView");if(!shell)return;shell.classList.toggle("dashboard-focus-shell",view==="dashboard");if(view!=="dashboard")shell.classList.remove("dashboard-menu-open")}
-function toggleDashboardMenu(){const shell=$("appView");if(shell)shell.classList.toggle("dashboard-menu-open")}
+function setDashboardShell(view){const shell=$("appView");if(!shell)return;shell.classList.toggle("dashboard-view-shell",view==="dashboard");shell.classList.remove("dashboard-menu-open");if(view!=="dashboard")shell.classList.remove("dashboard-fullscreen-shell");syncDashboardFullscreenShell()}
+function syncDashboardFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="dashboard"&&Boolean(document.fullscreenElement);shell.classList.toggle("dashboard-fullscreen-shell",active);if(!active)shell.classList.remove("dashboard-menu-open");syncDashboardMenuButton()}
+function toggleDashboardMenu(){const shell=$("appView");if(!shell?.classList.contains("dashboard-fullscreen-shell"))return;shell.classList.toggle("dashboard-menu-open");syncDashboardMenuButton()}
+function syncDashboardMenuButton(){const button=$("dashboardMenuButton"),open=$("appView")?.classList.contains("dashboard-menu-open");if(!button)return;button.setAttribute("aria-expanded",open?"true":"false");button.setAttribute("aria-label",open?"ปิดเมนู":"เปิดเมนู")}
 
 async function renderAdmin() {
   if(state.user?.accessRights!=="ADMIN"){return navigate(state.user?.accessRights==="INBOUND"?"inbound":"operations")}
