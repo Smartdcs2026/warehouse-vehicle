@@ -6,13 +6,15 @@ const scannerState = { active:false, stream:null, detector:null, timer:0, readin
 const submitState = { busy:false };
 const receivingState = { busyIds:new Set() };
 const uiState = { detailsOpen:false };
+const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 let audioContext = null;
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", init);
-window.addEventListener("online", () => setConnection(true));
+window.addEventListener("online", () => { setConnection(true); checkInboundLiveUpdates(true); });
 window.addEventListener("offline", () => setConnection(false));
-document.addEventListener("visibilitychange", () => { if (!document.hidden && scannerState.active) $("qrVideo")?.play().catch(() => undefined); });
+window.addEventListener("focus",()=>checkInboundLiveUpdates(true));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && scannerState.active) $("qrVideo")?.play().catch(() => undefined); if(!document.hidden)checkInboundLiveUpdates(true); });
 
 async function init() {
   $("brandName").textContent = cfg.appName;
@@ -22,6 +24,7 @@ async function init() {
   document.addEventListener("fullscreenchange",updateFullscreenButton);
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
+  setInterval(()=>checkInboundLiveUpdates(false),5000);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; openApp(); } catch { clearSession(); } }
 }
@@ -58,7 +61,7 @@ function renderNavigation() {
 async function navigate(view) {
   if(scannerState.active&&state.view==="inbound"){if(view!=="inbound")showNotice("info","กรุณาปิดกล้องก่อนเปลี่ยนหน้า");return}
   stopCamera();
-  state.view = view; const titles = { operations:"งานรับสินค้า", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", admin:"ตั้งค่าระบบ" };
+  state.view = view;if(view==="inbound")inboundLiveState.version=""; const titles = { operations:"งานรับสินค้า", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", admin:"ตั้งค่าระบบ" };
   $("pageTitle").textContent = titles[view]; document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   $("pageContent").innerHTML = `<div class="loading">กำลังโหลดข้อมูล</div>`;
   if (view === "admin") return renderAdmin();
@@ -71,6 +74,19 @@ function renderCurrentView() { if (state.view === "operations") renderOperations
 async function refreshLiveData(){
   if(!state.user||document.hidden||scannerState.active||!["operations","dashboard"].includes(state.view)||document.activeElement?.tagName==="INPUT")return;
   try{const data=await api("/api/vehicles/active");state.vehicles=data.items||[];renderCurrentView()}catch{}
+}
+
+async function checkInboundLiveUpdates(force=false){
+  if(force)inboundLiveState.nextAllowedAt=0;
+  if(!state.user||state.view!=="inbound"||document.hidden||!navigator.onLine||inboundLiveState.checking||submitState.busy||scannerState.reading||uiState.detailsOpen||Date.now()<inboundLiveState.nextAllowedAt)return;
+  const input=$("autoSearch");if(input&&input.value.trim())return;
+  inboundLiveState.checking=true;
+  try{
+    const snapshot=await api("/api/vehicles/active-version"),changed=!inboundLiveState.version||snapshot.version!==inboundLiveState.version;
+    if(changed){const data=await api("/api/vehicles/active");state.vehicles=data.items||[];restoreInboundMainDisplay()}
+    inboundLiveState.version=String(snapshot.version||"");inboundLiveState.failures=0;inboundLiveState.nextAllowedAt=0;
+  }catch{inboundLiveState.failures=Math.min(inboundLiveState.failures+1,4);inboundLiveState.nextAllowedAt=Date.now()+Math.min(60000,5000*(2**inboundLiveState.failures))}
+  finally{inboundLiveState.checking=false}
 }
 
 function renderOperations() {
@@ -141,6 +157,7 @@ function renderInbound() {
   $("inboundRows").addEventListener("keydown",event=>{if(event.key!=="Enter"&&event.key!==" ")return;const row=event.target.closest("[data-auto-id]");if(row){event.preventDefault();showInboundVehicleDetails(row.dataset.autoId)}});
   updateFullscreenButton();
   window.setTimeout(()=>$("autoSearch")?.focus({preventScroll:true}),50);
+  window.setTimeout(()=>checkInboundLiveUpdates(true),100);
 }
 
 function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row status-row ${statusTone(v.current_status)}" data-auto-id="${escapeHtml(v.auto_id)}" role="button" tabindex="0" aria-label="เปิดรายละเอียด ${escapeHtml(v.appointment_no||v.auto_id)}"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge status-badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
@@ -280,7 +297,7 @@ function renderDashboard() {
 function renderAdmin() { $("pageContent").innerHTML = `<section class="settings-grid"><article class="settings-card"><h2>สถานะระบบ</h2><p>ระบบพร้อมใช้งานและตรวจสอบสิทธิ์ก่อนแสดงข้อมูลทุกครั้ง</p><span class="badge">พร้อมใช้งาน</span></article><article class="settings-card"><h2>การตั้งค่าการทำงาน</h2><p>จัดการขั้นตอนการทำงาน กะ ประตูรับสินค้า และเงื่อนไขการแจ้งเตือน</p></article></section>`; }
 
 async function logout() { try { await api("/api/auth/logout",{method:"POST"}); } catch {} clearSession(); }
-function clearSession() { stopCamera(); sessionStorage.removeItem("wvf_token"); state.token=""; state.user=null; $("appView").hidden=true; $("loginView").hidden=false; $("loginPassword").value=""; window.scrollTo(0, 0); }
+function clearSession() { stopCamera(); inboundLiveState.version="";inboundLiveState.checking=false;inboundLiveState.failures=0;inboundLiveState.nextAllowedAt=0; sessionStorage.removeItem("wvf_token"); state.token=""; state.user=null; $("appView").hidden=true; $("loginView").hidden=false; $("loginPassword").value=""; window.scrollTo(0, 0); }
 function togglePassword() { const input=$("loginPassword"); input.type=input.type==="password"?"text":"password"; $("togglePassword").textContent=input.type==="password"?"ดู":"ซ่อน"; }
 
 async function api(path, options={}) {
