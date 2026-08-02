@@ -129,10 +129,8 @@ function parseDoorCode(value){const match=String(value||"").toUpperCase().match(
 function renderInbound() {
   const counts=statusCounts();
   const kioskLogout=state.user.accessRights==="INBOUND"?`<button id="kioskLogout" class="quiet-button">ออกจากระบบ</button>`:"";
-  $("pageContent").innerHTML = `<section class="inbound-controlbar"><div class="inbound-kiosk-title"><b>จุดบริการคนขับรถ</b><span>ระบบพร้อมรับ QR Code ต่อเนื่อง</span></div><div class="inbound-page-actions"><button id="fullscreenButton" class="quiet-button">เต็มหน้าจอ</button>${kioskLogout}</div></section><section class="scanner-panel"><div class="scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-side"><div class="scan-input-block"><h2>บันทึกยื่นเอกสาร</h2><p>ใช้เครื่องสแกน กล้อง หรือกรอก Auto ID</p><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">เครื่องสแกนที่ส่ง Enter จะบันทึกอัตโนมัติ</small></div><div class="inbound-metrics">${inboundMetric("metricWaiting","รอยื่นเอกสาร",counts.WAITING_DOCUMENT_SUBMISSION,"metric-orange")}${inboundMetric("metricReady","พร้อมตรวจรับ",counts.READY_FOR_RECEIVING,"metric-green")}${inboundMetric("metricProgress","กำลังตรวจรับ",counts.RECEIVING_IN_PROGRESS,"metric-blue")}${inboundMetric("metricReturn","รอรับเอกสารคืน",counts.WAITING_DOCUMENT_RETURN,"metric-pink")}${inboundMetric("metricGateout","รอออกจากพื้นที่",counts.WAITING_GATE_OUT,"metric-sky")}${inboundMetric("metricTotal","รถในพื้นที่",state.vehicles.length,"metric-magenta")}</div></div></section><section class="list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span id="inboundListCount">${state.vehicles.length} รายการ</span></header><div id="inboundRows"></div></section>`;
+  $("pageContent").innerHTML = `<section class="inbound-controlbar"><div class="inbound-kiosk-title"><span class="inbound-mini-logo" aria-hidden="true"><span class="spectrum-mark"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><div><b>จุดบริการคนขับรถ</b><span>พร้อมรับ QR Code ต่อเนื่อง</span></div></div><div class="inbound-page-actions"><button id="fullscreenButton" class="quiet-button">เต็มหน้าจอ</button>${kioskLogout}</div></section><section class="inbound-metrics inbound-metrics-top">${inboundMetric("metricWaiting","รอยื่นเอกสาร",counts.WAITING_DOCUMENT_SUBMISSION,"metric-orange")}${inboundMetric("metricReady","พร้อมตรวจรับ",counts.READY_FOR_RECEIVING,"metric-green")}${inboundMetric("metricProgress","กำลังตรวจรับ",counts.RECEIVING_IN_PROGRESS,"metric-blue")}${inboundMetric("metricReturn","รอรับเอกสารคืน",counts.WAITING_DOCUMENT_RETURN,"metric-pink")}${inboundMetric("metricGateout","รอออกจากพื้นที่",counts.WAITING_GATE_OUT,"metric-sky")}${inboundMetric("metricTotal","รถในพื้นที่",state.vehicles.length,"metric-magenta")}</section><section class="inbound-workspace"><aside class="inbound-scan-station"><div class="scanner compact-scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-input-block compact-input-block"><h2>บันทึกยื่นเอกสาร</h2><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">เครื่องสแกนที่ส่ง Enter จะบันทึกทันที</small></div></aside><section class="list-card inbound-list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span id="inboundListCount">${state.vehicles.length} รายการ</span></header><div class="inbound-table-head" aria-hidden="true"><span>เลขนัดหมาย</span><span>บริษัท</span><span>ทะเบียนรถ</span><span>ประตู</span><span>สถานะ</span></div><div id="inboundRows"></div></section></section>`;
   renderInboundRows(state.vehicles);
-  const filter=()=>{const q=$("autoSearch").value.trim().toLowerCase();renderInboundRows(state.vehicles.filter(v=>searchable(v).includes(q)))};
-  $("autoSearch").addEventListener("input",filter);
   $("autoSearch").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();if(submitState.busy)return;playFeedbackSound("scan");submitManualAutoId("scanner")}});
   $("autoButton").addEventListener("click",()=>submitManualAutoId("manual"));
   $("startCamera").addEventListener("click",startCamera);
@@ -148,7 +146,7 @@ function renderInbound() {
 function renderInboundRows(items) { $("inboundRows").innerHTML = items.length ? items.map(v => `<div class="list-row status-row ${statusTone(v.current_status)}" data-auto-id="${escapeHtml(v.auto_id)}" role="button" tabindex="0" aria-label="เปิดรายละเอียด ${escapeHtml(v.appointment_no||v.auto_id)}"><b>${escapeHtml(v.appointment_no || v.auto_id)}</b><span>${escapeHtml(v.company_name || "ไม่ระบุ")}</span><span>${escapeHtml(joinText(v.vehicle_plate,v.province))}</span><span>${escapeHtml(v.door_code || "-")}</span><span class="badge status-badge">${statusLabel(v.current_status)}</span></div>`).join("") : `<div class="empty-state"><b>ไม่พบข้อมูล</b></div>`; }
 function inboundMetric(id,label,value,tone){return `<article class="inbound-metric ${tone}"><small>${label}</small><b id="${id}">${Number(value)||0}</b></article>`}
 
-function submitManualAutoId(source="manual"){const input=$("autoSearch");const autoId=normalizeAutoId(input?.value);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(input)input.value=autoId;if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
+function submitManualAutoId(source="manual"){const input=$("autoSearch"),autoId=normalizeAutoId(input?.value);if(input)input.value="";renderInboundRows(state.vehicles);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
 
 async function startCamera(){
   if(scannerState.active)return;
@@ -187,7 +185,7 @@ async function scanCameraFrame(){
       if(value===scannerState.lastValue&&now-scannerState.lastSeenAt<1500)scannerState.repeatCount+=1;else scannerState.repeatCount=1;
       scannerState.lastValue=value;scannerState.lastSeenAt=now;
       if(scannerState.repeatCount>=2){
-        scannerState.reading=true;playFeedbackSound("scan");if($("autoSearch"))$("autoSearch").value=value;
+        scannerState.reading=true;playFeedbackSound("scan");clearInboundInput();
         try{await confirmInboundSubmit(value,"camera")}
         finally{scannerState.reading=false;scannerState.lastValue="";scannerState.lastSeenAt=0;scannerState.repeatCount=0;if(scannerState.active)scannerState.timer=window.setTimeout(scanCameraFrame,300)}
         return;
@@ -210,16 +208,16 @@ async function confirmInboundSubmit(autoId,source){
   if(!window.Swal){
     if(!automatic&&!window.confirm(`ยืนยันยื่นเอกสาร Auto ID: ${value}`))return;
     submitState.busy=true;
-    try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});playFeedbackSound(result.duplicate?"duplicate":"success");showKioskMessage(result.message||"บันทึกเรียบร้อย",true);if(scannerState.active&&state.view==="inbound")await refreshInboundKioskData();else await navigate("inbound")}
+    try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});mergeVehicleUpdate(result.vehicle);playFeedbackSound(result.duplicate?"duplicate":"success");showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay())}
     catch(error){playFeedbackSound("error");showKioskMessage(error.message,false)}
-    finally{submitState.busy=false;if(automatic&&$("autoSearch"))$("autoSearch").value="";$("autoSearch")?.focus()}
+    finally{submitState.busy=false;restoreInboundMainDisplay()}
     return;
   }
   const details=vehicleDetailsHtml(vehicle,value);
   submitState.busy=true;
   if(!automatic){
     const confirmation=await Swal.fire({title:"ยืนยันยื่นเอกสาร",html:details,icon:"question",showCancelButton:true,confirmButtonText:"ยืนยันบันทึก",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:420});
-    if(!confirmation.isConfirmed){submitState.busy=false;$("autoSearch")?.focus();return}
+    if(!confirmation.isConfirmed){submitState.busy=false;restoreInboundMainDisplay();return}
   }
   Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});
   const idempotencyKey=createIdempotencyKey();
@@ -227,9 +225,9 @@ async function confirmInboundSubmit(autoId,source){
     const result=await api("/api/workflow/inbound-submit",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});
     const duplicate=Boolean(result.duplicate);playFeedbackSound(duplicate?"duplicate":"success");
     await Swal.fire({icon:duplicate?"warning":"success",title:duplicate?"ยื่นเอกสารแล้ว":"บันทึกเรียบร้อย",html:`<p class="swal-message${duplicate?" duplicate-message":""}">${escapeHtml(result.message||"บันทึกเวลายื่นเอกสารแล้ว")}</p>${vehicleDetailsHtml(result.vehicle||vehicle,value)}`,timer:duplicate?4200:(automatic?2600:2200),timerProgressBar:automatic,showConfirmButton:false,allowOutsideClick:!automatic,allowEscapeKey:!automatic,customClass:swalClasses(),width:420});
-    if(scannerState.active&&state.view==="inbound")await refreshInboundKioskData();else await navigate("inbound");
+    mergeVehicleUpdate(result.vehicle);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay());
   }catch(error){playFeedbackSound("error");const errorVehicle=error.data?.vehicle||vehicle;await Swal.fire({icon:"error",title:"บันทึกไม่สำเร็จ",html:`<p class="swal-message">${escapeHtml(error.message)}</p>${vehicleDetailsHtml(errorVehicle,value)}`,timer:automatic?5000:undefined,timerProgressBar:automatic,showConfirmButton:!automatic,confirmButtonText:"ตกลง",allowOutsideClick:!automatic,allowEscapeKey:!automatic,customClass:swalClasses(),buttonsStyling:false,width:420})}
-  finally{submitState.busy=false;if(automatic&&$("autoSearch"))$("autoSearch").value="";$("autoSearch")?.focus()}
+  finally{submitState.busy=false;restoreInboundMainDisplay()}
 }
 
 function vehicleDetailsHtml(vehicle,autoId){
@@ -263,7 +261,9 @@ function playFeedbackSound(kind){
   notes.forEach(([frequency,delay,duration])=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),start=audioContext.currentTime+delay;oscillator.type="sine";oscillator.frequency.setValueAtTime(frequency,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.13,start+.012);gain.gain.exponentialRampToValueAtTime(.0001,start+duration);oscillator.connect(gain).connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+duration+.02)});
 }
 function showKioskMessage(text,success){const toast=$("toast");if(!toast)return;toast.hidden=false;toast.classList.toggle("toast-error",!success);const label=toast.querySelector("span"),mark=toast.querySelector("b");if(label)label.textContent=text;if(mark)mark.textContent=success?"✓":"!";window.setTimeout(()=>{toast.hidden=true;toast.classList.remove("toast-error")},success?2600:5000)}
-async function refreshInboundKioskData(){const data=await api("/api/vehicles/active");state.vehicles=data.items||[];renderInboundRows(state.vehicles);updateInboundMetrics();if($("inboundListCount"))$("inboundListCount").textContent=`${state.vehicles.length} รายการ`}
+async function refreshInboundKioskData(){const data=await api("/api/vehicles/active");state.vehicles=data.items||[];restoreInboundMainDisplay()}
+function clearInboundInput(){const input=$("autoSearch");if(input)input.value=""}
+function restoreInboundMainDisplay(){clearInboundInput();if(state.view!=="inbound"||!$("inboundRows"))return;renderInboundRows(state.vehicles);updateInboundMetrics();if($("inboundListCount"))$("inboundListCount").textContent=`${state.vehicles.length} รายการ`;window.setTimeout(()=>$("autoSearch")?.focus({preventScroll:true}),30)}
 function updateInboundMetrics(){const counts=statusCounts(),values={metricWaiting:counts.WAITING_DOCUMENT_SUBMISSION,metricReady:counts.READY_FOR_RECEIVING,metricProgress:counts.RECEIVING_IN_PROGRESS,metricReturn:counts.WAITING_DOCUMENT_RETURN,metricGateout:counts.WAITING_GATE_OUT,metricTotal:state.vehicles.length};Object.entries(values).forEach(([id,value])=>{if($(id))$(id).textContent=Number(value)||0})}
 function statusCounts(){return state.vehicles.reduce((counts,vehicle)=>{counts[vehicle.current_status]=(counts[vehicle.current_status]||0)+1;return counts},{})}
 

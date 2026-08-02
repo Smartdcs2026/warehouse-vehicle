@@ -735,3 +735,86 @@ button:disabled { cursor: wait; opacity: .7; }
   .inbound-metric { padding: 7px 9px; }
   .inbound-metric b { font-size: 18px; }
 }
+
+/* Inbound service counter: compact controls with maximum list space */
+.inbound-kiosk-title { align-items: center; }
+.inbound-kiosk-title > div { display: grid; gap: 1px; }
+.inbound-mini-logo {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(42,57,90,.08);
+}
+.inbound-mini-logo > span { width: 26px; height: 26px; }
+.inbound-metrics-top { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 7px; margin-bottom: 9px; }
+.inbound-metrics-top .inbound-metric { min-height: 54px; padding: 8px 10px; }
+.inbound-metrics-top .inbound-metric b { margin-top: 3px; font-size: 19px; }
+.inbound-workspace { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 10px; align-items: stretch; }
+.inbound-scan-station { min-width: 0; display: grid; align-content: start; gap: 8px; }
+.compact-scanner { padding: 10px; }
+.compact-scanner .scan-frame { width: min(100%,236px); }
+.compact-input-block {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px;
+  box-shadow: var(--shadow);
+}
+.compact-input-block h2 { margin: 0 0 7px; font-size: 15px; }
+.compact-input-block .auto-input { gap: 6px; }
+.compact-input-block .auto-input input { padding: 10px; font-size: 12px; }
+.compact-input-block .auto-input button { flex: 0 0 auto; padding: 9px 11px; }
+.inbound-list-card {
+  min-height: min(650px,calc(100dvh - 238px));
+  max-height: calc(100dvh - 238px);
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+.inbound-list-card header { flex: 0 0 auto; }
+.inbound-table-head { flex: 0 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1.2fr .8fr .8fr; gap: 10px; border-top: 1px solid var(--line); background: #f7f9fc; padding: 6px 8px; color: var(--muted); font-size: 10px; font-weight: 800; }
+.inbound-list-card #inboundRows { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.inbound-list-card .empty-state { min-height: 180px; display: grid; place-items: center; border: 0; }
+
+@media (max-width: 760px) {
+  .inbound-kiosk-title { gap: 7px; }
+  .inbound-mini-logo { width: 34px; height: 34px; }
+  .inbound-mini-logo > span { width: 23px; height: 23px; }
+  .inbound-metrics-top { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .inbound-metrics-top .inbound-metric { min-height: 50px; padding: 7px 8px; }
+  .inbound-metrics-top .inbound-metric small { font-size: 9px; }
+  .inbound-metrics-top .inbound-metric b { font-size: 17px; }
+  .inbound-workspace { grid-template-columns: 1fr; }
+  .compact-scanner .scan-frame { width: min(100%,214px); }
+  .inbound-table-head { display: none; }
+  .inbound-list-card { min-height: 320px; max-height: none; }
+  .inbound-list-card #inboundRows { overflow: visible; }
+  .inbound-list-card .list-row { grid-template-columns: .8fr 1.2fr; gap: 5px 9px; padding: 8px; }
+  .inbound-list-card .list-row > * { display: block !important; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .inbound-list-card .list-row .status-badge { grid-column: 1 / -1; justify-self: stretch; }
+}
+
+@media (max-width: 920px) and (orientation: landscape) {
+  .inbound-metrics-top { grid-template-columns: repeat(6,minmax(0,1fr)); margin-bottom: 6px; }
+  .inbound-metrics-top .inbound-metric { min-height: 43px; padding: 6px 8px; }
+  .inbound-metrics-top .inbound-metric b { font-size: 16px; }
+  .inbound-workspace { grid-template-columns: 238px minmax(0,1fr); gap: 7px; }
+  .compact-scanner { padding: 7px; }
+  .compact-scanner .scan-frame { width: min(100%,178px); }
+  .compact-input-block { padding: 8px; }
+  .compact-input-block h2 { margin-bottom: 5px; font-size: 13px; }
+  .compact-input-block .auto-input input { padding: 8px; }
+  .input-hint { margin-top: 4px; font-size: 9px; }
+  .inbound-list-card { min-height: calc(100dvh - 182px); max-height: calc(100dvh - 182px); }
+  .inbound-table-head { display: grid; }
+  .inbound-list-card #inboundRows { overflow: auto; }
+  .inbound-list-card .list-row { grid-template-columns: 1fr 1.4fr 1.2fr .8fr .8fr; gap: 7px; padding: 6px 7px; }
+  .inbound-list-card .list-row > * { display: block !important; }
+  .inbound-list-card .list-row .status-badge { grid-column: auto; }
+}
