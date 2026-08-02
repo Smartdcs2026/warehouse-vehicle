@@ -1738,3 +1738,96 @@ button:disabled { cursor: wait; opacity: .7; }
   .dashboard-view-shell .opsdash-context .opsdash-stale,
   .dashboard-view-shell .opsdash-context .opsdash-history { display:block; grid-column:auto; grid-row:1; }
 }
+
+/* Round 11 revision 2: equal mobile rhythm and additional decision charts */
+.cohort-strip { justify-content:flex-start; }
+.cohort-strip>div:last-child { display:grid; flex:1; grid-template-columns:1fr auto; align-items:center; gap:2px 8px; }
+.cohort-strip>div:last-child small { grid-column:1/-1; }
+.completion-ring {
+  display:grid;
+  flex:0 0 58px;
+  width:58px;
+  aspect-ratio:1;
+  place-items:center;
+  border-radius:50%;
+  background:conic-gradient(#059669 0 var(--completion),#e7edf5 var(--completion) 100%);
+}
+.completion-ring::before { content:""; grid-area:1/1; width:72%; aspect-ratio:1; border-radius:50%; background:#fff; }
+.completion-ring>span { z-index:1; grid-area:1/1; text-align:center; }
+.completion-ring b,.completion-ring small { display:block; }
+.completion-ring b { color:#087d3d; font-size:13px; line-height:1; }
+.completion-ring small { margin-top:2px; color:#718096; font-size:7px; }
+
+@media (max-width:760px) {
+  .dashboard-view-shell .opsdash-filter {
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button {
+    grid-column:1/3;
+    grid-row:1;
+    width:100%;
+  }
+  .dashboard-view-shell .opsdash-filter select {
+    grid-column:3/5;
+    grid-row:1;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons {
+    grid-column:1/4;
+    grid-row:2;
+  }
+  .dashboard-view-shell .opsdash-filter .outline-button {
+    grid-column:4;
+    grid-row:2;
+    width:100%;
+    min-width:0;
+  }
+  .dashboard-view-shell .opsdash-context {
+    position:relative;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    padding:7px 8px;
+  }
+  .dashboard-view-shell .opsdash-context .context-date { grid-column:1; grid-row:1; }
+  .dashboard-view-shell .opsdash-context .context-shift { grid-column:2; grid-row:1; }
+  .dashboard-view-shell .opsdash-context .context-range { grid-column:1/-1; grid-row:2; padding-right:102px; }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-stale,
+  .dashboard-view-shell .opsdash-context .opsdash-history {
+    position:absolute;
+    right:8px;
+    bottom:7px;
+    display:block;
+  }
+  .dashboard-view-shell .opsdash-kpi { min-height:78px; }
+  .dashboard-view-shell .opsdash-kpi b { font-size:21px; }
+  .dashboard-view-shell .opsdash-kpi>i { flex-basis:27px; width:27px; height:27px; font-size:13px; }
+  .dashboard-view-shell .opsdash-tabs { scroll-snap-type:x proximity; }
+  .dashboard-view-shell .opsdash-tabs button { min-width:86px; scroll-snap-align:start; }
+  .completion-ring { flex-basis:52px; width:52px; }
+}
+
+@media (max-width:380px) {
+  .dashboard-view-shell .opsdash-filter { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  .dashboard-view-shell .opsdash-filter .calendar-button { grid-column:1/3; }
+  .dashboard-view-shell .opsdash-filter select { grid-column:3/5; }
+  .dashboard-view-shell .opsdash-filter .range-buttons { grid-column:1/4; }
+  .dashboard-view-shell .opsdash-filter .outline-button { grid-column:4; width:100%; }
+  .dashboard-view-shell .opsdash-context { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dashboard-view-shell .opsdash-context .context-date { grid-column:1; }
+  .dashboard-view-shell .opsdash-context .context-shift { grid-column:2; }
+  .dashboard-view-shell .opsdash-context .context-range { grid-column:1/-1; }
+}
+
+@media (max-width:920px) and (orientation:landscape) {
+  .dashboard-view-shell .opsdash-filter {
+    grid-template-columns:minmax(90px,.8fr) minmax(190px,1.5fr) minmax(130px,1fr) 90px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button { grid-column:1; }
+  .dashboard-view-shell .opsdash-filter .range-buttons { grid-column:2; }
+  .dashboard-view-shell .opsdash-filter select { grid-column:3; }
+  .dashboard-view-shell .opsdash-filter .outline-button { grid-column:4; width:90px; }
+  .dashboard-view-shell .opsdash-context { position:static; grid-template-columns:.75fr 1.25fr 1.5fr auto; }
+  .dashboard-view-shell .opsdash-context .context-range { padding-right:0; }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-stale,
+  .dashboard-view-shell .opsdash-context .opsdash-history { position:static; }
+}
