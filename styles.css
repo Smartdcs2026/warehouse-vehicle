@@ -568,6 +568,15 @@ button:disabled { cursor: wait; opacity: .7; }
 }
 .wfv-swal .swal2-icon * { box-sizing: content-box !important; }
 .wfv-swal .swal-message { margin: 0 0 10px; color: var(--muted); }
+.wfv-swal .duplicate-message {
+  border: 1px solid rgba(247, 170, 18, .35);
+  border-radius: 10px;
+  background: rgba(247, 170, 18, .12);
+  padding: 10px;
+  color: #8a5900;
+  font-size: 1rem;
+  font-weight: 900;
+}
 .wfv-swal .swal2-actions { gap: 8px; margin: 1rem auto .15rem !important; }
 .wfv-swal-confirm, .wfv-swal-cancel {
   min-width: 100px;
