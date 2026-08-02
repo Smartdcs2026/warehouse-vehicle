@@ -4,6 +4,7 @@ const cfg = window.APP_CONFIG;
 const state = { token: sessionStorage.getItem("wvf_token") || "", user: null, view: "operations", vehicles: [], online: navigator.onLine };
 const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false, canvas:null, context:null, lastValue:"", lastSeenAt:0, repeatCount:0 };
 const submitState = { busy:false };
+const receivingState = { busyIds:new Set() };
 const uiState = { detailsOpen:false };
 let audioContext = null;
 const $ = (id) => document.getElementById(id);
@@ -74,13 +75,56 @@ async function refreshLiveData(){
 
 function renderOperations() {
   const items = state.vehicles.filter(v => ["READY_FOR_RECEIVING","RECEIVING_IN_PROGRESS"].includes(v.current_status));
-  $("pageContent").innerHTML = `<section class="summary-strip">${summary("พร้อมตรวจรับ",countStatus("READY_FOR_RECEIVING"))}${summary("กำลังตรวจรับ",countStatus("RECEIVING_IN_PROGRESS"))}${summary("ล่าช้า",0)}${summary("รถในพื้นที่",state.vehicles.length)}</section><div class="toolbar"><input id="jobSearch" placeholder="ค้นหาเลขนัดหมาย บริษัท ทะเบียนรถ หรือประตู"><button id="refreshButton">โหลดใหม่</button></div><section id="jobGrid" class="job-grid"></section>`;
-  renderJobCards(items); $("jobSearch").addEventListener("input", e => renderJobCards(items.filter(v => searchable(v).includes(e.target.value.toLowerCase())))); $("refreshButton").addEventListener("click", () => navigate("operations"));
+  $("pageContent").innerHTML = `<section class="summary-strip receiving-summary">${summary("พร้อมตรวจรับ",countStatus("READY_FOR_RECEIVING"))}${summary("กำลังตรวจรับ",countStatus("RECEIVING_IN_PROGRESS"))}${summary("งานรอดำเนินการ",items.length)}${summary("รถในพื้นที่",state.vehicles.length)}</section><div class="toolbar receiving-toolbar"><input id="jobSearch" placeholder="ค้นหาเลขนัดหมาย บริษัท คนขับ ทะเบียนรถ หรือประตู"><button id="refreshButton">โหลดใหม่</button></div><section id="jobGrid" class="job-grid receiving-grid"></section>`;
+  renderJobCards(items);
+  $("jobSearch").addEventListener("input",e=>renderJobCards(items.filter(v=>searchable(v).includes(e.target.value.toLowerCase()))));
+  $("refreshButton").addEventListener("click",()=>navigate("operations"));
+  $("jobGrid").addEventListener("click",event=>{const button=event.target.closest("[data-receiving-action]");if(!button)return;const vehicle=state.vehicles.find(item=>String(item.auto_id)===button.dataset.autoId);if(!vehicle)return;if(button.dataset.receivingAction==="start")startReceiving(vehicle);else completeReceiving(vehicle)});
 }
 
 function renderJobCards(items) {
-  $("jobGrid").innerHTML = items.length ? items.map(v => `<article class="job-card"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no || "ไม่ระบุ")}</h2></div><span class="badge">${statusLabel(v.current_status)}</span></div><div class="dense-grid"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name || "ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตู</small><b>${escapeHtml(v.door_code || "ไม่ต้องระบุ")}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div><div><small>สถานะ</small><b>${statusLabel(v.current_status)}</b></div></div></article>`).join("") : `<div class="empty-state"><b>ไม่มีรถที่พร้อมตรวจรับ</b><span>รายการใหม่จะแสดงเมื่อผ่านขั้นตอนที่กำหนด</span></div>`;
+  $("jobGrid").innerHTML = items.length ? items.map(v => {
+    const inProgress=v.current_status==="RECEIVING_IN_PROGRESS",busy=receivingState.busyIds.has(String(v.auto_id));
+    const doorLabel=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"รอเลือกประตู";
+    return `<article class="job-card receiving-card ${inProgress?"is-progress":"is-ready"}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><span class="badge receiving-badge">${statusLabel(v.current_status)}</span></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b>${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div><div class="receiving-actionbar"><button class="${inProgress?"complete-button":"primary"}" data-receiving-action="${inProgress?"complete":"start"}" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":inProgress?"รับสินค้าเสร็จ":"เริ่มตรวจรับ"}</button></div></article>`;
+  }).join("") : `<div class="empty-state receiving-empty"><b>ไม่มีงานรอตรวจรับ</b><span>พื้นที่ทำงานว่าง รายการใหม่จะแสดงทันทีเมื่อยื่นเอกสารแล้ว</span></div>`;
 }
+
+async function startReceiving(vehicle){
+  const autoId=String(vehicle.auto_id);if(receivingState.busyIds.has(autoId))return;
+  let doorCode=null;
+  if(window.Swal){
+    const usesDoor=Number(vehicle.use_door)!==0,requiresDoor=usesDoor&&Number(vehicle.require_door)!==0,existing=parseDoorCode(vehicle.door_code);
+    const doorHtml=usesDoor?`<div class="door-picker"><label>ชุดประตู<select id="doorPrefix"><option>S</option><option>R</option><option>SS</option><option>RR</option><option>SR</option><option>RS</option></select></label><label>หมายเลข<input id="doorNumber" inputmode="numeric" maxlength="3" placeholder="07" value="${escapeHtml(existing.number)}"></label></div>${requiresDoor?`<p class="door-note">งานนี้ต้องระบุประตูรับสินค้า</p>`:`<label class="no-door-choice"><input id="noDoor" type="checkbox"> ไม่ระบุประตู</label>`}`:`<p class="door-note">งานนี้ไม่ใช้ประตูรับสินค้า</p>`;
+    const result=await Swal.fire({title:"เริ่มตรวจรับสินค้า",html:`${vehicleDetailsHtml(vehicle,autoId)}${doorHtml}`,showCancelButton:true,confirmButtonText:"ยืนยันเริ่มตรวจรับ",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:440,didOpen:()=>{if(existing.prefix){const select=$("doorPrefix");if(select)select.value=existing.prefix}const checkbox=$("noDoor");if(checkbox)checkbox.addEventListener("change",()=>{$("doorPrefix").disabled=checkbox.checked;$("doorNumber").disabled=checkbox.checked})},preConfirm:()=>{if(!usesDoor)return null;if($("noDoor")?.checked)return null;const digits=String($("doorNumber")?.value||"").trim();if(!/^\d{1,3}$/.test(digits)){Swal.showValidationMessage("กรุณากรอกหมายเลขประตูเป็นตัวเลข 1–3 หลัก");return false}return String($("doorPrefix").value)+digits}});
+    if(!result.isConfirmed)return;doorCode=result.value;
+  }else{
+    if(Number(vehicle.use_door)!==0){const entered=window.prompt("กรอกประตู เช่น S07 หรือ SR12",vehicle.door_code||"");if(entered===null)return;doorCode=entered.trim()||null}
+    if(!window.confirm(`ยืนยันเริ่มตรวจรับ ${vehicle.appointment_no||autoId}`))return;
+  }
+  await runReceivingAction(vehicle,"start",doorCode);
+}
+
+async function completeReceiving(vehicle){
+  const autoId=String(vehicle.auto_id);if(receivingState.busyIds.has(autoId))return;
+  if(window.Swal){const result=await Swal.fire({title:"ยืนยันรับสินค้าเสร็จ",html:`${vehicleDetailsHtml(vehicle,autoId)}<div class="completion-time"><span>เริ่มตรวจรับ</span><b>${formatDate(vehicle.receiving_started_at)}</b><span>ใช้เวลารวม</span><b>${formatDuration(unixNow()-Number(vehicle.receiving_started_at||unixNow()))}</b></div>`,icon:"question",showCancelButton:true,confirmButtonText:"รับสินค้าเสร็จ",cancelButtonText:"ยกเลิก",reverseButtons:true,focusCancel:true,customClass:swalClasses(),buttonsStyling:false,width:440});if(!result.isConfirmed)return}else if(!window.confirm(`ยืนยันรับสินค้าเสร็จ ${vehicle.appointment_no||autoId}`))return;
+  await runReceivingAction(vehicle,"complete",null);
+}
+
+async function runReceivingAction(vehicle,action,doorCode){
+  const autoId=String(vehicle.auto_id),path=action==="start"?"/api/workflow/receiving-start":"/api/workflow/receiving-complete";receivingState.busyIds.add(autoId);renderOperations();
+  const idempotencyKey=createIdempotencyKey();
+  try{
+    if(window.Swal)Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});
+    const result=await api(path,{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId,doorCode,idempotencyKey}});
+    mergeVehicleUpdate(result.vehicle);receivingState.busyIds.delete(autoId);renderOperations();playFeedbackSound(result.duplicate?"duplicate":"success");
+    const title=action==="start"?"เริ่มตรวจรับแล้ว":"รับสินค้าเสร็จแล้ว",message=action==="complete"?"นำงานออกจากหน้าตรวจรับเรียบร้อย":result.message;
+    if(window.Swal)await Swal.fire({icon:result.duplicate?"warning":"success",title,html:`<p class="swal-message">${escapeHtml(message)}</p>`,timer:2200,timerProgressBar:true,showConfirmButton:false,customClass:swalClasses(),width:360});else showKioskMessage(message,true);
+  }catch(error){receivingState.busyIds.delete(autoId);if(error.data?.vehicle)mergeVehicleUpdate(error.data.vehicle);renderOperations();playFeedbackSound("error");await showNotice("error",error.message)}
+}
+
+function mergeVehicleUpdate(vehicle){if(!vehicle)return;const autoId=vehicle.autoId??vehicle.auto_id,index=state.vehicles.findIndex(item=>String(item.auto_id)===String(autoId));if(index<0)return;state.vehicles[index]={...state.vehicles[index],auto_id:autoId,appointment_no:vehicle.appointmentNo??vehicle.appointment_no,company_name:vehicle.companyName??vehicle.company_name,driver_name:vehicle.driverName??vehicle.driver_name,vehicle_plate:vehicle.vehiclePlate??vehicle.vehicle_plate,province:vehicle.province,vehicle_type:vehicle.vehicleType??vehicle.vehicle_type,current_status:vehicle.currentStatus??vehicle.current_status,door_code:vehicle.doorCode??vehicle.door_code,gate_in_at:vehicle.gateInAt??vehicle.gate_in_at,document_submitted_at:vehicle.documentSubmittedAt??vehicle.document_submitted_at,receiving_started_at:vehicle.receivingStartedAt??vehicle.receiving_started_at,receiving_completed_at:vehicle.receivingCompletedAt??vehicle.receiving_completed_at,use_door:vehicle.useDoor??vehicle.use_door,require_door:vehicle.requireDoor??vehicle.require_door}}
+function parseDoorCode(value){const match=String(value||"").toUpperCase().match(/^(SS|RR|SR|RS|S|R)(\d{1,3})$/);return{prefix:match?.[1]||"S",number:match?.[2]||""}}
 
 function renderInbound() {
   const counts=statusCounts();
@@ -247,6 +291,8 @@ async function api(path, options={}) {
 function setConnection(online) { state.online=online; $("connectionBanner").hidden=online; if($("syncStatus")) { $("syncStatus").textContent=online?"● พร้อมใช้งาน":"● รอเชื่อมต่อ"; $("syncStatus").style.color=online?"#08783a":"#a82020"; } }
 function updateClocks() { const value=formatDate(Math.floor(Date.now()/1000)); if($("thaiClock")) $("thaiClock").textContent=value; if($("headerClock")) $("headerClock").textContent=value; }
 function formatDate(seconds) { if(!seconds)return"-"; const parts=new Intl.DateTimeFormat("en-GB",{timeZone:cfg.timezone,day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(new Date(Number(seconds)*1000)); const p=Object.fromEntries(parts.map(x=>[x.type,x.value])); return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}:${p.second}`; }
+function unixNow(){return Math.floor(Date.now()/1000)}
+function formatDuration(seconds){const value=Math.max(0,Math.floor(Number(seconds)||0)),hours=Math.floor(value/3600),minutes=Math.floor(value%3600/60),secs=value%60;return [hours,minutes,secs].map(part=>String(part).padStart(2,"0")).join(":")}
 function countStatus(status){return state.vehicles.filter(v=>v.current_status===status).length} function summary(label,value){return `<div class="summary-card"><small>${label}</small><b>${value}</b></div>`} function dashboardCard(label,value){return `<article class="dashboard-card"><small>${label}</small><b>${value}</b></article>`}
 function statusLabel(status){return ({WAITING_DOCUMENT_SUBMISSION:"รอยื่นเอกสาร",DOCUMENT_SUBMITTED:"ยื่นเอกสารแล้ว",READY_FOR_RECEIVING:"พร้อมตรวจรับ",RECEIVING_IN_PROGRESS:"กำลังตรวจรับ",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",DOCUMENT_RETURNED:"รับเอกสารคืนแล้ว",WAITING_GATE_OUT:"รอออกจากพื้นที่",CLOSED:"ปิดงาน"})[status]||"กำลังดำเนินงาน"}
 function statusTone(status){return ({WAITING_DOCUMENT_SUBMISSION:"tone-waiting",DOCUMENT_SUBMITTED:"tone-submitted",READY_FOR_RECEIVING:"tone-ready",RECEIVING_IN_PROGRESS:"tone-progress",WAITING_DOCUMENT_RETURN:"tone-return",DOCUMENT_RETURNED:"tone-returned",WAITING_GATE_OUT:"tone-gateout",CLOSED:"tone-closed"})[status]||"tone-default"}
