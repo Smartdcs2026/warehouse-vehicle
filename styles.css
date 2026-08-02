@@ -1352,3 +1352,54 @@ button:disabled { cursor: wait; opacity: .7; }
   .dashboard-view-shell .dashboard-menu-button { display:grid; place-items:center; }
   .dashboard-view-shell:not(.dashboard-fullscreen-shell) .dashboard-menu-button { pointer-events:none; opacity:.45; }
 }
+
+/* Round 10 Revision 1: verified layout and neutral executive chart palette */
+.dashboard-view-shell #dashboardBody:not(.loading) { display:block; width:100%; min-height:0; }
+.opsdash-panel .hour-chart i { background:linear-gradient(180deg,#20a4d8 0%,#2563a9 100%); }
+.opsdash-combo rect { fill:#2b77b9; opacity:.88; }
+.opsdash-combo polyline { stroke:#e58a20; }
+.opsdash-combo circle { stroke:#e58a20; }
+.opsdash-line polyline,.opsdash-line circle { stroke:#147d92; }
+.opsdash-panel .dashboard-bars em { background:linear-gradient(90deg,#4b83c6,#245ba7); }
+.opsdash-panel .door-capacity-rows em { background:linear-gradient(90deg,#20a4d8,#2563a9); }
+.chart-legend .bar-key::before { background:#2b77b9; }
+.chart-legend .line-key::before { background:#e58a20; }
+.overview-grid .opsdash-panel { min-height:178px; }
+.overview-grid .action-panel { min-height:130px; }
+
+@media (min-width:1101px) {
+  .dashboard-view-shell .page-content { padding:10px 14px 14px; }
+  .opsdash-head { min-height:48px; }
+  .opsdash-context { max-width:none; }
+  .opsdash-kpis { width:100%; }
+  .opsdash-content { width:100%; }
+  .overview-grid { align-items:stretch; }
+}
+
+@media (max-width:760px) {
+  .opsdash-head { padding:8px; }
+  .opsdash-title { display:none; }
+  .opsdash-filter { grid-template-columns:minmax(0,1fr) 116px; }
+  .opsdash-filter .range-buttons button { min-height:34px; padding:5px; font-size:11px; }
+  .opsdash-filter select,.opsdash-filter .outline-button { min-height:36px; }
+  .opsdash-context { margin-bottom:7px; border-left-width:3px; border-radius:11px; box-shadow:none; }
+  .opsdash-context div { display:grid; grid-template-columns:70px minmax(0,1fr); }
+  .opsdash-context b { text-align:left; white-space:normal; }
+  .opsdash-context .opsdash-live,.opsdash-context .opsdash-stale { justify-self:start; }
+  .opsdash-kpis { width:100%; }
+  .opsdash-kpi { width:auto; min-height:72px; }
+  .opsdash-tabs { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); width:100%; min-width:0; margin:7px 0; }
+  .opsdash-tabs button { min-width:0; min-height:34px; padding:5px 7px; font-size:9px; }
+  .opsdash-content { width:100%; }
+  .overview-grid .opsdash-panel:nth-child(n+5) { display:block; }
+  .overview-grid .action-panel { display:none !important; }
+  .opsdash-panel>header h3 { font-size:13px; }
+  .opsdash-panel .hour-chart { height:120px; }
+}
+
+@media (max-width:920px) and (orientation:landscape) {
+  .opsdash-title { display:flex; }
+  .opsdash-head { padding:6px 8px; }
+  .opsdash-context { grid-template-columns:1fr 1.25fr auto; }
+  .opsdash-tabs { display:flex; width:max-content; min-width:0; }
+}

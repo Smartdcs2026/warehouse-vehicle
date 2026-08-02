@@ -308,7 +308,7 @@ async function loadDashboard(showLoading=true,force=false){
 }
 
 function renderDashboardData(data){
-  if(state.view!=="dashboard"||!$("dashboardBody"))return;const m=data.metrics||{};
+  if(state.view!=="dashboard"||!$("dashboardBody"))return;$("dashboardBody").classList.remove("loading");const m=data.metrics||{};
   $("dashboardRangeLabel").textContent=`${formatDate(data.from)} – ${formatDate(data.to-1)} · อัปเดต ${formatDate(data.generatedAt)}`;
   const shift=$("dashboardShift");if(shift){shift.innerHTML=`<option value="">ทุกกะ</option>${(data.shiftOptions||[]).map(item=>`<option value="${escapeHtml(item.shift_id)}">${escapeHtml(item.shift_name)} · ${minuteToTime(item.start_minute)}–${minuteToTime(item.end_minute)}</option>`).join("")}`;shift.value=dashboardState.shiftId;shift.onchange=()=>{dashboardState.shiftId=shift.value;dashboardState.lastLoadedAt=0;loadDashboard(true,true)}}
   const ctx=data.shiftContext||{},shiftHours=ctx.startMinute==null?"ยังไม่กำหนดเวลา":`${minuteToTime(ctx.startMinute)}–${minuteToTime(ctx.endMinute)}${ctx.crossesMidnight?" · ข้ามวัน":""}`,fresh=dashboardState.error?`<span class="opsdash-stale">ข้อมูลล่าสุด · เชื่อมต่อใหม่อัตโนมัติ</span>`:`<span class="opsdash-live">● ข้อมูลปัจจุบัน</span>`;
