@@ -2567,3 +2567,498 @@ button:disabled { cursor: wait; opacity: .7; }
     font-weight:700 !important;
   }
 }
+
+/* Round 17: final dashboard visual-regression closure */
+
+/* Narrow desktop / high browser zoom: stop six KPI cards competing for one row. */
+@media (min-width:981px) and (max-width:1200px) {
+  .dashboard-view-shell .opsdash-head {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    align-items:stretch;
+    gap:7px;
+  }
+  .dashboard-view-shell .opsdash-title {
+    width:100%;
+  }
+  .dashboard-view-shell .opsdash-title p {
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .dashboard-view-shell .opsdash-filter {
+    display:grid;
+    grid-template-columns:minmax(120px,.8fr) minmax(190px,1.2fr) minmax(170px,1fr) 104px;
+    width:100%;
+    gap:6px;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button,
+  .dashboard-view-shell .opsdash-filter .range-buttons,
+  .dashboard-view-shell .opsdash-filter #dashboardShift,
+  .dashboard-view-shell .opsdash-filter #dashboardFullscreen {
+    width:100%;
+    min-width:0;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .dashboard-view-shell .opsdash-kpis {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .dashboard-view-shell .opsdash-kpi {
+    min-height:86px;
+  }
+  .dashboard-view-shell .opsdash-kpi>div>b {
+    overflow:hidden;
+    font-size:26px;
+    letter-spacing:-.025em;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns:minmax(150px,.8fr) minmax(180px,1fr) minmax(0,1.55fr) auto;
+    gap:8px;
+  }
+}
+
+/* Tablets use the compact mobile shell, matching the approved mobile-bar rule. */
+@media (max-width:980px) {
+  .app-shell:not(.inbound-kiosk-shell) {
+    display:block;
+    padding-bottom:66px;
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.sidebar {
+    display:none;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .menu-button {
+    display:block;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .topbar {
+    height:61px;
+    padding:7px 12px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav {
+    position:fixed;
+    inset:auto 0 0;
+    z-index:40;
+    display:flex;
+    height:66px;
+    justify-content:space-around;
+    border-top:1px solid var(--line);
+    background:rgba(255,255,255,.97);
+    box-shadow:0 -8px 24px rgba(42,57,90,.08);
+    backdrop-filter:blur(12px);
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav::before {
+    content:"";
+    position:absolute;
+    inset:0 0 auto;
+    height:3px;
+    background:linear-gradient(90deg,var(--orange),var(--pink),var(--magenta),var(--green),var(--sky),var(--blue));
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav button {
+    min-width:66px;
+    border:0;
+    background:transparent;
+    color:#637087;
+    font-size:18px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav button.active {
+    color:var(--blue-dark);
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav small {
+    display:block;
+    margin-top:2px;
+    font-size:9px;
+    font-weight:700;
+  }
+
+  .dashboard-view-shell .page-content {
+    padding:7px 8px 76px;
+  }
+  .dashboard-view-shell .opsdash-head {
+    position:relative;
+    display:block !important;
+    min-height:0 !important;
+    margin-bottom:7px !important;
+    padding:7px 8px !important;
+    border:1px solid #dbe3ef;
+    border-radius:13px;
+    background:#fff;
+  }
+  .dashboard-view-shell .opsdash-title {
+    display:none !important;
+  }
+  .dashboard-view-shell .opsdash-filter {
+    display:grid !important;
+    grid-template-columns:minmax(96px,.85fr) minmax(132px,1.2fr) minmax(164px,1.35fr) 38px !important;
+    grid-template-rows:40px !important;
+    grid-template-areas:none !important;
+    align-items:stretch !important;
+    justify-content:stretch !important;
+    gap:5px !important;
+    width:100% !important;
+    min-width:0 !important;
+    padding:0 !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button {
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:40px !important;
+    padding:5px 7px !important;
+    gap:5px !important;
+    border-radius:10px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button span {
+    width:20px !important;
+    height:20px !important;
+    flex:0 0 20px !important;
+    font-size:10px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button b {
+    display:block !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+    font-size:0 !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button b::after {
+    content:attr(data-mobile-label) !important;
+    font-size:10px !important;
+    font-weight:800 !important;
+    white-space:nowrap !important;
+  }
+  .dashboard-view-shell .opsdash-filter #dashboardShift {
+    grid-column:2 !important;
+    grid-row:1 !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:40px !important;
+    padding:5px 25px 5px 8px !important;
+    border-radius:10px !important;
+    font-size:10px !important;
+    text-overflow:ellipsis !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons {
+    display:grid !important;
+    grid-column:3 !important;
+    grid-row:1 !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    width:100% !important;
+    min-width:0 !important;
+    min-height:40px !important;
+    gap:2px !important;
+    padding:2px !important;
+    border-radius:10px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons button {
+    width:100% !important;
+    min-width:0 !important;
+    min-height:34px !important;
+    padding:3px 1px !important;
+    border-radius:8px !important;
+    font-size:0 !important;
+    white-space:nowrap !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons button::after {
+    content:attr(data-mobile-label) !important;
+    font-size:9px !important;
+    font-weight:800 !important;
+  }
+  .dashboard-view-shell .opsdash-filter #dashboardFullscreen {
+    display:none !important;
+  }
+  .dashboard-view-shell .opsdash-filter .dashboard-more-button {
+    display:grid !important;
+    grid-column:4 !important;
+    grid-row:1 !important;
+    place-items:center !important;
+    width:38px !important;
+    min-width:38px !important;
+    min-height:40px !important;
+    padding:0 !important;
+    border:1px solid #cbd7e7 !important;
+    border-radius:10px !important;
+    background:#fff !important;
+    color:#285fae !important;
+    font-size:22px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+  }
+  .dashboard-view-shell .opsdash-filter .dashboard-more-button[aria-expanded="true"] {
+    border-color:#6e96d5 !important;
+    background:#eaf2ff !important;
+  }
+  .dashboard-view-shell .dashboard-mobile-menu {
+    position:absolute !important;
+    top:54px !important;
+    right:8px !important;
+    z-index:80 !important;
+    display:grid !important;
+    width:min(220px,calc(100vw - 28px)) !important;
+    gap:4px !important;
+    padding:6px !important;
+    border:1px solid #d7e0ed !important;
+    border-radius:12px !important;
+    background:#fff !important;
+    box-shadow:0 14px 32px rgba(24,49,84,.2) !important;
+  }
+  .dashboard-view-shell .dashboard-mobile-menu[hidden] {
+    display:none !important;
+  }
+  .dashboard-view-shell .dashboard-mobile-menu button {
+    display:grid !important;
+    grid-template-columns:28px minmax(0,1fr) !important;
+    align-items:center !important;
+    gap:7px !important;
+    min-height:40px !important;
+    padding:6px 9px !important;
+    border:0 !important;
+    border-radius:9px !important;
+    background:#f5f8fc !important;
+    color:#24466f !important;
+    text-align:left !important;
+  }
+  .dashboard-view-shell .dashboard-mobile-menu button b {
+    display:grid !important;
+    width:24px !important;
+    height:24px !important;
+    place-items:center !important;
+    border-radius:7px !important;
+    background:#e6effc !important;
+    color:#285fae !important;
+    font-size:14px !important;
+  }
+  .dashboard-view-shell .dashboard-mobile-menu button span {
+    font-size:11px !important;
+    font-weight:700 !important;
+  }
+
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+    padding:9px 10px;
+  }
+  .dashboard-view-shell .opsdash-context .context-range {
+    grid-column:1/-1;
+  }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-history,
+  .dashboard-view-shell .opsdash-context .opsdash-stale {
+    grid-column:1/-1;
+    justify-self:start;
+  }
+  .dashboard-view-shell .opsdash-kpis {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .dashboard-view-shell .opsdash-kpi {
+    min-height:94px;
+    padding:11px 10px;
+  }
+  .dashboard-view-shell .opsdash-kpi>div>b {
+    overflow:hidden;
+    font-size:clamp(22px,3.8vw,28px);
+    letter-spacing:-.035em;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .dashboard-view-shell .opsdash-kpi>i {
+    flex:0 0 34px;
+    width:34px;
+    height:34px;
+    margin-right:12px;
+    font-size:16px;
+  }
+  .dashboard-view-shell .opsdash-tabs {
+    position:sticky;
+    top:3px;
+    z-index:15;
+    display:flex;
+    justify-content:flex-start;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .dashboard-view-shell .opsdash-tabs::-webkit-scrollbar {
+    display:none;
+  }
+  .dashboard-view-shell .opsdash-tabs button {
+    flex:0 0 auto;
+    min-width:96px;
+  }
+  .dashboard-view-shell .round12-overview {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:none;
+    height:auto;
+    max-height:none;
+  }
+  .dashboard-view-shell .round12-overview .opsdash-panel {
+    grid-column:auto !important;
+    min-height:220px;
+  }
+  .dashboard-view-shell .round12-overview .urgent-panel {
+    grid-column:1/-1 !important;
+  }
+  .dashboard-view-shell .opsdash-panel>header h3,
+  .dashboard-view-shell .opsdash-panel-meta {
+    min-width:0;
+  }
+  .dashboard-view-shell .opsdash-panel-meta>span {
+    max-width:100%;
+  }
+}
+
+/* Phones retain two KPI columns and a tighter single-row control bar. */
+@media (max-width:600px) {
+  .dashboard-view-shell .opsdash-filter {
+    grid-template-columns:minmax(68px,.9fr) minmax(78px,1fr) minmax(112px,1.35fr) 34px !important;
+    grid-template-rows:40px !important;
+    gap:4px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .dashboard-more-button {
+    width:34px !important;
+    min-width:34px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button {
+    padding-inline:5px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button span {
+    width:18px !important;
+    height:18px !important;
+    flex-basis:18px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button b::after,
+  .dashboard-view-shell .opsdash-filter #dashboardShift {
+    font-size:8.5px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons button::after {
+    font-size:8px !important;
+  }
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .dashboard-view-shell .opsdash-kpis {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .dashboard-view-shell .opsdash-kpi {
+    min-height:112px;
+    padding:13px 10px 10px;
+  }
+  .dashboard-view-shell .opsdash-kpi>div>b {
+    font-size:27px;
+  }
+  .dashboard-view-shell .opsdash-kpi>i {
+    width:36px;
+    height:36px;
+  }
+  .dashboard-view-shell .round12-overview {
+    grid-template-columns:1fr;
+  }
+  .dashboard-view-shell .round12-overview .opsdash-panel {
+    grid-column:1 !important;
+    min-height:230px;
+  }
+}
+
+/* Landscape phones stay compact and do not inherit the portrait bottom-bar height. */
+@media (max-width:980px) and (orientation:landscape) {
+  .app-shell:not(.inbound-kiosk-shell) {
+    padding-bottom:52px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .topbar {
+    height:52px;
+    padding:5px 12px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav {
+    height:52px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav button {
+    min-width:0;
+    font-size:17px;
+  }
+  .app-shell:not(.inbound-kiosk-shell) .mobile-nav small {
+    display:inline;
+    margin:0 0 0 5px;
+  }
+  .dashboard-view-shell .page-content {
+    padding:6px 8px 58px;
+  }
+  .dashboard-view-shell .opsdash-head {
+    margin-bottom:6px !important;
+    padding:6px 8px !important;
+  }
+  .dashboard-view-shell .opsdash-filter {
+    grid-template-columns:minmax(88px,.9fr) minmax(132px,1.35fr) minmax(136px,1.15fr) 36px !important;
+    grid-template-rows:38px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button,
+  .dashboard-view-shell .opsdash-filter #dashboardShift,
+  .dashboard-view-shell .opsdash-filter .range-buttons,
+  .dashboard-view-shell .opsdash-filter .dashboard-more-button {
+    min-height:38px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button b {
+    font-size:9px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .calendar-button b::after {
+    content:none !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons button {
+    min-height:32px !important;
+    font-size:9px !important;
+  }
+  .dashboard-view-shell .opsdash-filter .range-buttons button::after {
+    content:none !important;
+  }
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns:1fr 1.2fr 1.5fr auto;
+    gap:6px;
+    padding:6px 8px;
+  }
+  .dashboard-view-shell .opsdash-context .context-range,
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-history,
+  .dashboard-view-shell .opsdash-context .opsdash-stale {
+    grid-column:auto;
+  }
+  .dashboard-view-shell .opsdash-kpis {
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:5px;
+  }
+  .dashboard-view-shell .opsdash-kpi {
+    min-height:88px;
+    padding:8px 8px;
+  }
+  .dashboard-view-shell .opsdash-kpi>div>b {
+    font-size:22px;
+  }
+  .dashboard-view-shell .opsdash-kpi>i {
+    display:none;
+  }
+  .dashboard-view-shell .opsdash-tabs {
+    position:static;
+    margin:5px auto;
+  }
+  .dashboard-view-shell .round12-overview {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .dashboard-view-shell .round12-overview .urgent-panel {
+    grid-column:1/-1 !important;
+  }
+}
+
+@media (min-width:601px) and (max-width:980px) {
+  .dashboard-view-shell .opsdash-context .context-range {
+    grid-column:1;
+  }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-history,
+  .dashboard-view-shell .opsdash-context .opsdash-stale {
+    grid-column:2;
+    justify-self:end;
+  }
+}
