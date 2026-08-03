@@ -8,7 +8,7 @@ const receivingState = { busyIds:new Set() };
 const uiState = { detailsOpen:false };
 const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 const adminState = { data:null, tab:"users", busy:false };
-const dashboardState = { range:"today", date:"", shiftId:"", tab:"overview", data:null, busy:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null };
+const dashboardState = { range:"today", date:"", shiftId:"", tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null };
 const DASHBOARD_INFO={
   dashboard:{title:"ข้อมูลใน Dashboard",meaning:"สรุปข้อมูลรถและขั้นตอนการทำงานตามวันที่ ช่วงเวลา และกะที่เลือก",source:"ข้อมูลรถมาจากระบบ Gate In/Gate Out แบบอ่านอย่างเดียว ส่วนขั้นตอน Inbound และตรวจรับมาจากประวัติการทำงานในระบบนี้",calculation:"ตัวเลขทุกจุดคำนวณจากข้อมูลใน D1 ณ เวลาที่ระบุว่าอัปเดตล่าสุด"},
   gateIn:{title:"รถเข้า",meaning:"จำนวนรถที่มีเวลา Gate In อยู่ในช่วงที่เลือก",source:"เวลา Gate In ของรถแต่ละคัน",calculation:"นับ Auto ID ที่ไม่ซ้ำกันตามเวลา Gate In"},
@@ -321,17 +321,37 @@ function createIdempotencyKey(){return crypto.randomUUID?crypto.randomUUID():`${
 function renderDashboard() {
   if(!["ADMIN","USER"].includes(state.user?.accessRights))return navigate("inbound");
   $("pageContent").innerHTML=`<section class="opsdash-head"><div class="opsdash-title"><button id="dashboardMenuButton" class="dashboard-menu-button" aria-label="เปิดเมนู" aria-expanded="false">☰</button><div><span>ภาพรวมคลังสินค้า</span><h2>ศูนย์ควบคุมการปฏิบัติงาน</h2><p id="dashboardRangeLabel">กำลังโหลดข้อมูล</p></div><button type="button" class="dashboard-global-info" data-dashboard-info="dashboard" aria-label="คำอธิบาย Dashboard">i</button></div><div class="opsdash-filter"><button id="dashboardCalendarButton" class="calendar-button" aria-label="เลือกวันที่"><span>▣</span><b id="dashboardDateButtonLabel" data-mobile-label="วันที่">เลือกวันที่</b></button><div class="range-buttons"><button data-dashboard-range="today" data-mobile-label="1วัน" aria-label="แสดงข้อมูลรายวัน">วัน</button><button data-dashboard-range="7d" data-mobile-label="7วัน" aria-label="แสดงข้อมูล 7 วัน">7 วัน</button><button data-dashboard-range="30d" data-mobile-label="30วัน" aria-label="แสดงข้อมูล 30 วัน">30 วัน</button></div><select id="dashboardShift" aria-label="เลือกกะ"><option value="">ทุกกะ</option></select><button id="dashboardFullscreen" class="outline-button">เต็มหน้าจอ</button><button id="dashboardMoreButton" class="dashboard-more-button" type="button" aria-label="ตัวเลือก Dashboard เพิ่มเติม" aria-expanded="false">⋮</button></div><div id="dashboardMobileMenu" class="dashboard-mobile-menu" hidden><button id="dashboardMobileFullscreen" type="button"><b>⛶</b><span>เต็มหน้าจอ</span></button><button id="dashboardMobileInfo" type="button"><b>i</b><span>คำอธิบาย Dashboard</span></button></div></section><section id="dashboardCalendarPopover" class="dashboard-calendar-popover" hidden></section><div id="dashboardBody" class="loading">กำลังสรุปข้อมูล</div>`;
-  document.querySelectorAll("[data-dashboard-range]").forEach(button=>{button.classList.toggle("active",button.dataset.dashboardRange===dashboardState.range);button.addEventListener("click",()=>{closeDashboardMobileMenu();dashboardState.range=button.dataset.dashboardRange;dashboardState.lastLoadedAt=0;loadDashboard(true,true)})});
+  document.querySelectorAll("[data-dashboard-range]").forEach(button=>button.addEventListener("click",()=>{closeDashboardMobileMenu();dashboardState.range=button.dataset.dashboardRange;dashboardState.lastLoadedAt=0;syncDashboardRangeButtons();loadDashboard(true,true)}));
+  syncDashboardRangeButtons();
   $("dashboardMenuButton").addEventListener("click",toggleDashboardMenu);$("dashboardFullscreen").addEventListener("click",toggleFullscreen);$("dashboardCalendarButton").addEventListener("click",()=>{closeDashboardMobileMenu();toggleDashboardCalendar()});$("dashboardMoreButton").addEventListener("click",toggleDashboardMobileMenu);$("dashboardMobileFullscreen").addEventListener("click",()=>{closeDashboardMobileMenu();toggleFullscreen()});$("dashboardMobileInfo").addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardInfo("dashboard")});document.querySelector(".dashboard-global-info")?.addEventListener("click",()=>showDashboardInfo("dashboard"));$("dashboardBody").addEventListener("click",event=>{const button=event.target.closest("[data-dashboard-info]");if(button)showDashboardInfo(button.dataset.dashboardInfo)});updateFullscreenButton();loadDashboard(true);
 }
 
+function syncDashboardRangeButtons(){
+  document.querySelectorAll("[data-dashboard-range]").forEach(button=>{const active=button.dataset.dashboardRange===dashboardState.range;button.classList.toggle("active",active);button.setAttribute("aria-pressed",active?"true":"false")});
+}
+
 async function loadDashboard(showLoading=true,force=false){
-  if(dashboardState.busy||state.view!=="dashboard"||!force&&dashboardState.data&&Date.now()-dashboardState.lastLoadedAt<25000)return;dashboardState.busy=true;if(showLoading&&!dashboardState.data&&$("dashboardBody"))$("dashboardBody").innerHTML=`<div class="loading">กำลังสรุปข้อมูล</div>`;
-  try{const query=`?range=${encodeURIComponent(dashboardState.range)}${dashboardState.date?`&date=${encodeURIComponent(dashboardState.date)}`:""}${dashboardState.shiftId?`&shiftId=${encodeURIComponent(dashboardState.shiftId)}`:""}`,data=await api(`/api/dashboard/summary${query}`);dashboardState.data=data;dashboardState.date=data.selectedDate||dashboardState.date;dashboardState.error="";dashboardState.lastLoadedAt=Date.now();renderDashboardData(data)}catch(error){dashboardState.error=error.message;if(dashboardState.data){renderDashboardData(dashboardState.data)}else if($("dashboardBody")){ $("dashboardBody").innerHTML=`<div class="empty-state"><b>โหลด Dashboard ไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryDashboard" class="primary">ลองใหม่</button></div>`;$("retryDashboard")?.addEventListener("click",()=>loadDashboard(true,true))}}finally{dashboardState.busy=false}
+  if(state.view!=="dashboard")return;
+  if(dashboardState.busy){if(force)dashboardState.reloadRequested=true;return}
+  if(!force&&dashboardState.data&&Date.now()-dashboardState.lastLoadedAt<25000)return;
+  dashboardState.busy=true;
+  const requestRange=dashboardState.range,requestDate=dashboardState.date,requestShiftId=dashboardState.shiftId;
+  if(showLoading&&!dashboardState.data&&$("dashboardBody"))$("dashboardBody").innerHTML=`<div class="loading">กำลังสรุปข้อมูล</div>`;
+  try{
+    const query=`?range=${encodeURIComponent(requestRange)}${requestDate?`&date=${encodeURIComponent(requestDate)}`:""}${requestShiftId?`&shiftId=${encodeURIComponent(requestShiftId)}`:""}`,data=await api(`/api/dashboard/summary${query}`);
+    if(requestRange!==dashboardState.range||requestDate!==dashboardState.date||requestShiftId!==dashboardState.shiftId){dashboardState.reloadRequested=true;return}
+    dashboardState.data=data;dashboardState.date=data.selectedDate||dashboardState.date;dashboardState.error="";dashboardState.lastLoadedAt=Date.now();renderDashboardData(data)
+  }catch(error){
+    if(requestRange!==dashboardState.range||requestDate!==dashboardState.date||requestShiftId!==dashboardState.shiftId){dashboardState.reloadRequested=true;return}
+    dashboardState.error=error.message;if(dashboardState.data){renderDashboardData(dashboardState.data)}else if($("dashboardBody")){ $("dashboardBody").innerHTML=`<div class="empty-state"><b>โหลด Dashboard ไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryDashboard" class="primary">ลองใหม่</button></div>`;$("retryDashboard")?.addEventListener("click",()=>loadDashboard(true,true))}
+  }finally{
+    dashboardState.busy=false;
+    if(dashboardState.reloadRequested&&state.view==="dashboard"){dashboardState.reloadRequested=false;void loadDashboard(true,true)}
+  }
 }
 
 function renderDashboardData(data){
-  if(state.view!=="dashboard"||!$("dashboardBody"))return;$("dashboardBody").classList.remove("loading");const m=data.metrics||{},w=data.workload||{};
+  if(state.view!=="dashboard"||!$("dashboardBody"))return;syncDashboardRangeButtons();$("dashboardBody").classList.remove("loading");const m=data.metrics||{},w=data.workload||{};
   $("dashboardRangeLabel").textContent=`${formatDate(data.from)} – ${formatDate(data.to-1)} · อัปเดต ${formatDate(data.generatedAt)}`;
   const dashboardDateLabel=$("dashboardDateButtonLabel"),dashboardDateKey=data.selectedDate||dashboardState.date;if(dashboardDateLabel){dashboardDateLabel.textContent=formatDashboardDateKey(dashboardDateKey);dashboardDateLabel.dataset.mobileLabel=formatDashboardCompactDateKey(dashboardDateKey)}
   const shift=$("dashboardShift");if(shift){shift.innerHTML=`<option value="">ทุกกะ</option>${(data.shiftOptions||[]).map(item=>`<option value="${escapeHtml(item.shift_id)}">${escapeHtml(item.shift_name)} · ${minuteToTime(item.start_minute)}–${minuteToTime(item.end_minute)}</option>`).join("")}`;shift.value=dashboardState.shiftId;shift.onchange=()=>{closeDashboardMobileMenu();dashboardState.shiftId=shift.value;dashboardState.lastLoadedAt=0;loadDashboard(true,true)}}
