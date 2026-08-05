@@ -29,7 +29,18 @@ const DASHBOARD_INFO={
   exceptions:{title:"ข้อยกเว้น",meaning:"รวมระดับเตือน คอขวด และข้อมูลที่ขาด เพื่อให้แก้ปัญหาได้ทันที",source:"เงื่อนไข Admin สถานะปัจจุบัน และข้อมูลรถ",calculation:"ตัวเลขเป็นภาพ ณ ปลายช่วงที่เลือก"}
 };
 const alertSoundState = { initialized:false, levels:new Map() };
-const inboundVoiceState = { enabled:true, initialized:false };
+const inboundVoiceState = {
+  enabled:true,
+  initialized:false,
+  activated:false,
+  voicesLoaded:false,
+  voices:[],
+  utterance:null,
+  pendingText:"",
+  speakToken:0,
+  retryCount:0,
+  timer:0
+};
 let audioContext = null;
 const $ = (id) => document.getElementById(id);
 
@@ -172,11 +183,12 @@ function renderInbound() {
   const counts=statusCounts();
   initializeInboundVoicePreference();
   const kioskLogout=state.user.accessRights==="INBOUND"?`<button id="kioskLogout" class="quiet-button">ออกจากระบบ</button>`:"";
-  const voiceControl=inboundSpeechSupported()?`<button id="inboundVoiceToggle" class="quiet-button inbound-voice-toggle" type="button" aria-pressed="${inboundVoiceState.enabled?"true":"false"}">${inboundVoiceState.enabled?"เสียงอ่าน: เปิด":"เสียงอ่าน: ปิด"}</button>`:"";
+  const voiceLabel=!inboundVoiceState.enabled?"เสียงอ่าน: ปิด":inboundVoiceState.activated?"เสียงอ่าน: พร้อม":"แตะเปิดเสียงอ่าน";
+  const voiceControl=inboundSpeechSupported()?`<button id="inboundVoiceToggle" class="quiet-button inbound-voice-toggle${inboundVoiceState.enabled&&!inboundVoiceState.activated?" needs-activation":""}" type="button" aria-pressed="${inboundVoiceState.enabled?"true":"false"}">${voiceLabel}</button>`:"";
   $("pageContent").innerHTML = `<section class="inbound-controlbar"><div class="inbound-kiosk-title"><span class="inbound-mini-logo" aria-hidden="true"><span class="spectrum-mark"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><div><b>จุดบริการคนขับรถ</b><span>พร้อมรับ QR Code ต่อเนื่อง</span></div></div><div class="inbound-page-actions">${voiceControl}<button id="fullscreenButton" class="quiet-button">เต็มหน้าจอ</button>${kioskLogout}</div></section><section class="inbound-metrics inbound-metrics-top">${inboundMetric("metricWaiting","รอยื่นเอกสาร",counts.WAITING_DOCUMENT_SUBMISSION,"metric-orange")}${inboundMetric("metricReady","พร้อมตรวจรับ",counts.READY_FOR_RECEIVING,"metric-green")}${inboundMetric("metricProgress","กำลังตรวจรับ",counts.RECEIVING_IN_PROGRESS,"metric-blue")}${inboundMetric("metricReturn","รอรับเอกสารคืน",counts.WAITING_DOCUMENT_RETURN,"metric-pink")}${inboundMetric("metricGateout","รอออกจากพื้นที่",counts.WAITING_GATE_OUT,"metric-sky")}${inboundMetric("metricTotal","รถในพื้นที่",state.vehicles.length,"metric-magenta")}</section><section class="inbound-workspace"><aside class="inbound-scan-station"><div class="scanner compact-scanner"><div id="scanFrame" class="scan-frame"><video id="qrVideo" class="qr-video" playsinline muted hidden></video><canvas id="qrCanvas" hidden></canvas><div id="scanPlaceholder" class="scan-placeholder">⌗<span>วาง QR Code ให้อยู่ในกรอบ</span></div><div id="scanBeam" class="scan-beam" hidden></div></div><div class="scan-actions"><button id="startCamera" class="primary">เปิดกล้องสแกน</button><button id="stopCamera" class="outline-button" hidden>ปิดกล้อง</button></div></div><div class="scan-input-block compact-input-block"><h2>บันทึกรับ–คืนเอกสาร</h2><div class="auto-input"><input id="autoSearch" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="สแกนหรือกรอก Auto ID"><button id="autoButton" class="primary">บันทึก</button></div><small class="input-hint">ระบบเลือกขั้นตอนให้จากสถานะรถ เครื่องสแกนที่ส่ง Enter จะบันทึกทันที</small></div></aside><section class="list-card inbound-list-card"><header><h2>รถที่ยังอยู่ในพื้นที่</h2><span id="inboundListCount">${state.vehicles.length} รายการ</span></header><div class="inbound-table-head" aria-hidden="true"><span>เลขนัดหมาย</span><span>บริษัท</span><span>ทะเบียนรถ</span><span>ประตู</span><span>สถานะ</span></div><div id="inboundRows"></div></section></section>`;
   renderInboundRows(state.vehicles);
-  $("autoSearch").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();if(submitState.busy)return;playFeedbackSound("scan");submitManualAutoId("scanner")}});
-  $("autoButton").addEventListener("click",()=>submitManualAutoId("manual"));
+  $("autoSearch").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();if(submitState.busy)return;activateInboundVoiceFromGesture(false);playFeedbackSound("scan");submitManualAutoId("scanner")}});
+  $("autoButton").addEventListener("click",()=>{activateInboundVoiceFromGesture(false);submitManualAutoId("manual")});
   $("startCamera").addEventListener("click",startCamera);
   $("stopCamera").addEventListener("click",stopCamera);
   $("inboundVoiceToggle")?.addEventListener("click",toggleInboundVoice);
@@ -196,7 +208,7 @@ function submitManualAutoId(source="manual"){const input=$("autoSearch"),autoId=
 
 async function startCamera(){
   if(scannerState.active)return;
-  unlockAudio();
+  activateInboundVoiceFromGesture(false);unlockAudio();
   if(!navigator.mediaDevices?.getUserMedia){showNotice("info","อุปกรณ์นี้ยังไม่พร้อมใช้งานกล้อง กรุณาใช้เครื่องสแกนหรือกรอก Auto ID");return}
   try{
     scannerState.detector=null;
@@ -307,15 +319,98 @@ function updateFullscreenButton(){
 
 function normalizeAutoId(value){return String(value??"").replace(/[\r\n\t]/g,"").trim()}
 function unlockAudio(){try{audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==="suspended")audioContext.resume()}catch{}}
-function inboundSpeechSupported(){return "speechSynthesis" in window&&"SpeechSynthesisUtterance" in window}
-function initializeInboundVoicePreference(){if(inboundVoiceState.initialized)return;try{inboundVoiceState.enabled=localStorage.getItem("wvf_inbound_voice")!=="off"}catch{}inboundVoiceState.initialized=true}
-function updateInboundVoiceButton(){const button=$("inboundVoiceToggle");if(!button)return;button.textContent=inboundVoiceState.enabled?"เสียงอ่าน: เปิด":"เสียงอ่าน: ปิด";button.setAttribute("aria-pressed",inboundVoiceState.enabled?"true":"false");button.classList.toggle("is-off",!inboundVoiceState.enabled)}
-function toggleInboundVoice(){initializeInboundVoicePreference();inboundVoiceState.enabled=!inboundVoiceState.enabled;try{localStorage.setItem("wvf_inbound_voice",inboundVoiceState.enabled?"on":"off")}catch{}if(!inboundVoiceState.enabled&&inboundSpeechSupported())window.speechSynthesis.cancel();updateInboundVoiceButton()}
-function thaiSpeechVoice(){if(!inboundSpeechSupported())return null;const voices=window.speechSynthesis.getVoices?.()||[];return voices.find(voice=>/^th(?:-|_)/i.test(String(voice.lang||"")))||voices.find(voice=>/thai/i.test(String(voice.name||"")))||null}
-function speakInbound(text){initializeInboundVoicePreference();if(!inboundVoiceState.enabled||!inboundSpeechSupported()||!String(text||"").trim())return;try{window.speechSynthesis.cancel();const utterance=new window.SpeechSynthesisUtterance(String(text));utterance.lang="th-TH";utterance.rate=.9;utterance.pitch=1;utterance.volume=1;const voice=thaiSpeechVoice();if(voice)utterance.voice=voice;window.speechSynthesis.speak(utterance)}catch{}}
+function inboundSpeechSupported(){return Boolean(window.speechSynthesis&&window.SpeechSynthesisUtterance)}
+function loadInboundVoices(){
+  if(!inboundSpeechSupported())return[];
+  try{inboundVoiceState.voices=window.speechSynthesis.getVoices?.()||[];inboundVoiceState.voicesLoaded=inboundVoiceState.voices.length>0}catch{inboundVoiceState.voices=[]}
+  return inboundVoiceState.voices;
+}
+function initializeInboundVoicePreference(){
+  if(inboundVoiceState.initialized)return;
+  try{inboundVoiceState.enabled=localStorage.getItem("wvf_inbound_voice")!=="off"}catch{}
+  inboundVoiceState.initialized=true;
+  if(!inboundSpeechSupported())return;
+  loadInboundVoices();
+  const onVoicesChanged=()=>{loadInboundVoices();const synth=window.speechSynthesis;if(inboundVoiceState.pendingText&&inboundVoiceState.activated&&!synth.speaking&&!synth.pending)scheduleInboundSpeech(inboundVoiceState.pendingText,80)};
+  window.speechSynthesis.addEventListener?.("voiceschanged",onVoicesChanged);
+  if("onvoiceschanged" in window.speechSynthesis&&!window.speechSynthesis.onvoiceschanged)window.speechSynthesis.onvoiceschanged=onVoicesChanged;
+}
+function updateInboundVoiceButton(){
+  const button=$("inboundVoiceToggle");if(!button)return;
+  const label=!inboundVoiceState.enabled?"เสียงอ่าน: ปิด":inboundVoiceState.activated?"เสียงอ่าน: พร้อม":"แตะเปิดเสียงอ่าน";
+  button.textContent=label;button.setAttribute("aria-pressed",inboundVoiceState.enabled?"true":"false");button.classList.toggle("is-off",!inboundVoiceState.enabled);button.classList.toggle("needs-activation",inboundVoiceState.enabled&&!inboundVoiceState.activated)
+}
+function rememberInboundVoicePreference(){try{localStorage.setItem("wvf_inbound_voice",inboundVoiceState.enabled?"on":"off")}catch{}}
+function clearInboundSpeech(){
+  if(inboundVoiceState.timer)window.clearTimeout(inboundVoiceState.timer);inboundVoiceState.timer=0;inboundVoiceState.pendingText="";inboundVoiceState.utterance=null;inboundVoiceState.speakToken+=1;
+  if(inboundSpeechSupported())try{window.speechSynthesis.cancel()}catch{}
+}
+function primeInboundSpeechEngine(){
+  if(!inboundSpeechSupported())return;
+  try{
+    const synth=window.speechSynthesis;synth.resume?.();
+    const primer=new window.SpeechSynthesisUtterance("พร้อม");primer.lang="th-TH";primer.volume=.01;primer.rate=1.2;
+    const voice=thaiSpeechVoice();if(voice)primer.voice=voice;
+    inboundVoiceState.utterance=primer;synth.speak(primer)
+  }catch{}
+}
+function activateInboundVoiceFromGesture(announceReady=true){
+  initializeInboundVoicePreference();unlockAudio();
+  if(!inboundVoiceState.enabled||!inboundSpeechSupported())return false;
+  inboundVoiceState.activated=true;loadInboundVoices();primeInboundSpeechEngine();updateInboundVoiceButton();
+  if(announceReady)window.setTimeout(()=>speakInbound("เสียงอ่านพร้อมใช้งาน"),140);
+  return true
+}
+function toggleInboundVoice(){
+  initializeInboundVoicePreference();
+  if(!inboundVoiceState.enabled){inboundVoiceState.enabled=true;rememberInboundVoicePreference();activateInboundVoiceFromGesture(true);return}
+  if(!inboundVoiceState.activated){activateInboundVoiceFromGesture(true);return}
+  inboundVoiceState.enabled=false;rememberInboundVoicePreference();clearInboundSpeech();updateInboundVoiceButton()
+}
+function thaiSpeechVoice(){
+  if(!inboundSpeechSupported())return null;
+  const voices=inboundVoiceState.voices.length?inboundVoiceState.voices:loadInboundVoices();
+  return voices.find(voice=>/^th(?:-|_)/i.test(String(voice.lang||"")))||voices.find(voice=>/thai|ไทย/i.test(`${voice.name||""} ${voice.lang||""}`))||null
+}
+function scheduleInboundSpeech(text,delay=90){
+  if(inboundVoiceState.timer)window.clearTimeout(inboundVoiceState.timer);
+  const token=++inboundVoiceState.speakToken;inboundVoiceState.timer=window.setTimeout(()=>startInboundSpeech(text,token,false),delay)
+}
+function startInboundSpeech(text,token,retry){
+  if(token!==inboundVoiceState.speakToken||!inboundVoiceState.enabled||!inboundVoiceState.activated||!inboundSpeechSupported())return;
+  try{
+    const synth=window.speechSynthesis;if(synth.paused)synth.resume?.();
+    const utterance=new window.SpeechSynthesisUtterance(String(text));utterance.lang="th-TH";utterance.rate=.82;utterance.pitch=1;utterance.volume=1;
+    const voice=thaiSpeechVoice();if(voice&&!retry)utterance.voice=voice;
+    let started=false;
+    utterance.onstart=()=>{started=true;inboundVoiceState.retryCount=0;inboundVoiceState.pendingText=""};
+    utterance.onend=()=>{if(inboundVoiceState.utterance===utterance)inboundVoiceState.utterance=null};
+    utterance.onerror=event=>{
+      if(token!==inboundVoiceState.speakToken)return;
+      const reason=String(event?.error||"");
+      if((reason==="not-allowed"||reason==="audio-busy")&&!retry){inboundVoiceState.activated=false;inboundVoiceState.pendingText=String(text);updateInboundVoiceButton();return}
+      if(!retry){window.setTimeout(()=>startInboundSpeech(text,token,true),180)}
+    };
+    inboundVoiceState.utterance=utterance;synth.speak(utterance);
+    if(!retry)window.setTimeout(()=>{if(!started&&token===inboundVoiceState.speakToken&&inboundVoiceState.utterance===utterance){try{synth.cancel()}catch{}window.setTimeout(()=>startInboundSpeech(text,token,true),180)}},1600)
+  }catch{if(!retry)window.setTimeout(()=>startInboundSpeech(text,token,true),180)}
+}
+function speakInbound(text){
+  initializeInboundVoicePreference();const phrase=String(text||"").trim();if(!phrase||!inboundVoiceState.enabled||!inboundSpeechSupported())return;
+  inboundVoiceState.pendingText=phrase;
+  if(!inboundVoiceState.activated){updateInboundVoiceButton();return}
+  try{window.speechSynthesis.cancel()}catch{}
+  scheduleInboundSpeech(phrase,100)
+}
 function spokenIdentifier(value){const digits={"0":"ศูนย์","1":"หนึ่ง","2":"สอง","3":"สาม","4":"สี่","5":"ห้า","6":"หก","7":"เจ็ด","8":"แปด","9":"เก้า"};return Array.from(String(value??"").trim()).map(character=>digits[character]||(/[A-Za-z]/.test(character)?character.toUpperCase():character==="-"?"ขีด":"")).filter(Boolean).join(" ")}
 function inboundVehicleField(vehicle,snake,camel){return vehicle?.[snake]??vehicle?.[camel]??""}
-function announceInboundResult(result,fallbackVehicle,fallbackAutoId){const vehicle=result?.vehicle||fallbackVehicle||{},appointment=inboundVehicleField(vehicle,"appointment_no","appointmentNo"),identifier=appointment||fallbackAutoId,label=appointment?"หมายเลขนัดหมาย":"ออโต้ไอดี",spoken=spokenIdentifier(identifier);if(!spoken)return;const currentStatus=inboundVehicleField(vehicle,"current_status","currentStatus"),status=statusLabel(currentStatus);if(result?.duplicate){speakInbound(`สแกนซ้ำ ${label} ${spoken} รายการนี้บันทึกแล้ว สถานะปัจจุบัน ${status}`);return}const action=result?.action,actionText=action==="DOCUMENT_SUBMITTED"?"ยื่นเอกสารเรียบร้อย":action==="DOCUMENT_RETURNED"?"รับเอกสารคืนเรียบร้อย":`ดำเนินการเรียบร้อย สถานะปัจจุบัน ${status}`;speakInbound(`${label} ${spoken} ${actionText}`)}
+function announceInboundResult(result,fallbackVehicle,fallbackAutoId){
+  const vehicle=result?.vehicle||fallbackVehicle||{},appointment=inboundVehicleField(vehicle,"appointment_no","appointmentNo"),identifier=appointment||fallbackAutoId,label=appointment?"นัดหมาย":"รหัส",spoken=spokenIdentifier(identifier);if(!spoken)return;
+  const currentStatus=inboundVehicleField(vehicle,"current_status","currentStatus"),status=statusLabel(currentStatus);
+  if(result?.duplicate){speakInbound(`สแกนซ้ำ ${label} ${spoken} รายการนี้บันทึกแล้ว สถานะปัจจุบัน ${status}`);return}
+  const action=result?.action,actionText=action==="DOCUMENT_SUBMITTED"?"ยื่นเอกสารเรียบร้อย":action==="DOCUMENT_RETURNED"?"รับเอกสารคืนเรียบร้อย":`ดำเนินการเรียบร้อย สถานะปัจจุบัน ${status}`;
+  speakInbound(`${label} ${spoken} ${actionText}`)
+}
 
 function playFeedbackSound(kind){
   unlockAudio();if(!audioContext)return;

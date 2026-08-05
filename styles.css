@@ -3162,3 +3162,8 @@ button:disabled { cursor: wait; opacity: .7; }
   .dashboard-info-list { grid-template-columns:1fr; }
   .dashboard-info-sheet-center { max-height:70vh; }
 }
+
+
+/* Round 21: inbound speech activation state */
+.inbound-voice-toggle.needs-activation { border-color:#d9a441; background:#fff8e7; color:#7a5600; box-shadow:inset 3px 0 0 #d9a441; }
+.inbound-voice-toggle.needs-activation:hover { background:#fff2cf; }
