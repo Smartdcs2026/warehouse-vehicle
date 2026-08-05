@@ -3222,17 +3222,25 @@ button:disabled { cursor: wait; opacity: .7; }
 .scan-frame::before, .scan-frame::after { display: none; }
 .scan-placeholder {
   position: relative;
+  display: block;
   min-height: 218px;
-  gap: 14px;
   font-size: 0;
 }
 .scan-placeholder > span:last-child {
-  position: static;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
   color: var(--muted);
   font-size: 13px;
+  text-align: center;
 }
 .scan-corners {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 104px;
   height: 104px;
   display: block;
