@@ -3824,3 +3824,42 @@ button:disabled { cursor: wait; opacity: .7; }
   .clean-door-picker select,
   .clean-door-picker input { min-height: 42px; padding: 9px 10px; }
 }
+
+/* Admin door control: simple, clean and immediate */
+.door-settings-form { display: grid; gap: 14px; }
+.door-master-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #dfe6ef;
+  border-radius: 18px;
+  background: #fff;
+  padding: 18px 20px;
+  box-shadow: 0 8px 22px rgba(31,41,55,.05);
+}
+.door-master-switch.is-on { border-color: #b9dfc3; background: #fbfffc; }
+.door-master-switch.is-off { border-color: #dfe6ef; background: #fafbfc; }
+.door-master-switch small { display: block; margin-bottom: 3px; color: #667085; font-size: 11px; font-weight: 800; }
+.door-master-switch h3 { margin: 0; color: #172033; font-size: 22px; }
+.door-master-switch p { margin: 5px 0 0; color: #667085; font-size: 12px; }
+.large-toggle { position: relative; flex: 0 0 auto; width: 62px; height: 34px; cursor: pointer; }
+.large-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.large-toggle span { position: absolute; inset: 0; border-radius: 999px; background: #cbd5e1; transition: .18s ease; }
+.large-toggle span::after { content: ""; position: absolute; top: 4px; left: 4px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 2px 7px rgba(15,23,42,.2); transition: .18s ease; }
+.large-toggle input:checked + span { background: #239b48; }
+.large-toggle input:checked + span::after { transform: translateX(28px); }
+.large-toggle input:focus-visible + span { outline: 3px solid rgba(65,111,195,.18); outline-offset: 3px; }
+.door-options { display: grid; gap: 14px; transition: opacity .18s ease; }
+.door-options.is-muted { opacity: .55; }
+.compact-setting { min-height: 72px; }
+.door-list-head { margin: 2px 0 0; }
+.clean-sticky-actions { margin-top: 0; }
+@media (max-width: 760px) {
+  .door-master-switch { padding: 15px; }
+  .door-master-switch h3 { font-size: 19px; }
+  .door-master-switch p { font-size: 11px; }
+  .large-toggle { width: 58px; height: 32px; }
+  .large-toggle span::after { width: 24px; height: 24px; }
+  .large-toggle input:checked + span::after { transform: translateX(26px); }
+}
