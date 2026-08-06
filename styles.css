@@ -3887,3 +3887,19 @@ button:disabled { cursor: wait; opacity: .7; }
   .dashboard-table-row>*::before,.action-table-row>*::before{content:attr(data-label);color:#7a8798;font-size:9px;font-weight:600;}
   .dashboard-table-row span[data-label="บริษัท"],.action-table-row span[data-label="บริษัท"]{grid-column:1/-1;}
 }
+
+
+/* Round 29: show company under appointment in every dashboard row */
+.action-table-head,.action-table-row{grid-template-columns:.62fr 1.45fr 1.15fr 1fr .48fr .75fr .75fr!important;}
+.dashboard-table-head,.dashboard-table-row{grid-template-columns:1.55fr 1.15fr .55fr 1fr .75fr!important;}
+.dashboard-view-shell .action-table-head,.dashboard-view-shell .action-table-row{grid-template-columns:.62fr 1.45fr 1.15fr 1fr .48fr .75fr .75fr!important;}
+.dashboard-view-shell .dashboard-table-head,.dashboard-view-shell .dashboard-table-row{grid-template-columns:1.55fr 1.15fr .55fr 1fr .75fr!important;}
+.dashboard-company-cell{display:flex!important;min-width:0;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.15;}
+.dashboard-company-cell>span{color:#1d4ed8;font-weight:900;}
+.dashboard-company-cell>small{display:block;max-width:100%;overflow:hidden;color:#334155;font-size:9px;font-weight:700;text-overflow:ellipsis;white-space:nowrap;}
+:fullscreen .dashboard-company-cell>small{font-size:9px;}
+@media(max-width:980px){
+ .action-table-row,.dashboard-table-row{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+ .dashboard-company-cell{grid-column:1/-1;}
+ .dashboard-company-cell>small{font-size:11px;white-space:normal;}
+}
