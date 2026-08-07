@@ -4228,3 +4228,68 @@ button:disabled { cursor: wait; opacity: .7; }
 @media (max-width:899px){
   .inbound-driver-qr{order:3}.driver-qr-code{width:min(100%,210px)}
 }
+
+/* Round 49: approved INBOUND driver QR layout + Admin master switch */
+.driver-tracking-master{margin-top:18px;padding:18px 20px;border:1px solid #d9e4f2;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:24px;box-shadow:0 8px 24px rgba(28,62,117,.04)}
+.driver-tracking-master small{display:block;color:#6d7d92;font-weight:700;margin-bottom:4px}
+.driver-tracking-master h3{margin:0 0 5px;color:#173b6d;font-size:22px}
+.driver-tracking-master p{margin:0;color:#61728a;line-height:1.55}
+.driver-tracking-master strong{display:block;margin-top:8px;color:#35629c;font-size:12px}
+.driver-tracking-master.is-off{background:#f7f9fc}
+.driver-tracking-master.is-off h3{color:#6f7b8d}
+.driver-track-admin.is-muted{opacity:.55;pointer-events:none}
+.inbound-driver-qr header h2{font-size:18px}
+.driver-qr-caption{gap:5px}
+.driver-qr-caption b{font-size:22px;color:#0d55b9}
+.driver-qr-caption span{font-size:13px}
+.driver-qr-caption small{font-size:12px}
+.driver-qr-code{width:min(100%,205px)}
+.inbound-kiosk-shell .inbound-controlbar{min-height:76px;padding:9px 14px;margin-bottom:8px}
+.inbound-kiosk-shell .inbound-kiosk-title-merged b{font-size:25px;line-height:1.05}
+.inbound-kiosk-shell .inbound-title-copy small{font-size:12px}
+.inbound-kiosk-shell .inbound-title-meta{margin-top:2px;font-size:11px}
+.inbound-kiosk-shell .inbound-metrics-top{margin-bottom:8px;gap:7px}
+.inbound-kiosk-shell .inbound-metrics-top .inbound-metric{min-height:70px;padding:8px 12px}
+.inbound-kiosk-shell .inbound-workspace{grid-template-columns:320px minmax(0,1fr);gap:10px;min-height:0}
+.inbound-kiosk-shell .inbound-scan-station{height:calc(100vh - 206px);grid-template-rows:auto auto minmax(0,1fr);gap:8px;overflow:hidden}
+.inbound-kiosk-shell .compact-scanner{padding:8px 10px}
+.inbound-kiosk-shell .compact-scanner .scan-panel-head{margin-bottom:5px}
+.inbound-kiosk-shell .compact-scanner .scan-frame{width:min(100%,205px);max-height:205px}
+.inbound-kiosk-shell .scan-actions{margin-top:6px}
+.inbound-kiosk-shell .scan-input-block{padding:8px 10px}
+.inbound-kiosk-shell .scan-input-block h2{font-size:16px;margin-bottom:5px}
+.inbound-kiosk-shell .inbound-driver-qr{padding:10px 12px;display:flex;flex-direction:column;min-height:0;border-color:#b9d1f5}
+.inbound-kiosk-shell .inbound-driver-qr header{margin-bottom:4px}
+.inbound-kiosk-shell .driver-qr-body{min-height:0;flex:1;display:flex;align-items:center;justify-content:center}
+.inbound-kiosk-shell .driver-qr-body>div{width:100%}
+.inbound-kiosk-shell .driver-qr-code{width:min(100%,205px);margin-bottom:6px}
+.inbound-kiosk-shell .driver-qr-idle{min-height:100%;padding:12px}
+.inbound-kiosk-shell .inbound-list-card{min-height:0;height:calc(100vh - 206px)}
+.inbound-kiosk-shell #inboundRows{min-height:0;overflow:auto}
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-controlbar{min-height:66px;padding:7px 12px}
+  .inbound-kiosk-shell .inbound-kiosk-title-merged b{font-size:22px}
+  .inbound-kiosk-shell .inbound-metrics-top .inbound-metric{min-height:58px;padding:6px 9px}
+  .inbound-kiosk-shell .inbound-workspace{grid-template-columns:300px minmax(0,1fr)}
+  .inbound-kiosk-shell .inbound-scan-station,.inbound-kiosk-shell .inbound-list-card{height:calc(100vh - 182px)}
+  .inbound-kiosk-shell .compact-scanner .scan-frame{width:min(100%,155px);max-height:155px}
+  .inbound-kiosk-shell .driver-qr-code{width:min(100%,165px)}
+  .inbound-kiosk-shell .driver-qr-caption b{font-size:18px}
+  .inbound-kiosk-shell .driver-qr-caption span{font-size:11px}
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-controlbar{min-height:58px}
+  .inbound-kiosk-shell .inbound-metrics-top .inbound-metric{min-height:50px}
+  .inbound-kiosk-shell .inbound-scan-station,.inbound-kiosk-shell .inbound-list-card{height:calc(100vh - 164px)}
+  .inbound-kiosk-shell .compact-scanner .scan-frame{width:min(100%,125px);max-height:125px}
+  .inbound-kiosk-shell .driver-qr-code{width:min(100%,138px)}
+}
+
+.driver-qr-caption .driver-qr-meta{display:grid;gap:3px;text-align:left;margin:0 auto;width:min(100%,240px)}
+.driver-qr-caption .driver-qr-meta>span{display:grid;grid-template-columns:88px minmax(0,1fr);align-items:baseline;gap:7px}
+.driver-qr-caption .driver-qr-meta small{margin:0;color:#74849a;font-size:10px}
+.driver-qr-caption .driver-qr-meta b{font-size:19px;color:#0d55b9;white-space:nowrap;overflow:visible}
+.driver-qr-caption .driver-qr-meta strong{font-size:12px;color:#233d62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.driver-qr-caption p{margin:5px 0 0;color:#58708f;font-size:11px;text-align:center}
+
+.inbound-scan-station.tracking-disabled{grid-template-rows:auto auto;align-content:start}
