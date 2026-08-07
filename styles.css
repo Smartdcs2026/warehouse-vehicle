@@ -4089,3 +4089,70 @@ button:disabled { cursor: wait; opacity: .7; }
   .dashboard-view-shell .opsdash-context .opsdash-history,
   .dashboard-view-shell .opsdash-context .opsdash-stale { grid-column: 2 !important; grid-row: 1 / 3 !important; align-self:center; }
 }
+
+
+/* Round 32: keep every dashboard card visible in reduced-window mode */
+.dashboard-view-shell .opsdash-grid > .opsdash-panel,
+.dashboard-view-shell .overview-grid > .opsdash-panel,
+.dashboard-view-shell .handover-grid > .opsdash-panel,
+.dashboard-view-shell .comparison-grid > .opsdash-panel,
+.dashboard-view-shell .performance-grid > .opsdash-panel,
+.dashboard-view-shell .capacity-grid > .opsdash-panel,
+.dashboard-view-shell .exceptions-grid > .opsdash-panel {
+  display:block !important;
+  visibility:visible !important;
+}
+.dashboard-view-shell .overview-grid .action-panel,
+.dashboard-view-shell .round12-overview .urgent-panel,
+.dashboard-view-shell .round13-overview .urgent-panel,
+.dashboard-view-shell .round13-overview .opsdash-panel:nth-child(n+5) {
+  display:block !important;
+}
+
+/* Compact desktop: resize rather than hide content. */
+@media (min-width:981px) and (max-width:1450px) {
+  .dashboard-view-shell .page-content { padding:8px 10px 12px !important; }
+  .dashboard-view-shell .opsdash-head { margin-bottom:6px; }
+  .dashboard-view-shell .opsdash-context { min-height:40px; padding:5px 8px !important; margin-bottom:6px !important; }
+  .dashboard-view-shell .opsdash-tabs-inline button { min-height:26px !important; padding:3px 6px !important; font-size:8px !important; }
+  .dashboard-view-shell .opsdash-kpis { gap:6px; }
+  .dashboard-view-shell .opsdash-kpi { min-height:66px; padding:8px 9px; }
+  .dashboard-view-shell .opsdash-kpi>div>b { font-size:21px; }
+  .dashboard-view-shell .opsdash-kpi small,
+  .dashboard-view-shell .opsdash-kpi span { font-size:8px; }
+  .dashboard-view-shell .opsdash-grid { gap:6px; }
+  .dashboard-view-shell .opsdash-panel { min-height:165px; padding:9px 10px; }
+  .dashboard-view-shell .opsdash-panel>header { margin-bottom:6px; }
+  .dashboard-view-shell .opsdash-panel>header h3 { font-size:12px; }
+}
+
+/* Sidebar desktop / narrowed browser window. */
+@media (min-width:981px) and (max-width:1240px) {
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns:minmax(120px,.7fr) minmax(180px,1fr) minmax(0,2.4fr) auto !important;
+  }
+  .dashboard-view-shell .opsdash-tabs-inline { min-width:0 !important; }
+  .dashboard-view-shell .opsdash-tabs-inline button {
+    min-width:62px !important;
+    padding-inline:4px !important;
+    letter-spacing:-.02em;
+  }
+  .dashboard-view-shell .opsdash-kpis { grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
+  .dashboard-view-shell .opsdash-kpi>i { width:30px; height:30px; flex-basis:30px; margin-right:7px; }
+}
+
+/* Tablet/mobile: never hide a card; stack cleanly. */
+@media (max-width:980px) {
+  .dashboard-view-shell .opsdash-content { min-height:0 !important; }
+  .dashboard-view-shell .opsdash-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; height:auto !important; max-height:none !important; overflow:visible !important; }
+  .dashboard-view-shell .opsdash-panel,
+  .dashboard-view-shell .opsdash-panel.wide-panel { grid-column:span 1 !important; height:auto !important; max-height:none !important; }
+  .dashboard-view-shell .opsdash-panel.full-panel { grid-column:1/-1 !important; }
+  .dashboard-view-shell .opsdash-panel-body { max-height:none; }
+}
+@media (max-width:620px) {
+  .dashboard-view-shell .opsdash-grid { grid-template-columns:1fr !important; }
+  .dashboard-view-shell .opsdash-panel,
+  .dashboard-view-shell .opsdash-panel.wide-panel,
+  .dashboard-view-shell .opsdash-panel.full-panel { grid-column:1 !important; }
+}
