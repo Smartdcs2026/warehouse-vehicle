@@ -4293,3 +4293,147 @@ button:disabled { cursor: wait; opacity: .7; }
 .driver-qr-caption p{margin:5px 0 0;color:#58708f;font-size:11px;text-align:center}
 
 .inbound-scan-station.tracking-disabled{grid-template-rows:auto auto;align-content:start}
+
+/* Round 50: INBOUND full-screen layout — tools left, header/metrics/table aligned right */
+.inbound-workspace-r50{
+  display:grid;
+  grid-template-columns:330px minmax(0,1fr);
+  gap:10px;
+  align-items:stretch;
+  min-height:0;
+}
+.inbound-workspace-r50 .inbound-main-stack{
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr);
+  gap:8px;
+}
+.inbound-workspace-r50 .inbound-controlbar,
+.inbound-workspace-r50 .inbound-metrics-top{
+  margin:0;
+  min-width:0;
+}
+.inbound-workspace-r50 .inbound-list-card{
+  min-width:0;
+  min-height:0;
+  height:auto;
+}
+.inbound-workspace-r50 .inbound-scan-station{
+  min-width:0;
+  min-height:0;
+  height:auto;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr);
+  gap:8px;
+  overflow:hidden;
+}
+.inbound-workspace-r50 .compact-scanner{
+  padding:8px 10px;
+}
+.inbound-workspace-r50 .compact-scanner .scan-panel-head{
+  margin-bottom:4px;
+}
+.inbound-workspace-r50 .compact-scanner .scan-frame{
+  width:min(100%,190px);
+  max-height:190px;
+}
+.inbound-workspace-r50 .scan-actions{margin-top:5px}
+.inbound-workspace-r50 .scan-input-block{padding:8px 10px}
+.inbound-workspace-r50 .scan-input-block h2{font-size:16px;margin-bottom:5px}
+.inbound-workspace-r50 .inbound-driver-qr{
+  min-height:0;
+  padding:10px 12px;
+  display:flex;
+  flex-direction:column;
+  border-color:#b8d0f4;
+}
+.inbound-workspace-r50 .inbound-driver-qr header{margin-bottom:4px}
+.inbound-workspace-r50 .driver-qr-body{
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.inbound-workspace-r50 .driver-qr-body>div{width:100%}
+.inbound-workspace-r50 .driver-qr-code{
+  width:min(100%,210px);
+  margin:0 auto 7px;
+}
+.inbound-workspace-r50 .driver-qr-caption .driver-qr-meta{
+  width:min(100%,270px);
+  gap:4px;
+}
+.inbound-workspace-r50 .driver-qr-caption .driver-qr-meta>span{
+  grid-template-columns:92px minmax(0,1fr);
+  gap:8px;
+}
+.inbound-workspace-r50 .driver-qr-caption .driver-qr-meta strong{
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  line-height:1.25;
+}
+.inbound-workspace-r50 .driver-qr-caption p{margin-top:7px}
+
+/* INBOUND role already removes the navigation; use the reclaimed space vertically as well. */
+.inbound-kiosk-shell .content>.page-content{padding-top:8px}
+.inbound-kiosk-shell .inbound-workspace-r50{
+  height:calc(100vh - 16px);
+  grid-template-columns:330px minmax(0,1fr);
+}
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-main-stack{
+  height:100%;
+  grid-template-rows:70px 68px minmax(0,1fr);
+}
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-controlbar{
+  min-height:0;
+  height:70px;
+  padding:8px 13px;
+}
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top{
+  height:68px;
+  gap:7px;
+}
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top .inbound-metric{
+  min-height:0;
+  height:68px;
+  padding:7px 10px;
+}
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-scan-station,
+.inbound-kiosk-shell .inbound-workspace-r50 .inbound-list-card{
+  height:100%;
+}
+.inbound-kiosk-shell .inbound-workspace-r50 #inboundRows{
+  min-height:0;
+  overflow:auto;
+}
+
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-workspace-r50{grid-template-columns:310px minmax(0,1fr)}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-main-stack{grid-template-rows:62px 58px minmax(0,1fr)}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-controlbar{height:62px;padding:6px 11px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top{height:58px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top .inbound-metric{height:58px;padding:5px 8px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .compact-scanner .scan-frame{width:min(100%,145px);max-height:145px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .driver-qr-code{width:min(100%,165px)}
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-workspace-r50{grid-template-columns:290px minmax(0,1fr)}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-main-stack{grid-template-rows:56px 50px minmax(0,1fr)}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-controlbar{height:56px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top{height:50px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .inbound-metrics-top .inbound-metric{height:50px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .compact-scanner .scan-frame{width:min(100%,118px);max-height:118px}
+  .inbound-kiosk-shell .inbound-workspace-r50 .driver-qr-code{width:min(100%,135px)}
+  .inbound-kiosk-shell .inbound-workspace-r50 .driver-qr-caption .driver-qr-meta{gap:2px}
+}
+
+/* Keep the previous stacked/mobile behavior on narrower screens. */
+@media (max-width:920px){
+  .inbound-workspace-r50{grid-template-columns:1fr;height:auto!important}
+  .inbound-workspace-r50 .inbound-scan-station{order:1;height:auto!important}
+  .inbound-workspace-r50 .inbound-main-stack{order:2;height:auto!important;grid-template-rows:auto auto auto}
+  .inbound-workspace-r50 .inbound-list-card{height:auto!important}
+}
