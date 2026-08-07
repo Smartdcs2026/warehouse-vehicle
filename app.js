@@ -1569,7 +1569,7 @@ async function confirmInboundSubmit(autoId,source){
   finally{submitState.busy=false;restoreInboundMainDisplay()}
 }
 
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r49`,location.href).href}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r51`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
