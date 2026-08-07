@@ -4009,3 +4009,83 @@ button:disabled { cursor: wait; opacity: .7; }
 .dashboard-theme-dialog .theme-green{background:linear-gradient(135deg,#0f9f78 0 50%,#dff7ec 50%);}
 .dashboard-theme-dialog .theme-dark{background:linear-gradient(135deg,#172033 0 50%,#53647c 50%);}
 .dashboard-theme-dialog .theme-warm{background:linear-gradient(135deg,#b85c38 0 50%,#fff0df 50%);}
+
+
+/* Round 31: move dashboard view buttons into operation context row */
+.dashboard-view-shell .opsdash-context,
+:fullscreen .dashboard-fullscreen-shell .opsdash-context {
+  grid-template-columns: minmax(150px,.68fr) minmax(220px,1fr) minmax(500px,2.45fr) auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+  padding: 7px 10px !important;
+  margin-bottom: 7px !important;
+}
+.opsdash-tabs-inline {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 2px !important;
+  overflow-x: auto !important;
+  border-radius: 9px !important;
+  justify-content: center;
+  scrollbar-width: none;
+}
+.opsdash-tabs-inline::-webkit-scrollbar { display:none; }
+.opsdash-tabs-inline button {
+  flex: 1 1 auto !important;
+  min-width: 74px !important;
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  font-size: 9px !important;
+  white-space: nowrap;
+}
+.dashboard-view-shell .opsdash-context .opsdash-live,
+.dashboard-view-shell .opsdash-context .opsdash-history,
+.dashboard-view-shell .opsdash-context .opsdash-stale {
+  grid-column: auto !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  white-space: nowrap;
+}
+:fullscreen .dashboard-fullscreen-shell .opsdash-context { min-height: 42px; }
+:fullscreen .dashboard-fullscreen-shell .opsdash-tabs-inline button {
+  min-height: 26px !important;
+  padding: 3px 7px !important;
+}
+@media (max-width: 1180px) {
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns: minmax(135px,.7fr) minmax(190px,1fr) minmax(390px,2.1fr) auto !important;
+  }
+  .opsdash-tabs-inline button { min-width: 68px !important; padding-inline: 6px !important; }
+}
+@media (max-width: 980px) {
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns: 1fr 1.25fr auto !important;
+  }
+  .dashboard-view-shell .opsdash-context .opsdash-tabs-inline {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    justify-content: flex-start;
+  }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-history,
+  .dashboard-view-shell .opsdash-context .opsdash-stale {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+  }
+  .opsdash-tabs-inline button { flex: 0 0 auto !important; min-width: 86px !important; }
+}
+@media (max-width: 620px) {
+  .dashboard-view-shell .opsdash-context {
+    grid-template-columns: 1fr auto !important;
+    gap: 6px !important;
+  }
+  .dashboard-view-shell .opsdash-context .context-date { grid-column: 1; grid-row: 1; }
+  .dashboard-view-shell .opsdash-context .context-shift { grid-column: 1; grid-row: 2; }
+  .dashboard-view-shell .opsdash-context .opsdash-tabs-inline { grid-column: 1 / -1 !important; grid-row: 3 !important; }
+  .dashboard-view-shell .opsdash-context .opsdash-live,
+  .dashboard-view-shell .opsdash-context .opsdash-history,
+  .dashboard-view-shell .opsdash-context .opsdash-stale { grid-column: 2 !important; grid-row: 1 / 3 !important; align-self:center; }
+}
