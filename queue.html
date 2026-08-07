@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#eef5ff">
   <title>สถานะคิวรถขนส่ง</title>
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="stylesheet" href="./queue.css?v=20260807-r39">
+  <link rel="stylesheet" href="./queue.css?v=20260807-r40">
 </head>
 <body>
   <main class="queue-shell">
@@ -20,15 +20,15 @@
       </div>
       <div class="queue-actions">
         <div class="queue-clock"><small id="queueDate">--</small><b id="queueClock">--:--:--</b></div>
-        <button id="soundButton" type="button"><span>🔊</span> เปิดเสียง</button>
-        <button id="fullButton" type="button"><span>⛶</span> เต็มหน้าจอ</button>
+        <button id="soundButton" type="button"><span class="ui-sound-mark" aria-hidden="true"></span> เปิดเสียง</button>
+        <button id="fullButton" type="button"><span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ</button>
         <span id="queueHealth" class="health">● กำลังเชื่อมต่อ</span>
       </div>
     </header>
 
     <section id="callPanel" class="call-panel idle">
       <div class="call-tag">
-        <div class="call-icon">📣</div>
+        <div class="call-icon">เรียก</div>
         <b>กำลังเรียกคิว</b>
       </div>
       <div class="call-center">
@@ -43,12 +43,12 @@
           </div>
         </div>
         <div class="call-detail-row">
-          <div><span class="detail-icon">🚚</span><small>ทะเบียนรถ</small><b id="callPlate">–</b></div>
-          <div id="callDoorBox"><span class="detail-icon">▥</span><small>ประตู</small><b id="callDoor">–</b></div>
+          <div><span class="detail-icon detail-plate" aria-hidden="true"></span><small>ทะเบียนรถ</small><b id="callPlate">–</b></div>
+          <div id="callDoorBox"><span class="detail-icon detail-door" aria-hidden="true"></span><small>ประตู</small><b id="callDoor">–</b></div>
         </div>
       </div>
       <div class="call-instruction">
-        <span class="arrow-icon">➜</span>
+        <span class="arrow-icon" aria-hidden="true"></span>
         <div>
           <small id="callInstructionPrefix">กรุณาเข้ารับการตรวจรับ</small>
           <strong id="callInstruction">รอการเรียกคิว</strong>
@@ -61,18 +61,18 @@
     <section class="queue-board">
       <section class="next-panel">
         <header class="panel-title">
-          <div class="title-with-icon"><span>👥</span><h2>คิวถัดไป</h2></div>
+          <div class="title-with-icon"><span class="title-mark">รอ</span><div><h2>รอเรียกตรวจรับ</h2><small>รายการพร้อมรอการเรียก ไม่ใช่ลำดับคิว</small></div></div>
           <span id="nextPageLabel" class="page-label">ไม่มีคิวรอ</span>
         </header>
         <div class="next-table-head">
-          <span>ลำดับ</span><span>คิวที่</span><span>บริษัท</span><span>ทะเบียนรถ</span><span>รอคิวมาแล้ว</span>
+          <span>เลขนัดหมาย</span><span>บริษัท</span><span>ทะเบียนรถ</span><span>รอมาแล้ว</span>
         </div>
         <div id="nextQueue" class="next-list"></div>
       </section>
 
       <section class="work-panel">
         <header class="panel-title">
-          <div class="title-with-icon"><span>⚙</span><h2>กำลังดำเนินการ</h2></div>
+          <div class="title-with-icon"><span class="title-mark">งาน</span><h2>กำลังดำเนินการ</h2></div>
           <span id="workCount" class="page-label">0 คัน</span>
         </header>
         <div id="workGroups" class="work-groups"></div>
@@ -80,14 +80,14 @@
     </section>
 
     <footer class="queue-footer">
-      <div>⟳ <span>รีเฟรชอัตโนมัติทุก 5 วินาที</span></div>
-      <div>◷ <b id="updatedAt">–</b></div>
+      <div><span>รีเฟรชอัตโนมัติทุก 5 วินาที</span></div>
+      <div><b id="updatedAt">–</b></div>
       <div class="footer-spacer"></div>
-      <div>ⓘ <span>ข้อมูลจากระบบบริหารรถขนส่งคลังสินค้า</span></div>
+      <div><span>ข้อมูลจากระบบบริหารรถขนส่งคลังสินค้า</span></div>
       <span id="rotationLabel" hidden></span>
     </footer>
   </main>
   <script src="./config.js"></script>
-  <script src="./queue.js?v=20260807-r39"></script>
+  <script src="./queue.js?v=20260807-r40"></script>
 </body>
 </html>
