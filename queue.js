@@ -1,49 +1,561 @@
 "use strict";
-const cfg=window.APP_CONFIG||{};
-const ROTATE_MS=10000;
-const CALL_HOLD_MS=20000;
-const STALE_AFTER_MS=20000;
-let lastCallKey="",audioEnabled=false,audioCtx=null,loading=false,latestData=null,lastRotateAt=Date.now(),holdRotationUntil=0,lastSuccessfulLoad=0;
-let nextPage=0,workPages={RECEIVING_IN_PROGRESS:0,WAITING_DOCUMENT_RETURN:0,WAITING_GATE_OUT:0};
-const $=id=>document.getElementById(id);
-document.addEventListener("DOMContentLoaded",init);
-function init(){
-  $("soundButton")?.addEventListener("click",enableSound);$("fullButton")?.addEventListener("click",toggleFull);
-  let resizeTimer=0;window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{nextPage=0;Object.keys(workPages).forEach(k=>workPages[k]=0);applyDensity();if(latestData){renderNext(latestData);renderWork(latestData)}},120)});
-  applyDensity();
-  document.addEventListener("fullscreenchange",()=>{if($("fullButton"))$("fullButton").innerHTML=document.fullscreenElement?"<span class=\"ui-full-mark\" aria-hidden=\"true\"></span> ออกจากเต็มหน้าจอ":"<span class=\"ui-full-mark\" aria-hidden=\"true\"></span> เต็มหน้าจอ"});
-  tick();setInterval(()=>{tick();refreshHealthAge()},1000);loadQueue();setInterval(loadQueue,5000);
-  setInterval(()=>{if(latestData&&Date.now()>=holdRotationUntil&&Date.now()-lastRotateAt>=ROTATE_MS){rotatePages();lastRotateAt=Date.now()}},1000);
-}
-function tick(){const now=new Date(),tz=cfg.timezone||"Asia/Bangkok";$("queueDate").textContent=new Intl.DateTimeFormat("th-TH",{timeZone:tz,weekday:"long",day:"numeric",month:"short",year:"numeric"}).format(now);$("queueClock").textContent=new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now)}
-async function loadQueue(){if(loading)return;loading=true;try{const base=String(cfg.apiBaseUrl||"").replace(/\/$/,"");if(!base)throw new Error("ไม่พบที่อยู่ระบบ");const r=await fetch(base+"/api/public/queue",{cache:"no-store"});const data=await r.json();if(!r.ok||data.success===false)throw new Error(data.message||"โหลดข้อมูลไม่สำเร็จ");latestData=data;lastSuccessfulLoad=Date.now();render(data);health(true)}catch(e){health(false,e.message)}finally{loading=false}}
-function render(data){renderCall(data.calling);renderSummary(data);renderNext(data);renderWork(data);$("updatedAt").textContent="อัปเดตล่าสุด "+formatTime(data.generatedAt)}
-function renderSummary(data){const c=data.counts||{},defs=[["รอ","รอเรียกตรวจรับ",c.READY_FOR_RECEIVING||0,"ready"],["รับ","กำลังตรวจรับ",c.RECEIVING_IN_PROGRESS||0,"progress"],["คืน","รอรับเอกสารคืน",c.WAITING_DOCUMENT_RETURN||0,"return"],["ออก","รอออกจากพื้นที่",c.WAITING_GATE_OUT||0,"out"]];$("summaryCards").innerHTML=defs.map(([icon,label,n,tone])=>`<article class="summary-${tone}"><span class="summary-icon">${icon}</span><small>${label}</small><b>${Number(n).toLocaleString("th-TH")}</b><em>คัน</em></article>`).join("")}
-function renderCall(item){const panel=$("callPanel"),doorBox=$("callDoorBox"),num=$("callNumber");if(!item){panel.classList.add("idle");num.textContent="รอการเรียกคิว";fitAppointmentNumber(num,"รอการเรียกคิว");$("callCompany").textContent="–";$("callPlate").textContent="–";$("callDoor").textContent="–";doorBox.hidden=false;$("callInstructionPrefix").textContent="กรุณาตรวจสอบสถานะคิว";$("callInstruction").textContent="รอการเรียกคิว";return}panel.classList.remove("idle");const appt=String(item.appointmentNo||"–");num.textContent=appt;fitAppointmentNumber(num,appt);$("callCompany").textContent=item.companyName||"ไม่ระบุบริษัท";$("callPlate").textContent=plateText(item);$("callDoor").textContent=item.doorCode||"–";doorBox.hidden=!item.doorCode;$("callInstructionPrefix").textContent="กรุณาเข้ารับการตรวจรับ";$("callInstruction").textContent=item.doorCode?`ที่ประตู ${item.doorCode}`:"ได้ทันที";const key=[item.appointmentNo,item.receivingStartedAt].join(":");if(key!==lastCallKey){lastCallKey=key;nextPage=0;Object.keys(workPages).forEach(k=>workPages[k]=0);lastRotateAt=Date.now();holdRotationUntil=Date.now()+CALL_HOLD_MS;panel.classList.remove("flash");void panel.offsetWidth;panel.classList.add("flash");if(audioEnabled)announceCall(item)}}
-function readyItems(data){return(data.items||[]).filter(x=>x.status==="READY_FOR_RECEIVING")}
-function queuePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<700||w<1050)return 4;if(h<820||w<1350)return 5;if(h>=1000&&w>=1600)return 7;return 6}
-function workPageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<700||w<1050)return 2;if(h<820||w<1350)return 3;if(h>=1000&&w>=1600)return 5;return 4}
-function applyDensity(){const root=document.documentElement,h=window.innerHeight||800,w=window.innerWidth||1280;root.dataset.queueDensity=(h<700||w<1050)?"compact":(h>=1000&&w>=1600)?"wide":"normal"}
-function renderNext(data,animate=false){const items=readyItems(data),size=queuePageSize(),pages=Math.max(1,Math.ceil(items.length/size));if(nextPage>=pages)nextPage=0;const start=nextPage*size,shown=items.slice(start,start+size);$("nextPageLabel").textContent=items.length?(pages>1?`หน้า ${nextPage+1}/${pages} · ${items.length} คัน`:`${items.length} คัน`):"ไม่มีคิวรอ";const list=$("nextQueue");list.innerHTML=shown.length?shown.map(item=>nextItem(item)).join(""):`<div class="queue-empty">ไม่มีรถรอตรวจรับ</div>`;if(animate)fadePage(list);$("rotationLabel").textContent=pages>1?`รอเรียกตรวจรับ ${nextPage+1}/${pages}`:""}
-function nextItem(item){return`<article class="next-item"><div class="next-appt">${esc(item.appointmentNo)}</div><div class="next-company">${esc(item.companyName||"ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(plateText(item))}</div><div class="next-wait">${shortDuration(item.elapsedSeconds)}</div></article>`}
-function renderWork(data,animate=false){const all=data.items||[],defs=[["กำลังตรวจรับ","RECEIVING_IN_PROGRESS","progress"],["รอรับเอกสารคืน","WAITING_DOCUMENT_RETURN","return"],["รอออกจากพื้นที่","WAITING_GATE_OUT","out"]];let total=0;$("workGroups").innerHTML=defs.map(([label,status,tone])=>{const items=all.filter(x=>x.status===status).sort((a,b)=>(a.stageSince||0)-(b.stageSince||0));total+=items.length;const size=workPageSize(),pages=Math.max(1,Math.ceil(items.length/size));if((workPages[status]||0)>=pages)workPages[status]=0;const page=workPages[status]||0,shown=items.slice(page*size,page*size+size);return`<section class="work-group tone-${tone}"><header><h3>${label}</h3><b>${items.length} คัน${pages>1?` · ${page+1}/${pages}`:""}</b></header><div class="work-body">${shown.length?shown.map(workItem).join(""):`<p class="work-empty">ไม่มีรายการ</p>`}</div></section>`}).join("");if(animate)fadePage($("workGroups"));$("workCount").textContent=`${total.toLocaleString("th-TH")} คัน`}
-function workItem(item){return`<article class="work-item"><b>${esc(item.appointmentNo)}</b><span class="work-company">${esc(item.companyName||"ไม่ระบุบริษัท")}</span><small>${esc(plateText(item))}${item.doorCode?` · ประตู ${esc(item.doorCode)}`:""}</small></article>`}
-function rotatePages(){if(!latestData)return;const ready=readyItems(latestData),nextSize=queuePageSize(),npages=Math.ceil(ready.length/nextSize);if(npages>1)nextPage=(nextPage+1)%npages;const all=latestData.items||[];for(const status of Object.keys(workPages)){const pages=Math.ceil(all.filter(x=>x.status===status).length/workPageSize());if(pages>1)workPages[status]=(workPages[status]+1)%pages}renderNext(latestData,true);renderWork(latestData,true)}
 
-function fadePage(el){
-  if(!el)return;
+const cfg = window.APP_CONFIG || {};
+const POLL_MS = 5000;
+const FETCH_TIMEOUT_MS = 4500;
+const ROTATE_MS = 10000;
+const CALL_HOLD_MS = 20000;
+const STALE_AFTER_MS = 20000;
+
+let lastCallKey = sessionStorage.getItem("queueLastCallKey") || "";
+let audioEnabled = false;
+let audioCtx = null;
+let loading = false;
+let latestData = null;
+let lastRotateAt = Date.now();
+let holdRotationUntil = 0;
+let lastSuccessfulLoad = 0;
+let nextPage = 0;
+let workPages = {
+  RECEIVING_IN_PROGRESS: 0,
+  WAITING_DOCUMENT_RETURN: 0,
+  WAITING_GATE_OUT: 0
+};
+
+const $ = id => document.getElementById(id);
+
+document.addEventListener("DOMContentLoaded", init);
+
+function init() {
+  $("soundButton")?.addEventListener("click", toggleSound);
+  $("fullButton")?.addEventListener("click", toggleFull);
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resetPages();
+      applyDensity();
+      if (latestData) {
+        renderNext(latestData);
+        renderWork(latestData);
+      }
+    }, 140);
+  });
+
+  window.addEventListener("online", () => {
+    setHealth("loading", "กำลังเชื่อมต่อ");
+    loadQueue(true);
+  });
+
+  window.addEventListener("offline", () => {
+    setHealth("offline", latestData ? "เครือข่ายขัดข้อง — แสดงข้อมูลล่าสุด" : "เครือข่ายขัดข้อง");
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadQueue(true);
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if ($("fullButton")) {
+      $("fullButton").innerHTML = document.fullscreenElement
+        ? '<span class="ui-full-mark" aria-hidden="true"></span> ออกจากเต็มหน้าจอ'
+        : '<span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ';
+    }
+    setTimeout(() => {
+      resetPages();
+      applyDensity();
+      if (latestData) {
+        renderNext(latestData);
+        renderWork(latestData);
+      }
+    }, 120);
+  });
+
+  applyDensity();
+  tick();
+  setInterval(() => {
+    tick();
+    refreshHealthAge();
+  }, 1000);
+
+  loadQueue(true);
+  setInterval(() => loadQueue(false), POLL_MS);
+  setInterval(() => {
+    if (
+      latestData &&
+      !document.hidden &&
+      Date.now() >= holdRotationUntil &&
+      Date.now() - lastRotateAt >= ROTATE_MS
+    ) {
+      rotatePages();
+      lastRotateAt = Date.now();
+    }
+  }, 1000);
+}
+
+function resetPages() {
+  nextPage = 0;
+  Object.keys(workPages).forEach(key => (workPages[key] = 0));
+  lastRotateAt = Date.now();
+}
+
+function tick() {
+  const now = new Date();
+  const tz = cfg.timezone || "Asia/Bangkok";
+  if ($("queueDate")) {
+    $("queueDate").textContent = new Intl.DateTimeFormat("th-TH", {
+      timeZone: tz,
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }).format(now);
+  }
+  if ($("queueClock")) {
+    $("queueClock").textContent = new Intl.DateTimeFormat("en-GB", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).format(now);
+  }
+}
+
+async function loadQueue(force = false) {
+  if (loading && !force) return;
+  if (!navigator.onLine) {
+    setHealth("offline", latestData ? "เครือข่ายขัดข้อง — แสดงข้อมูลล่าสุด" : "เครือข่ายขัดข้อง");
+    return;
+  }
+
+  loading = true;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const base = String(cfg.apiBaseUrl || "").replace(/\/$/, "");
+    if (!base) throw new Error("ไม่พบที่อยู่ระบบ");
+
+    const response = await fetch(base + "/api/public/queue", {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" }
+    });
+
+    const raw = await response.json().catch(() => null);
+    if (!response.ok || !raw || raw.success === false) {
+      throw new Error(raw?.message || "โหลดข้อมูลไม่สำเร็จ");
+    }
+
+    const data = normalizeQueueData(raw);
+    latestData = data;
+    lastSuccessfulLoad = Date.now();
+    render(data);
+    setHealth("ok", "พร้อมใช้งาน");
+  } catch (error) {
+    const message = error?.name === "AbortError" ? "การเชื่อมต่อตอบสนองช้า" : (error?.message || "เชื่อมต่อไม่ได้");
+    if (latestData) {
+      setHealth("error", "เชื่อมต่อไม่ได้ — แสดงข้อมูลล่าสุด", message);
+    } else {
+      renderUnavailable();
+      setHealth("error", "เชื่อมต่อไม่ได้", message);
+    }
+  } finally {
+    clearTimeout(timeout);
+    loading = false;
+  }
+}
+
+function normalizeQueueData(raw) {
+  const validStatuses = new Set([
+    "READY_FOR_RECEIVING",
+    "RECEIVING_IN_PROGRESS",
+    "WAITING_DOCUMENT_RETURN",
+    "WAITING_GATE_OUT"
+  ]);
+
+  const items = Array.isArray(raw.items)
+    ? raw.items
+        .filter(item => item && typeof item === "object" && validStatuses.has(String(item.status || "")))
+        .map(normalizeItem)
+    : [];
+
+  const calling = raw.calling && typeof raw.calling === "object" ? normalizeItem(raw.calling) : null;
+  const counts = raw.counts && typeof raw.counts === "object" ? raw.counts : {};
+
+  return {
+    success: true,
+    generatedAt: raw.generatedAt ?? Date.now(),
+    calling,
+    items,
+    counts: {
+      READY_FOR_RECEIVING: safeCount(counts.READY_FOR_RECEIVING, items, "READY_FOR_RECEIVING"),
+      RECEIVING_IN_PROGRESS: safeCount(counts.RECEIVING_IN_PROGRESS, items, "RECEIVING_IN_PROGRESS"),
+      WAITING_DOCUMENT_RETURN: safeCount(counts.WAITING_DOCUMENT_RETURN, items, "WAITING_DOCUMENT_RETURN"),
+      WAITING_GATE_OUT: safeCount(counts.WAITING_GATE_OUT, items, "WAITING_GATE_OUT")
+    }
+  };
+}
+
+function normalizeItem(item) {
+  return {
+    ...item,
+    appointmentNo: cleanText(item.appointmentNo),
+    companyName: cleanText(item.companyName),
+    vehiclePlate: cleanText(item.vehiclePlate),
+    province: cleanText(item.province),
+    doorCode: cleanText(item.doorCode),
+    status: cleanText(item.status),
+    elapsedSeconds: Math.max(0, Number(item.elapsedSeconds) || 0),
+    stageSince: Number(item.stageSince) || 0,
+    receivingStartedAt: Number(item.receivingStartedAt) || 0
+  };
+}
+
+function cleanText(value) {
+  return String(value ?? "").trim();
+}
+
+function safeCount(value, items, status) {
+  const n = Number(value);
+  if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+  return items.filter(item => item.status === status).length;
+}
+
+function render(data) {
+  renderCall(data.calling);
+  renderSummary(data);
+  renderNext(data);
+  renderWork(data);
+  if ($("updatedAt")) $("updatedAt").textContent = "อัปเดตล่าสุด " + formatTime(data.generatedAt);
+}
+
+function renderUnavailable() {
+  renderCall(null);
+  renderSummary({ counts: {} });
+  renderNext({ items: [] });
+  renderWork({ items: [] });
+  if ($("updatedAt")) $("updatedAt").textContent = "ยังไม่ได้รับข้อมูลจากระบบ";
+}
+
+function renderSummary(data) {
+  const c = data.counts || {};
+  const defs = [
+    ["รอ", "รอเรียกตรวจรับ", c.READY_FOR_RECEIVING || 0, "ready"],
+    ["รับ", "กำลังตรวจรับ", c.RECEIVING_IN_PROGRESS || 0, "progress"],
+    ["คืน", "รอรับเอกสารคืน", c.WAITING_DOCUMENT_RETURN || 0, "return"],
+    ["ออก", "รอออกจากพื้นที่", c.WAITING_GATE_OUT || 0, "out"]
+  ];
+
+  $("summaryCards").innerHTML = defs
+    .map(
+      ([icon, label, n, tone]) =>
+        `<article class="summary-${tone}"><span class="summary-icon">${icon}</span><small>${label}</small><b>${Number(n).toLocaleString("th-TH")}</b><em>คัน</em></article>`
+    )
+    .join("");
+}
+
+function renderCall(item) {
+  const panel = $("callPanel");
+  const doorBox = $("callDoorBox");
+  const num = $("callNumber");
+
+  if (!item || !item.appointmentNo) {
+    panel.classList.add("idle");
+    num.textContent = "รอการเรียกคิว";
+    fitAppointmentNumber(num, "รอการเรียกคิว");
+    $("callCompany").textContent = "–";
+    $("callPlate").textContent = "–";
+    $("callDoor").textContent = "–";
+    doorBox.hidden = false;
+    $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
+    $("callInstruction").textContent = "รอการเรียกคิว";
+    return;
+  }
+
+  panel.classList.remove("idle");
+  const appt = item.appointmentNo || "–";
+  num.textContent = appt;
+  fitAppointmentNumber(num, appt);
+  $("callCompany").textContent = item.companyName || "ไม่ระบุบริษัท";
+  $("callPlate").textContent = plateText(item);
+  $("callDoor").textContent = item.doorCode || "–";
+  doorBox.hidden = !item.doorCode;
+  $("callInstructionPrefix").textContent = "กรุณาเข้ารับการตรวจรับ";
+  $("callInstruction").textContent = item.doorCode ? `ที่ประตู ${item.doorCode}` : "ได้ทันที";
+
+  const key = [item.appointmentNo, item.receivingStartedAt].join(":");
+  if (key !== lastCallKey) {
+    lastCallKey = key;
+    sessionStorage.setItem("queueLastCallKey", key);
+    resetPages();
+    holdRotationUntil = Date.now() + CALL_HOLD_MS;
+    panel.classList.remove("flash");
+    void panel.offsetWidth;
+    panel.classList.add("flash");
+    if (audioEnabled) announceCall(item);
+  }
+}
+
+function readyItems(data) {
+  return (data.items || []).filter(item => item.status === "READY_FOR_RECEIVING");
+}
+
+function queuePageSize() {
+  const h = window.innerHeight || 800;
+  const w = window.innerWidth || 1280;
+  if (h < 700 || w < 1050) return 4;
+  if (h < 820 || w < 1350) return 5;
+  if (h >= 1000 && w >= 1600) return 7;
+  return 6;
+}
+
+function workPageSize() {
+  const h = window.innerHeight || 800;
+  const w = window.innerWidth || 1280;
+  if (h < 700 || w < 1050) return 2;
+  if (h < 820 || w < 1350) return 3;
+  if (h >= 1000 && w >= 1600) return 5;
+  return 4;
+}
+
+function applyDensity() {
+  const h = window.innerHeight || 800;
+  const w = window.innerWidth || 1280;
+  document.documentElement.dataset.queueDensity = h < 700 || w < 1050 ? "compact" : h >= 1000 && w >= 1600 ? "wide" : "normal";
+}
+
+function renderNext(data, animate = false) {
+  const items = readyItems(data);
+  const size = queuePageSize();
+  const pages = Math.max(1, Math.ceil(items.length / size));
+  if (nextPage >= pages) nextPage = 0;
+
+  const start = nextPage * size;
+  const shown = items.slice(start, start + size);
+  $("nextPageLabel").textContent = items.length
+    ? pages > 1
+      ? `หน้า ${nextPage + 1}/${pages} · ${items.length} คัน`
+      : `${items.length} คัน`
+    : "ไม่มีรายการรอ";
+
+  const list = $("nextQueue");
+  list.innerHTML = shown.length
+    ? shown.map(nextItem).join("")
+    : '<div class="queue-empty">ไม่มีรถรอเรียกตรวจรับ</div>';
+
+  if (animate) fadePage(list);
+  $("rotationLabel").textContent = pages > 1 ? `รอเรียกตรวจรับ ${nextPage + 1}/${pages}` : "";
+}
+
+function nextItem(item) {
+  return `<article class="next-item"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(plateText(item))}</div><div class="next-wait">${shortDuration(item.elapsedSeconds)}</div></article>`;
+}
+
+function renderWork(data, animate = false) {
+  const all = data.items || [];
+  const defs = [
+    ["กำลังตรวจรับ", "RECEIVING_IN_PROGRESS", "progress"],
+    ["รอรับเอกสารคืน", "WAITING_DOCUMENT_RETURN", "return"],
+    ["รอออกจากพื้นที่", "WAITING_GATE_OUT", "out"]
+  ];
+
+  let total = 0;
+  $("workGroups").innerHTML = defs
+    .map(([label, status, tone]) => {
+      const items = all
+        .filter(item => item.status === status)
+        .sort((a, b) => (a.stageSince || 0) - (b.stageSince || 0));
+      total += items.length;
+
+      const size = workPageSize();
+      const pages = Math.max(1, Math.ceil(items.length / size));
+      if ((workPages[status] || 0) >= pages) workPages[status] = 0;
+      const page = workPages[status] || 0;
+      const shown = items.slice(page * size, page * size + size);
+
+      return `<section class="work-group tone-${tone}"><header><h3>${label}</h3><b>${items.length} คัน${pages > 1 ? ` · ${page + 1}/${pages}` : ""}</b></header><div class="work-body">${
+        shown.length ? shown.map(workItem).join("") : '<p class="work-empty">ไม่มีรายการ</p>'
+      }</div></section>`;
+    })
+    .join("");
+
+  if (animate) fadePage($("workGroups"));
+  $("workCount").textContent = `${total.toLocaleString("th-TH")} คัน`;
+}
+
+function workItem(item) {
+  return `<article class="work-item"><b>${esc(item.appointmentNo || "–")}</b><span class="work-company">${esc(
+    item.companyName || "ไม่ระบุบริษัท"
+  )}</span><small>${esc(plateText(item))}${item.doorCode ? ` · ประตู ${esc(item.doorCode)}` : ""}</small></article>`;
+}
+
+function rotatePages() {
+  if (!latestData) return;
+
+  const ready = readyItems(latestData);
+  const nextPages = Math.ceil(ready.length / queuePageSize());
+  if (nextPages > 1) nextPage = (nextPage + 1) % nextPages;
+
+  const all = latestData.items || [];
+  for (const status of Object.keys(workPages)) {
+    const pages = Math.ceil(all.filter(item => item.status === status).length / workPageSize());
+    if (pages > 1) workPages[status] = (workPages[status] + 1) % pages;
+  }
+
+  renderNext(latestData, true);
+  renderWork(latestData, true);
+}
+
+function fadePage(el) {
+  if (!el) return;
   el.classList.remove("page-fade");
   void el.offsetWidth;
   el.classList.add("page-fade");
 }
-function plateText(item){const p=String(item.vehiclePlate||"").trim(),prov=String(item.province||"").trim();return[p,prov].filter(Boolean).join(" ")||"ไม่ระบุทะเบียน"}
-function health(ok,msg=""){const el=$("queueHealth");if(!el)return;el.classList.toggle("error",!ok);el.classList.remove("stale");el.textContent=ok?"พร้อมใช้งาน":"เชื่อมต่อไม่ได้";el.title=msg}
-function refreshHealthAge(){if(!lastSuccessfulLoad)return;const age=Date.now()-lastSuccessfulLoad;if(age>STALE_AFTER_MS){const el=$("queueHealth");if(!el)return;el.classList.add("stale");el.classList.remove("error");el.textContent="ข้อมูลกำลังรออัปเดต";el.title=`ไม่ได้รับข้อมูลใหม่ ${Math.floor(age/1000)} วินาที`}}
-function shortDuration(sec){sec=Math.max(0,Math.floor(Number(sec)||0));const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60);return h?`${h} ชม. ${m} นาที`:`${m} นาที`}
-function formatTime(sec){if(!sec)return"–";return new Intl.DateTimeFormat("en-GB",{timeZone:cfg.timezone||"Asia/Bangkok",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date(Number(sec)*1000))}
-function esc(v){return String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]))}
-async function enableSound(){audioEnabled=!audioEnabled;$("soundButton").innerHTML=audioEnabled?"<span class=\"ui-sound-mark on\" aria-hidden=\"true\"></span> เปิดเสียงแล้ว":"<span class=\"ui-sound-mark off\" aria-hidden=\"true\"></span> เปิดเสียง";if(audioEnabled){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();await audioCtx.resume().catch(()=>{});beep();if(latestData?.calling)setTimeout(()=>announceCall(latestData.calling),450)}}
-function beep(){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const now=audioCtx.currentTime;[0,.28].forEach((delay,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=i?980:820;g.gain.setValueAtTime(.001,now+delay);g.gain.exponentialRampToValueAtTime(.13,now+delay+.02);g.gain.exponentialRampToValueAtTime(.001,now+delay+.22);o.connect(g);g.connect(audioCtx.destination);o.start(now+delay);o.stop(now+delay+.25)})}catch{}}
-function announceCall(item){beep();if(!("speechSynthesis" in window))return;try{window.speechSynthesis.cancel();const appt=String(item.appointmentNo||"").split("").join(" ");const company=String(item.companyName||"").trim();const door=String(item.doorCode||"").trim();const text=`หมายเลขนัดหมาย ${appt}${company?` บริษัท ${company}`:""} กรุณาเข้ารับการตรวจรับ${door?` ที่ประตู ${door}`:""}`;const u=new SpeechSynthesisUtterance(text);u.lang="th-TH";u.rate=.88;u.pitch=1;u.volume=1;setTimeout(()=>window.speechSynthesis.speak(u),620)}catch{}}
-function fitAppointmentNumber(el,value){const len=String(value||"").length;el.classList.remove("appt-long","appt-xlong");if(len>=11)el.classList.add("appt-xlong");else if(len>=8)el.classList.add("appt-long")}
-async function toggleFull(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{}}
+
+function plateText(item) {
+  return [item.vehiclePlate, item.province].filter(Boolean).join(" ") || "ไม่ระบุทะเบียน";
+}
+
+function setHealth(state, text, detail = "") {
+  const el = $("queueHealth");
+  if (!el) return;
+  el.classList.remove("error", "stale", "offline", "loading");
+  if (state && state !== "ok") el.classList.add(state);
+  el.textContent = text;
+  el.title = detail || text;
+  el.dataset.state = state || "ok";
+}
+
+function refreshHealthAge() {
+  if (!navigator.onLine) {
+    setHealth("offline", latestData ? "เครือข่ายขัดข้อง — แสดงข้อมูลล่าสุด" : "เครือข่ายขัดข้อง");
+    return;
+  }
+  if (!lastSuccessfulLoad) return;
+
+  const age = Date.now() - lastSuccessfulLoad;
+  if (age > STALE_AFTER_MS) {
+    setHealth("stale", "ข้อมูลกำลังรออัปเดต", `ไม่ได้รับข้อมูลใหม่ ${Math.floor(age / 1000)} วินาที`);
+  }
+}
+
+function shortDuration(sec) {
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return h ? `${h} ชม. ${m} นาที` : `${m} นาที`;
+}
+
+function toDate(value) {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value > 1e12 ? value : value * 1000);
+  if (typeof value === "string" && /^\d+(\.\d+)?$/.test(value.trim())) {
+    const n = Number(value);
+    return new Date(n > 1e12 ? n : n * 1000);
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatTime(value) {
+  const d = toDate(value);
+  if (!d) return "–";
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: cfg.timezone || "Asia/Bangkok",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(d);
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+async function toggleSound() {
+  audioEnabled = !audioEnabled;
+  const button = $("soundButton");
+  if (!button) return;
+
+  if (!audioEnabled) {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    button.innerHTML = '<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง';
+    button.classList.remove("sound-on");
+    return;
+  }
+
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    await audioCtx.resume();
+    beep();
+    button.innerHTML = '<span class="ui-sound-mark on" aria-hidden="true"></span> เปิดเสียงแล้ว';
+    button.classList.add("sound-on");
+  } catch {
+    audioEnabled = false;
+    button.innerHTML = '<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง';
+    button.classList.remove("sound-on");
+  }
+}
+
+function beep() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    [0, 0.28].forEach((delay, index) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.frequency.value = index ? 980 : 820;
+      gain.gain.setValueAtTime(0.001, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.13, now + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.22);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.25);
+    });
+  } catch {}
+}
+
+function announceCall(item) {
+  beep();
+  if (!("speechSynthesis" in window)) return;
+
+  try {
+    window.speechSynthesis.cancel();
+    const appt = String(item.appointmentNo || "").split("").join(" ");
+    const company = item.companyName || "";
+    const door = item.doorCode || "";
+    const text = `หมายเลขนัดหมาย ${appt}${company ? ` บริษัท ${company}` : ""} กรุณาเข้ารับการตรวจรับ${door ? ` ที่ประตู ${door}` : ""}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "th-TH";
+    utterance.rate = 0.88;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    setTimeout(() => window.speechSynthesis.speak(utterance), 620);
+  } catch {}
+}
+
+function fitAppointmentNumber(el, value) {
+  const len = String(value || "").length;
+  el.classList.remove("appt-long", "appt-xlong");
+  if (len >= 11) el.classList.add("appt-xlong");
+  else if (len >= 8) el.classList.add("appt-long");
+}
+
+async function toggleFull() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch {}
+}
