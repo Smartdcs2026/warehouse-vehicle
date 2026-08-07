@@ -4170,3 +4170,20 @@ button:disabled { cursor: wait; opacity: .7; }
 .admin-queue-guide b{display:block;color:#123566;margin-bottom:7px}.admin-queue-guide p{margin:0;color:#65758c;line-height:1.6}
 .admin-queue-url{margin-top:14px}.admin-queue-url small{display:block;color:#6d7d92;margin-bottom:7px}.admin-queue-url code{font-family:inherit;color:#235fb8;word-break:break-all}
 @media(max-width:900px){.admin-queue-guide{grid-template-columns:1fr}.admin-queue-open{width:100%}.clean-admin-head{align-items:stretch}}
+
+
+/* Round 36: quick access to central queue display */
+.dashboard-queue-button{
+  min-height:40px;padding:7px 11px;border:1px solid #c8d8ef;border-radius:10px;
+  background:#fff;color:#174b96;display:inline-flex;align-items:center;gap:6px;
+  font:inherit;font-weight:700;cursor:pointer;white-space:nowrap;
+}
+.dashboard-queue-button:hover{background:#f4f8ff;border-color:#8eb2ea}
+.dashboard-queue-button span{font-size:15px;line-height:1}
+.dashboard-fullscreen-shell .dashboard-queue-button{min-height:36px;padding:6px 9px}
+@media (max-width:1180px){
+  .dashboard-view-shell .dashboard-queue-button{min-height:34px;padding:5px 8px;font-size:10px}
+}
+@media (max-width:760px){
+  .dashboard-view-shell .dashboard-queue-button{display:none}
+}

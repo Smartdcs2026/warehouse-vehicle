@@ -1,7 +1,17 @@
 <!doctype html>
-<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef5ff"><title>สถานะคิวรถขนส่ง</title><link rel="icon" href="./favicon.png" type="image/png"><link rel="stylesheet" href="./queue.css?v=20260807-r35"></head>
-<body><main class="queue-shell"><header class="queue-header"><div class="queue-brand"><span class="truck-icon">▣</span><div><small>ระบบบริหารรถขนส่งคลังสินค้า</small><h1>สถานะคิวรถขนส่ง</h1><p>จอแสดงผลส่วนกลาง</p></div></div><div class="queue-actions"><div class="queue-clock"><small id="queueDate">--</small><b id="queueClock">--:--:--</b></div><button id="soundButton" type="button">🔔 เปิดเสียง</button><button id="fullButton" type="button">เต็มหน้าจอ</button><span id="queueHealth" class="health">● กำลังเชื่อมต่อ</span></div></header>
-<section id="callPanel" class="call-panel idle"><div class="call-tag">กำลังเรียกคิว</div><div class="call-number" id="callNumber">รอการเรียกคิว</div><div class="call-company" id="callCompany">เมื่อพนักงานเริ่มตรวจรับ รายการจะขึ้นที่นี่</div><div class="call-door" id="callDoor"></div><div class="call-note" id="callNote">กรุณาตรวจสอบสถานะของหมายเลขนัดหมาย</div></section>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eef5ff"><title>สถานะคิวรถขนส่ง</title><link rel="icon" href="./favicon.png" type="image/png"><link rel="stylesheet" href="./queue.css?v=20260807-r37"></head>
+<body><main class="queue-shell">
+<header class="queue-header"><div class="queue-brand"><span class="truck-icon">▣</span><div><small>ระบบบริหารรถขนส่งคลังสินค้า</small><h1>สถานะคิวรถขนส่ง</h1><p>จอแสดงผลส่วนกลาง</p></div></div><div class="queue-actions"><div class="queue-clock"><small id="queueDate">--</small><b id="queueClock">--:--:--</b></div><button id="soundButton" type="button">🔔 เปิดเสียง</button><button id="fullButton" type="button">เต็มหน้าจอ</button><span id="queueHealth" class="health">● กำลังเชื่อมต่อ</span></div></header>
+<section id="callPanel" class="call-panel idle">
+  <div class="call-tag">กำลังเรียกคิว</div>
+  <div class="call-main"><div class="call-number" id="callNumber">รอการเรียกคิว</div><div class="call-company" id="callCompany">เมื่อพนักงานเริ่มตรวจรับ รายการจะขึ้นที่นี่</div></div>
+  <div class="call-meta"><div><small>ทะเบียนรถ</small><b id="callPlate">–</b></div><div><small>ประตู</small><b id="callDoor">–</b></div></div>
+  <div class="call-note" id="callNote">กรุณาตรวจสอบสถานะของหมายเลขนัดหมาย</div>
+</section>
 <section id="summaryCards" class="queue-summary"></section>
-<section id="queueColumns" class="queue-columns"></section>
-<footer class="queue-footer"><span>ข้อมูลอัปเดตอัตโนมัติ</span><b id="updatedAt">–</b><span id="buildLabel"></span></footer></main><script src="./config.js"></script><script src="./queue.js?v=20260807-r35"></script></body></html>
+<section class="queue-board">
+  <section class="next-panel"><header><div><small>ลำดับการรอ</small><h2>คิวถัดไป</h2></div><div class="page-label" id="nextPageLabel">–</div></header><div id="nextQueue" class="next-list"></div></section>
+  <section class="work-panel"><header><div><small>สถานะปัจจุบัน</small><h2>กำลังดำเนินการ</h2></div><span id="workCount">0 คัน</span></header><div id="workGroups" class="work-groups"></div></section>
+</section>
+<footer class="queue-footer"><span>ข้อมูลอัปเดตอัตโนมัติ</span><b id="updatedAt">–</b><span id="buildLabel"></span></footer>
+</main><script src="./config.js"></script><script src="./queue.js?v=20260807-r37"></script></body></html>
