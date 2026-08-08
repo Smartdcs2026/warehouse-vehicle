@@ -59,7 +59,7 @@ function render(data){
       <small>สถานะปัจจุบัน</small><h1>${esc(v.statusLabel||"กำลังดำเนินการ")}</h1>
       <p>${data.closed?"รถออกจากพื้นที่และสิ้นสุดขั้นตอนแล้ว":"หน้านี้อัปเดตสถานะให้อัตโนมัติ"}</p>
     </section>
-    <section class="track-identity"><div><small>หมายเลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span>${esc(v.companyName||"ไม่ระบุบริษัท")}</span><em>${esc(plate)}</em></section>
+    <section class="track-identity"><div><small>หมายเลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><dl class="track-identity-details"><div><dt>บริษัท</dt><dd>${esc(v.companyName||"ไม่ระบุบริษัท")}</dd></div>${v.driverName?`<div><dt>คนขับรถ</dt><dd>${esc(v.driverName)}</dd></div>`:""}<div><dt>ทะเบียนรถ</dt><dd>${esc(plate)}</dd></div></dl></section>
     <section class="track-instruction ${v.status==="READY_FOR_RECEIVING"?"attention":""}"><small>สิ่งที่ต้องทำ</small><b>${esc(instruction)}</b></section>
     ${v.doorCode?`<section class="track-door"><span>ประตูรับสินค้า</span><b>${esc(v.doorCode)}</b></section>`:""}
     <section class="track-timeline"><h2>ความคืบหน้า</h2>${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${!step.done&&index===currentIndex?"current":""}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</section>
