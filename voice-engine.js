@@ -141,7 +141,7 @@
       const seq=["appointment",...this.appointmentKeys(item?.appointmentNo)];
       const mayReadDoor=item?.useDoor!==false&&this.settings.readDoor!==false;
       const doorKeys=mayReadDoor?this.doorKeys(item?.doorCode):[];
-      if(doorKeys.length)seq.push("pleaseAt","door",...doorKeys);
+      if(doorKeys.length)seq.push("pleaseAt",...doorKeys);
       else seq.push("pleaseNoDoor");
       if(this.settings.playThanks)seq.push("thanks");
       return seq;
