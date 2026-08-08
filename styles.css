@@ -4752,3 +4752,14 @@ button:disabled { cursor: wait; opacity: .7; }
   .inbound-workspace-r50 .driver-qr-caption .driver-qr-meta b{font-size:15px !important}
   .inbound-workspace-r50 .driver-qr-caption .driver-qr-meta strong{font-size:9.5px !important}
 }
+
+
+/* R60 - Admin driver tracking settings */
+.tracking-settings-form{display:grid;gap:16px}
+.tracking-option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;transition:opacity .18s ease}
+.tracking-option-grid.is-muted{opacity:.48}
+.tracking-number-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 18px;border:1px solid #e1e8f2;border-radius:16px;background:#fff;min-height:96px}
+.tracking-number-card>span{display:grid;gap:4px;min-width:0}.tracking-number-card b{color:#183b69;font-size:16px}.tracking-number-card small{color:#718097;line-height:1.4}
+.tracking-number-card>div{display:flex;align-items:center;gap:7px;flex:0 0 auto}.tracking-number-card input{width:86px;height:44px;border:1px solid #d7e0ed;border-radius:11px;padding:0 10px;text-align:right;font:700 17px/1 inherit;color:#174d9b;background:#fbfdff}.tracking-number-card em{font-style:normal;color:#687790;font-size:13px;min-width:44px}
+.tracking-setting-note{display:grid;gap:4px;padding:14px 16px;border-radius:14px;background:#f4f8ff;border:1px solid #dce9ff;color:#35567e}.tracking-setting-note b{font-size:14px}.tracking-setting-note span{font-size:13px;line-height:1.5;color:#667891}
+@media(max-width:820px){.tracking-option-grid{grid-template-columns:1fr}.tracking-number-card{min-height:82px;padding:14px}.driver-tracking-master{align-items:flex-start}.tracking-number-card input{width:78px}}

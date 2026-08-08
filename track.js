@@ -1338,7 +1338,7 @@ function render(data){
     ${v.doorCode?`<section class="track-door"><span>ประตูรับสินค้า</span><b>${esc(v.doorCode)}</b></section>`:""}
     <section class="track-timeline"><h2>ความคืบหน้า</h2>${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${!step.done&&index===currentIndex?"current":""}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</section>
     <section class="track-site-time"><div><small>เข้าพื้นที่</small><b>${esc(v.gateInAt?dateText(v.gateInAt):"-")}</b></div><div><small>${data.closed?"เวลารวมทั้งหมด":"อยู่ในพื้นที่แล้ว"}</small><b id="trackSiteDuration">${formatDuration(siteElapsedSeconds())}</b></div></section>
-    ${showGateOutQr?`<section class="track-gateout-qr"><div class="gateout-qr-code">${qrSvg}</div><div class="gateout-qr-copy"><small>พร้อมออกจากคลัง</small><b>ใช้สแกนออกจากคลังได้ เช่นเดียวกับที่ได้จากขาเข้าคลัง</b></div><div class="gateout-autoid"><small>Auto ID</small><strong>${esc(autoId)}</strong></div></section>`:""}
+    ${showGateOutQr?`<section class="track-gateout-qr"><div class="gateout-qr-code">${qrSvg}</div><div class="gateout-qr-copy"><small>พร้อมออกจากคลัง</small><b>ใช้สแกนเพื่อบันทึกเวลาออกจากคลัง</b></div><div class="gateout-autoid"><small>Auto ID</small><strong>${esc(autoId)}</strong></div></section>`:""}
     ${data.closed&&gateOut?`<section class="track-complete"><small>ออกจากพื้นที่</small><b>${esc(gateOut)}</b></section>`:""}
     <section class="track-expiry"><span>${data.closed?"ลิงก์นี้ใช้ตรวจสอบย้อนหลังได้ถึง":"ติดตามได้ถึง"}</span><b>${esc(expiry)}</b></section>
   </article>`;

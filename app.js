@@ -1571,7 +1571,7 @@ async function confirmInboundSubmit(autoId,source){
 
 const inboundTrackingQrCache=new Map();
 function trackingQrSvg(url){if(inboundTrackingQrCache.has(url))return inboundTrackingQrCache.get(url);const svg=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;inboundTrackingQrCache.set(url,svg);if(inboundTrackingQrCache.size>24)inboundTrackingQrCache.delete(inboundTrackingQrCache.keys().next().value);return svg}
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r55`,location.href).href}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r60`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
@@ -1749,12 +1749,12 @@ async function renderAdmin() {
 }
 
 function renderAdminShell(){
-  const tabs=[["users","ผู้ใช้งาน"],["workflow","ขั้นตอนงาน"],["doors","ประตู"],["shifts","กะทำงาน"],["alerts","เวลาแจ้งเตือน"],["data","การใช้ข้อมูล"],["queue","จอคิว"]];
+  const tabs=[["users","ผู้ใช้งาน"],["workflow","ขั้นตอนงาน"],["doors","ประตู"],["shifts","กะทำงาน"],["alerts","เวลาแจ้งเตือน"],["data","การใช้ข้อมูล"],["tracking","ติดตามคนขับ"],["queue","จอคิว"]];
   $("pageContent").innerHTML=`<section class="admin-hero"><div><span class="eyebrow">ศูนย์ควบคุมระบบ</span><h2>ตั้งค่าการทำงาน</h2><p>การเปลี่ยนขั้นตอนและกะมีผลกับงานใหม่ ประวัติงานเดิมยังคงเดิม</p></div><span class="admin-build">พร้อมใช้งาน</span></section><nav class="admin-tabs">${tabs.map(([id,label])=>`<button data-admin-tab="${id}" class="${adminState.tab===id?"active":""}">${label}</button>`).join("")}</nav><section id="adminPanel" class="admin-panel"></section>`;
   document.querySelectorAll("[data-admin-tab]").forEach(button=>button.addEventListener("click",()=>{adminState.tab=button.dataset.adminTab;renderAdminShell()}));renderAdminPanel();
 }
 
-function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="data")renderAdminDataUsage();else renderAdminQueue()}
+function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="tracking")renderAdminTracking();else renderAdminQueue()}
 
 function renderAdminUsers(){const users=adminState.data.users||[];$("adminPanel").innerHTML=`<div class="admin-section-head"><div><h3>ผู้ใช้งานและสิทธิ์</h3><p>บัญชีที่จัดการจากหน้านี้จะไม่ถูก PASS Sheet เขียนทับ</p></div><button id="addAdminUser" class="primary">เพิ่มผู้ใช้งาน</button></div><div class="admin-table users-admin-table"><div class="admin-table-row admin-table-header"><span>ชื่อผู้ใช้</span><span>สิทธิ์</span><span>ที่มา</span><span>สถานะ</span><span></span></div>${users.map(user=>`<div class="admin-table-row"><b>${escapeHtml(user.name)}</b><span>${roleLabel(user.access_rights)}</span><span>${user.managed_source==="ADMIN"?"หน้า Admin":"PASS Sheet"}</span><span class="admin-status ${user.is_active?"on":"off"}">${user.is_active?"ใช้งาน":"ปิดใช้งาน"}</span><span class="admin-row-actions"><button data-edit-user="${escapeHtml(user.user_id)}">แก้ไข</button><button data-toggle-user="${escapeHtml(user.user_id)}">${user.is_active?"ปิด":"เปิด"}</button></span></div>`).join("")}</div>`;$("addAdminUser").addEventListener("click",()=>editAdminUser());document.querySelectorAll("[data-edit-user]").forEach(button=>button.addEventListener("click",()=>editAdminUser(users.find(user=>user.user_id===button.dataset.editUser))));document.querySelectorAll("[data-toggle-user]").forEach(button=>button.addEventListener("click",()=>toggleAdminUser(users.find(user=>user.user_id===button.dataset.toggleUser))))}
 
@@ -1777,21 +1777,36 @@ function timeToMinute(value){const [hour,minute]=String(value||"").split(":").ma
 
 function renderAdminAlerts(){const stages=[['GATE_TO_DOCUMENT','Gate In → ยื่นเอกสาร'],['DOCUMENT_TO_RECEIVING_START','ยื่นเอกสาร → เริ่มตรวจรับ'],['RECEIVING_DURATION','ระยะเวลาตรวจรับ'],['RECEIVING_TO_RETURN','รับสินค้าเสร็จ → รับเอกสารคืน'],['RETURN_TO_GATE_OUT','รับเอกสารคืน → Gate Out'],['TOTAL_IN_SITE','เวลารวมในพื้นที่']],levels=[['NORMAL','ปกติ','#59A63E'],['WATCH','เฝ้าระวัง','#F7AA12'],['WARNING','เตือน','#FB5B82'],['URGENT','เร่งด่วน','#D5007F'],['CRITICAL','วิกฤต','#D9304F']],existing=new Map((adminState.data.alerts||[]).map(rule=>[`${rule.stage_code}:${rule.level_code}`,rule]));$("adminPanel").innerHTML=`<div class="admin-section-head"><div><h3>เวลาแจ้งเตือน</h3><p>กำหนดเป็นนาที สีและเสียงของแต่ละช่วง เวลาในแถวเดียวกันต้องเพิ่มขึ้น</p></div></div><form id="alertsForm" class="alerts-admin-form">${stages.map(([stage,label])=>`<fieldset data-alert-stage="${stage}"><legend>${label}</legend><div class="alert-level-grid">${levels.map(([level,levelLabel,color],index)=>{const rule=existing.get(`${stage}:${level}`);return `<label><span>${levelLabel}</span><input data-alert-level="${level}" type="number" min="0" step="1" value="${Math.round(Number(rule?.start_seconds??[0,30,60,90,120][index]*60)/60)}"><small>นาที</small><input data-alert-color type="color" value="${escapeHtml(rule?.color||color)}"><input data-alert-sound type="checkbox" ${rule?.sound_enabled?"checked":""}><small>เสียง</small></label>`}).join("")}</div></fieldset>`).join("")}<div class="admin-form-actions"><button class="primary" type="submit">บันทึกเวลาแจ้งเตือน</button></div></form>`;$("alertsForm").addEventListener("submit",event=>{event.preventDefault();const rules=[];document.querySelectorAll("[data-alert-stage]").forEach(field=>field.querySelectorAll("[data-alert-level]").forEach(input=>{const label=input.closest("label");rules.push({stageCode:field.dataset.alertStage,levelCode:input.dataset.alertLevel,startSeconds:Math.round(Number(input.value)*60),color:label.querySelector("[data-alert-color]").value,soundEnabled:label.querySelector("[data-alert-sound]").checked,repeatSeconds:null,isActive:true})}));adminMutation("/api/admin/alerts",{rules})})}
 
-function renderAdminQueue(){
+function trackingNumber(value,fallback,min,max){const n=Number(value);return Number.isFinite(n)?Math.min(max,Math.max(min,Math.round(n))):fallback}
+function renderAdminTracking(){
   const panel=$("adminPanel");if(!panel)return;
   const tracking=adminState.data.tracking||{},trackingEnabled=tracking.enabled!==false&&Number(tracking.enabled)!==0;
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง อ่านข้อมูลอย่างเดียว ไม่เปลี่ยนสถานะงาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260808-r49" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  const first=trackingNumber(tracking.firstDisplaySeconds,15,8,60),repeat=trackingNumber(tracking.repeatDisplaySeconds,20,8,60),maxHours=trackingNumber(tracking.maxHours,24,1,168),afterOut=trackingNumber(tracking.afterGateOutHours,2,0,48);
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>การติดตามสำหรับคนขับ</h3><p>กำหนดการแสดง QR และอายุการติดตามจากหน้านี้ โดยไม่ต้องแก้ค่าที่ระบบเบื้องหลัง</p></div></div>
+  <form id="trackingSettingsForm" class="tracking-settings-form">
+    <section class="driver-tracking-master ${trackingEnabled?"is-on":"is-off"}">
+      <div><small>การติดตามสถานะสำหรับคนขับ</small><h3 id="trackingMasterTitle">${trackingEnabled?"เปิดใช้งาน":"ปิดใช้งาน"}</h3><p id="trackingMasterText">${trackingEnabled?"หน้า Inbound สามารถแสดง QR ให้คนขับติดตามสถานะรถได้":"หน้า Inbound จะไม่แสดง QR ติดตามสำหรับคนขับ"}</p><strong>การตั้งค่านี้ไม่กระทบกล้องสแกน Auto ID ของเจ้าหน้าที่</strong></div>
+      <label class="large-toggle"><input id="trackingMasterSwitch" type="checkbox" ${trackingEnabled?"checked":""}><span></span></label>
+    </section>
+    <section id="trackingOptions" class="tracking-option-grid ${trackingEnabled?"":"is-muted"}">
+      <label class="tracking-number-card"><span><b>QR รอบแรก</b><small>เวลาที่ QR แสดงหลังยื่นเอกสารสำเร็จ</small></span><div><input id="trackingFirstSeconds" type="number" min="8" max="60" step="1" value="${first}"><em>วินาที</em></div></label>
+      <label class="tracking-number-card"><span><b>QR เมื่อสแกนซ้ำ</b><small>เวลาที่แสดงอีกครั้งเมื่อสแกนรถคันเดิม</small></span><div><input id="trackingRepeatSeconds" type="number" min="8" max="60" step="1" value="${repeat}"><em>วินาที</em></div></label>
+      <label class="tracking-number-card"><span><b>อายุการติดตามสูงสุด</b><small>นับจากช่วงเริ่มงานของรถคันนั้น</small></span><div><input id="trackingMaxHours" type="number" min="1" max="168" step="1" value="${maxHours}"><em>ชั่วโมง</em></div></label>
+      <label class="tracking-number-card"><span><b>หลังรถออกจากพื้นที่</b><small>ให้คนขับเปิดดูสถานะย้อนหลังได้อีกช่วงหนึ่ง</small></span><div><input id="trackingAfterOutHours" type="number" min="0" max="48" step="1" value="${afterOut}"><em>ชั่วโมง</em></div></label>
+    </section>
+    <div class="tracking-setting-note"><b>การแสดง QR ซ้ำไม่สร้างรายการใหม่ในฐานข้อมูล</b><span>ระบบใช้ข้อมูลรถคันเดิมและรอบ Gate In เดิม การปรับเวลานี้จึงมีผลเฉพาะระยะเวลาที่ QR อยู่บนหน้าจอ</span></div>
+    <div class="admin-form-actions"><button class="primary" type="submit">บันทึกการติดตามคนขับ</button></div>
+  </form>
+  <section class="driver-track-admin ${trackingEnabled?"":"is-muted"}"><header><div><h3>ลิงก์สำหรับคนขับ</h3><p>ใช้ค้นหาและสร้างลิงก์สำรองสำหรับรถที่กำลังปฏิบัติงาน</p></div></header><div class="driver-track-create"><label><span>Auto ID หรือหมายเลขนัดหมาย</span><input id="trackingSearch" type="text" autocomplete="off" placeholder="ระบุข้อมูลรถ" ${trackingEnabled?"":"disabled"}></label><button id="trackingCreate" class="primary" type="button" ${trackingEnabled?"":"disabled"}>สร้างลิงก์</button></div><div id="trackingResult" class="driver-track-result" hidden></div></section>`;
+  const master=$("trackingMasterSwitch"),options=$("trackingOptions"),sync=()=>{const on=master.checked;options?.classList.toggle("is-muted",!on);["trackingFirstSeconds","trackingRepeatSeconds","trackingMaxHours","trackingAfterOutHours"].forEach(id=>{const el=$(id);if(el)el.disabled=!on});$("trackingMasterTitle").textContent=on?"เปิดใช้งาน":"ปิดใช้งาน";$("trackingMasterText").textContent=on?"หน้า Inbound สามารถแสดง QR ให้คนขับติดตามสถานะรถได้":"หน้า Inbound จะไม่แสดง QR ติดตามสำหรับคนขับ";master.closest(".driver-tracking-master")?.classList.toggle("is-on",on);master.closest(".driver-tracking-master")?.classList.toggle("is-off",!on)};master?.addEventListener("change",sync);sync();
+  $("trackingSettingsForm")?.addEventListener("submit",event=>{event.preventDefault();adminMutation("/api/admin/tracking",{enabled:master.checked,firstDisplaySeconds:trackingNumber($("trackingFirstSeconds").value,15,8,60),repeatDisplaySeconds:trackingNumber($("trackingRepeatSeconds").value,20,8,60),maxHours:trackingNumber($("trackingMaxHours").value,24,1,168),afterGateOutHours:trackingNumber($("trackingAfterOutHours").value,2,0,48)})});
+  $("trackingCreate")?.addEventListener("click",createDriverTrackingLink);$("trackingSearch")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();createDriverTrackingLink()}})
+}
+function renderAdminQueue(){
+  const panel=$("adminPanel");if(!panel)return;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง อ่านข้อมูลอย่างเดียว ไม่เปลี่ยนสถานะงาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260808-r60" target="_blank" rel="noopener">เปิดจอคิว</a></div>
   <section class="admin-queue-guide"><article><b>เริ่มเรียกคิวเมื่อใด</b><p>เมื่อพนักงานกด “เริ่มตรวจรับ” รถคันนั้นจะขึ้นเป็นรายการเรียกคิวโดยอัตโนมัติ</p></article><article><b>กรณีใช้ประตู</b><p>ถ้ามีการระบุประตู จอคิวจะแสดงประตู หากไม่ได้กำหนดให้ใช้ประตู จอจะไม่แสดงช่องประตู</p></article><article><b>ไม่กระทบงานเดิม</b><p>จอคิวอ่านข้อมูลผ่านช่องทางแยกและไม่มีการบันทึกข้อมูลเพิ่มจากการเปิดจอ</p></article></section>
-  <section class="driver-tracking-master ${trackingEnabled?"is-on":"is-off"}">
-    <div><small>QR ติดตามสถานะสำหรับคนขับ</small><h3 id="trackingMasterTitle">${trackingEnabled?"เปิดใช้งาน":"ปิดใช้งาน"}</h3><p id="trackingMasterText">${trackingEnabled?"หลังยื่นเอกสารสำเร็จ หน้า Inbound จะแสดง QR ให้คนขับติดตามรถของตนเอง":"หน้า Inbound จะไม่สร้างหรือแสดง QR ติดตามสำหรับคนขับ"}</p><strong>สวิตช์นี้ไม่กระทบ QR Scanner ที่เจ้าหน้าที่ใช้สแกน Auto ID</strong></div>
-    <label class="large-toggle"><input id="trackingMasterSwitch" type="checkbox" ${trackingEnabled?"checked":""}><span></span></label>
-  </section>
-  <section class="driver-track-admin ${trackingEnabled?"":"is-muted"}"><header><div><h3>ลิงก์สำหรับคนขับ</h3><p>ใช้เป็นเครื่องมือสำรองสำหรับผู้ดูแล ลิงก์จะเปิดได้เฉพาะเมื่อระบบ QR คนขับเปิดใช้งาน</p></div></header><div class="driver-track-create"><label><span>Auto ID หรือหมายเลขนัดหมาย</span><input id="trackingSearch" type="text" autocomplete="off" placeholder="ระบุข้อมูลรถ" ${trackingEnabled?"":"disabled"}></label><button id="trackingCreate" class="primary" type="button" ${trackingEnabled?"":"disabled"}>สร้างลิงก์</button></div><div id="trackingResult" class="driver-track-result" hidden></div></section>
-  <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(new URL("./queue.html?v=20260808-r49",location.href).href)}</code></div>`;
-  const master=$("trackingMasterSwitch");
-  master?.addEventListener("change",async()=>{master.disabled=true;try{await adminMutation("/api/admin/tracking",{enabled:master.checked})}finally{master.disabled=false}});
-  $("trackingCreate")?.addEventListener("click",createDriverTrackingLink);
-  $("trackingSearch")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();createDriverTrackingLink()}});
+  <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(new URL("./queue.html?v=20260808-r60",location.href).href)}</code></div>`;
 }
 async function renderAdminDataUsage(){
   const panel=$("adminPanel");if(!panel)return;
