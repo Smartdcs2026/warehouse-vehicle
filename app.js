@@ -1828,6 +1828,14 @@ function renderAdminTracking(){
   $("trackingCreate")?.addEventListener("click",createDriverTrackingLink);$("trackingSearch")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();createDriverTrackingLink()}})
 }
 
+function renderAdminQueue(){
+  const panel=$("adminPanel");if(!panel)return;
+  const queueUrl=new URL("./queue.html?v=20260808-r72",location.href).href;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง อ่านข้อมูลอย่างเดียว ไม่เปลี่ยนสถานะงาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260808-r72" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  <section class="admin-queue-guide"><article><b>เริ่มเรียกคิวเมื่อใด</b><p>เมื่อพนักงานกด “เริ่มตรวจรับ” รถคันนั้นจะขึ้นเป็นรายการเรียกคิวโดยอัตโนมัติ</p></article><article><b>กรณีใช้ประตู</b><p>ถ้ามีการระบุประตู จอคิวจะแสดงประตู หากไม่ได้กำหนดให้ใช้ประตู จอจะไม่แสดงช่องประตู</p></article><article><b>ไม่กระทบงานเดิม</b><p>จอคิวอ่านข้อมูลผ่านช่องทางแยกและไม่มีการบันทึกข้อมูลเพิ่มจากการเปิดจอ</p></article></section>
+  <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
+}
+
 async function renderAdminDataUsage(){
   const panel=$("adminPanel");if(!panel)return;
   panel.innerHTML=`<div class="admin-data-loading"><span></span><b>กำลังตรวจสอบการใช้ข้อมูล</b></div>`;
