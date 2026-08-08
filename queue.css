@@ -101,3 +101,6 @@ html,body,.queue-shell{overscroll-behavior:none}
   .next-panel,.work-panel{padding:4px 6px}.panel-title h2{font-size:16px}.title-with-icon small{font-size:7px}
   .queue-footer{font-size:8px;padding:0 8px}
 }
+
+/* Round 74 — queue voice */
+#soundButton:disabled{opacity:.68;cursor:not-allowed;filter:saturate(.55)}

@@ -9,7 +9,10 @@ const STALE_AFTER_MS = 20000;
 
 let lastCallKey = sessionStorage.getItem("queueLastCallKey") || "";
 let audioEnabled = false;
-let audioCtx = null;
+let voiceSettings = null;
+let voiceAdminEnabled = false;
+const VOICE_SEEN_STORAGE = "queueVoiceSeenCallsR74";
+let voiceSeenCalls = loadVoiceSeenCalls();
 let loading = false;
 let latestData = null;
 let lastRotateAt = Date.now();
@@ -185,10 +188,16 @@ function normalizeQueueData(raw) {
   const calling = raw.calling && typeof raw.calling === "object" ? normalizeItem(raw.calling) : null;
   const counts = raw.counts && typeof raw.counts === "object" ? raw.counts : {};
 
+  const recentCalls = Array.isArray(raw.recentCalls)
+    ? raw.recentCalls.filter(item => item && typeof item === "object").map(normalizeItem).sort((a,b)=>(a.receivingStartedAt||0)-(b.receivingStartedAt||0))
+    : (calling ? [calling] : []);
+
   return {
     success: true,
     generatedAt: raw.generatedAt ?? Date.now(),
     calling,
+    recentCalls,
+    voice: raw.voice && typeof raw.voice === "object" ? raw.voice : null,
     items,
     counts: {
       READY_FOR_RECEIVING: safeCount(counts.READY_FOR_RECEIVING, items, "READY_FOR_RECEIVING"),
@@ -202,6 +211,8 @@ function normalizeQueueData(raw) {
 function normalizeItem(item) {
   return {
     ...item,
+    autoId: cleanText(item.autoId),
+    callId: cleanText(item.callId),
     appointmentNo: cleanText(item.appointmentNo),
     companyName: cleanText(item.companyName),
     vehiclePlate: cleanText(item.vehiclePlate),
@@ -225,10 +236,12 @@ function safeCount(value, items, status) {
 }
 
 function render(data) {
+  syncVoiceSettings(data.voice);
   renderCall(data.calling);
   renderSummary(data);
   renderNext(data);
   renderWork(data);
+  processVoiceCalls(data);
   if ($("updatedAt")) $("updatedAt").textContent = "อัปเดตล่าสุด " + formatTime(data.generatedAt);
 }
 
@@ -295,7 +308,6 @@ function renderCall(item) {
     panel.classList.remove("flash");
     void panel.offsetWidth;
     panel.classList.add("flash");
-    if (audioEnabled) announceCall(item);
   }
 }
 
@@ -483,67 +495,83 @@ function esc(value) {
   })[char]);
 }
 
-async function toggleSound() {
-  audioEnabled = !audioEnabled;
-  const button = $("soundButton");
-  if (!button) return;
+function loadVoiceSeenCalls(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(VOICE_SEEN_STORAGE)||"{}");
+    const now=Date.now(),clean={};
+    for(const [key,value] of Object.entries(raw||{}))if(key&&now-Number(value||0)<6*3600*1000)clean[key]=Number(value);
+    return clean;
+  }catch{return{}}
+}
+function saveVoiceSeenCalls(){
+  const entries=Object.entries(voiceSeenCalls).sort((a,b)=>b[1]-a[1]).slice(0,100);
+  voiceSeenCalls=Object.fromEntries(entries);
+  try{localStorage.setItem(VOICE_SEEN_STORAGE,JSON.stringify(voiceSeenCalls))}catch{}
+}
+function voiceCallKey(item){return String(item?.callId||[item?.autoId||item?.appointmentNo||"",item?.receivingStartedAt||""].join(":"))}
+function markVoiceCallSeen(item){const key=voiceCallKey(item);if(!key)return;voiceSeenCalls[key]=Date.now();saveVoiceSeenCalls()}
+function isVoiceCallSeen(item){const key=voiceCallKey(item);return Boolean(key&&voiceSeenCalls[key])}
+function markCurrentCallsSeen(){for(const item of latestData?.recentCalls||[])markVoiceCallSeen(item)}
 
-  if (!audioEnabled) {
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    button.innerHTML = '<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง';
-    button.classList.remove("sound-on");
+function syncVoiceSettings(settings){
+  const previous=voiceAdminEnabled;
+  voiceSettings=settings||voiceSettings||{enabled:false};
+  voiceAdminEnabled=voiceSettings?.enabled===true;
+  if(window.SmartQueueVoice&&voiceSettings)window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});
+  if(previous&&!voiceAdminEnabled){
+    audioEnabled=false;
+    window.SmartQueueVoice?.clearPending?.();
+  }
+  updateSoundButton();
+}
+
+function updateSoundButton(){
+  const button=$("soundButton");if(!button)return;
+  if(!voiceAdminEnabled){
+    button.disabled=true;button.classList.remove("sound-on");
+    button.innerHTML='<span class="ui-sound-mark off" aria-hidden="true"></span> เสียงถูกปิด';
+    button.title="ผู้ดูแลระบบปิดเสียงประกาศ";
     return;
   }
+  button.disabled=false;button.title="";
+  if(audioEnabled){button.classList.add("sound-on");button.innerHTML='<span class="ui-sound-mark on" aria-hidden="true"></span> ระบบเสียงพร้อม'}
+  else{button.classList.remove("sound-on");button.innerHTML='<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง'}
+}
 
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    await audioCtx.resume();
-    beep();
-    button.innerHTML = '<span class="ui-sound-mark on" aria-hidden="true"></span> เปิดเสียงแล้ว';
-    button.classList.add("sound-on");
-  } catch {
-    audioEnabled = false;
-    button.innerHTML = '<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง';
-    button.classList.remove("sound-on");
+async function toggleSound() {
+  const button=$("soundButton");if(!button||!voiceAdminEnabled)return;
+  if(audioEnabled){
+    audioEnabled=false;window.SmartQueueVoice?.clearPending?.();updateSoundButton();return;
+  }
+  button.disabled=true;button.innerHTML='<span class="ui-sound-mark" aria-hidden="true"></span> กำลังเตรียมเสียง';
+  try{
+    if(!window.SmartQueueVoice)throw new Error("ไม่พบระบบเสียง");
+    window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});
+    await window.SmartQueueVoice.unlockAndPrepare();
+    markCurrentCallsSeen();
+    audioEnabled=true;
+    updateSoundButton();
+    if(voiceSettings?.playDing!==false)await window.SmartQueueVoice.playSequence(["ding"]);
+  }catch(error){
+    audioEnabled=false;updateSoundButton();
+    setHealth("error","เปิดเสียงไม่สำเร็จ",error?.message||"โหลดชุดเสียงไม่สำเร็จ");
+  }finally{button.disabled=!voiceAdminEnabled}
+}
+
+function processVoiceCalls(data){
+  if(!audioEnabled||!voiceAdminEnabled||!window.SmartQueueVoice)return;
+  const calls=Array.isArray(data?.recentCalls)?data.recentCalls:[];
+  for(const item of calls){
+    if(!item?.appointmentNo||isVoiceCallSeen(item))continue;
+    const accepted=window.SmartQueueVoice.enqueue(item);
+    if(accepted)markVoiceCallSeen(item);
   }
 }
 
-function beep() {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const now = audioCtx.currentTime;
-    [0, 0.28].forEach((delay, index) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.value = index ? 980 : 820;
-      gain.gain.setValueAtTime(0.001, now + delay);
-      gain.gain.exponentialRampToValueAtTime(0.13, now + delay + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.22);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now + delay);
-      osc.stop(now + delay + 0.25);
-    });
-  } catch {}
-}
-
-function announceCall(item) {
-  beep();
-  if (!("speechSynthesis" in window)) return;
-
-  try {
-    window.speechSynthesis.cancel();
-    const appt = String(item.appointmentNo || "").split("").join(" ");
-    const company = item.companyName || "";
-    const door = item.doorCode || "";
-    const text = `หมายเลขนัดหมาย ${appt}${company ? ` บริษัท ${company}` : ""} กรุณาเข้ารับการตรวจรับ${door ? ` ที่ประตู ${door}` : ""}`;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "th-TH";
-    utterance.rate = 0.88;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    setTimeout(() => window.speechSynthesis.speak(utterance), 620);
-  } catch {}
+function announceCall(item){
+  if(!audioEnabled||!voiceAdminEnabled||!window.SmartQueueVoice||!item)return false;
+  if(isVoiceCallSeen(item))return false;
+  const accepted=window.SmartQueueVoice.enqueue(item);if(accepted)markVoiceCallSeen(item);return accepted;
 }
 
 function fitAppointmentNumber(el, value) {
