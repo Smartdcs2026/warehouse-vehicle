@@ -1571,7 +1571,7 @@ async function confirmInboundSubmit(autoId,source){
 
 const inboundTrackingQrCache=new Map();
 function trackingQrSvg(url){if(inboundTrackingQrCache.has(url))return inboundTrackingQrCache.get(url);const svg=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;inboundTrackingQrCache.set(url,svg);if(inboundTrackingQrCache.size>24)inboundTrackingQrCache.delete(inboundTrackingQrCache.keys().next().value);return svg}
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r53`,location.href).href}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r55`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
