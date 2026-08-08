@@ -1315,7 +1315,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260808-r49",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260808-r64",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; openApp(); } catch { clearSession(); } }
 }
 
@@ -1571,7 +1571,7 @@ async function confirmInboundSubmit(autoId,source){
 
 const inboundTrackingQrCache=new Map();
 function trackingQrSvg(url){if(inboundTrackingQrCache.has(url))return inboundTrackingQrCache.get(url);const svg=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;inboundTrackingQrCache.set(url,svg);if(inboundTrackingQrCache.size>24)inboundTrackingQrCache.delete(inboundTrackingQrCache.keys().next().value);return svg}
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r60`,location.href).href}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r64`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
@@ -1823,6 +1823,26 @@ function renderDataActivity(items){if(!items.length)return`<div class="empty-sta
 function dataActivityReference(item){const ref=String(item.reference||"").trim(),detail=String(item.detail||"").trim();return [ref,detail&&dataActivityDetail(detail)].filter(Boolean).join(" · ")||"–"}
 function dataActivityDetail(value){return({COMPLETED:"สำเร็จ",RUNNING:"กำลังดำเนินการ",FAILED:"ไม่สำเร็จ",REJECTED:"ไม่รับรายการ"})[value]||value}
 function dataActivityLabel(code){return({GATE_IN:"รถเข้าพื้นที่",GATE_OUT:"รถออกจากพื้นที่",DOCUMENT_SUBMITTED:"ยื่นเอกสาร",RECEIVING_STARTED:"เริ่มตรวจรับ",RECEIVING_COMPLETED:"รับสินค้าเสร็จ",DOCUMENT_RETURNED:"รับเอกสารคืน",ADMIN_USER_SAVE:"บันทึกผู้ใช้งาน",ADMIN_USER_STATUS:"เปลี่ยนสถานะผู้ใช้",ADMIN_WORKFLOW_SAVE:"บันทึกขั้นตอนงาน",ADMIN_DOORS_SAVE:"บันทึกประตู",ADMIN_SHIFTS_SAVE:"บันทึกกะ",ADMIN_ALERTS_SAVE:"บันทึกเวลาแจ้งเตือน",SYNC_GATE:"รับข้อมูลรถ"})[code]||"อัปเดตข้อมูล"}
+
+async function createDriverTrackingLink(){
+  const input=$("trackingSearch"),button=$("trackingCreate"),resultBox=$("trackingResult");
+  const search=String(input?.value||"").trim();
+  if(!search){await showNotice("warning","กรุณาระบุ Auto ID หรือหมายเลขนัดหมาย");input?.focus();return}
+  if(button?.disabled)return;
+  const originalText=button?.textContent||"สร้างลิงก์";
+  if(button){button.disabled=true;button.textContent="กำลังสร้าง"}
+  try{
+    const result=await api("/api/track/link",{method:"POST",body:{search}}),token=String(result?.token||"").trim();
+    if(!token)throw new Error("ไม่สามารถสร้างลิงก์ติดตามได้");
+    const vehicle=result.vehicle||{},url=new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r64`,location.href).href;
+    if(resultBox){
+      resultBox.hidden=false;
+      resultBox.innerHTML=`<div><small>หมายเลขนัดหมาย</small><b>${escapeHtml(vehicle.appointmentNo||vehicle.autoId||search)}</b><small>${escapeHtml(joinText(vehicle.companyName,vehicle.vehiclePlate,vehicle.province))}</small></div><label><span>ลิงก์ติดตาม</span><input id="trackingGeneratedLink" value="${escapeHtml(url)}" readonly></label><div class="driver-track-actions"><button id="trackingCopyLink" class="outline-button" type="button">คัดลอกลิงก์</button><a class="primary" href="${escapeHtml(url)}" target="_blank" rel="noopener">เปิดหน้า Track</a></div>`;
+      $("trackingCopyLink")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(url);await showNotice("success","คัดลอกลิงก์แล้ว")}catch{const link=$("trackingGeneratedLink");link?.focus();link?.select();await showNotice("info","เลือกลิงก์ไว้แล้ว สามารถคัดลอกได้")}});
+    }
+  }catch(error){if(resultBox)resultBox.hidden=true;await showNotice("error",error.message||"สร้างลิงก์ไม่สำเร็จ")}
+  finally{if(button){button.disabled=false;button.textContent=originalText}}
+}
 
 async function adminMutation(path,body){if(adminState.busy)return;adminState.busy=true;try{Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});const result=await api(path,{method:"POST",body});adminState.data=await api("/api/admin/settings");renderAdminShell();await Swal.fire({icon:"success",title:result.message||"บันทึกแล้ว",timer:1700,showConfirmButton:false,customClass:swalClasses(),width:360})}catch(error){await showNotice("error",error.message)}finally{adminState.busy=false}}
 
