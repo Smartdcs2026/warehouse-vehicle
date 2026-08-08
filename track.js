@@ -1269,7 +1269,8 @@ const cfg=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
-const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v1";
+const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v2";
+const TRACK_API_VERSION="2026-08-track-v1";
 
 document.addEventListener("DOMContentLoaded",()=>{
   siteClockTimer=window.setInterval(updateSiteClock,1000);
@@ -1296,7 +1297,7 @@ function restoreTrackSnapshot(){
     const raw=sessionStorage.getItem(TRACK_SNAPSHOT_KEY);if(!raw)return false;
     const item=JSON.parse(raw);
     if(!item||item.key!==snapshotTokenKey()||!item.data?.success||Date.now()-Number(item.savedAt||0)>10*60*1000){clearTrackSnapshot();return false}
-    render(item.data);lastFingerprint=JSON.stringify({v:item.data.vehicle,t:item.data.timeline,closed:item.data.closed,expiresAt:item.data.expiresAt,instruction:item.data.instruction,lifecycle:item.data.lifecycle});hasRendered=true;lastOk=Number(item.savedAt)||Date.now();
+    render(item.data);lastFingerprint=trackFingerprint(item.data);hasRendered=true;lastOk=Number(item.savedAt)||Date.now();
     setFresh("wait",navigator.onLine?"กำลังตรวจสอบข้อมูลล่าสุด":"แสดงข้อมูลล่าสุดที่มี");
     $("trackUpdated").textContent=`ข้อมูลล่าสุด ${new Date(lastOk).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
     return true;
@@ -1321,8 +1322,9 @@ async function loadTrack(force){
       if(data.reason==="INVALID_LINK"||data.reason==="TRACK_NOT_FOUND"){clearTrackSnapshot();return showTerminal("ไม่สามารถใช้ลิงก์นี้ได้",data.message||"กรุณาสแกน QR Code ใหม่จากจุดบริการ")}
       throw new Error(data.message||"ตรวจสอบสถานะไม่สำเร็จ");
     }
+    validateTrackPayload(data);
     lastOk=Date.now();retryDelay=15000;saveTrackSnapshot(data);
-    const fingerprint=JSON.stringify({v:data.vehicle,t:data.timeline,closed:data.closed,expiresAt:data.expiresAt,instruction:data.instruction,lifecycle:data.lifecycle});
+    const fingerprint=trackFingerprint(data);
     if(force||fingerprint!==lastFingerprint||!hasRendered){render(data);lastFingerprint=fingerprint;hasRendered=true}
     setFresh(data.closed?"done":"",data.closed?"เสร็จสิ้น":"ข้อมูลล่าสุด");
     $("trackUpdated").textContent=`อัปเดต ${timeText(data.generatedAt)}`;
@@ -1337,6 +1339,16 @@ async function loadTrack(force){
       if(online)retryDelay=Math.min(60000,retryDelay*2);
     }else{showRetry(error.name==="AbortError"?"การเชื่อมต่อใช้เวลานานเกินไป":error.message);schedule(retryDelay);retryDelay=Math.min(60000,retryDelay*2)}
   }finally{inFlight=false}
+}
+
+function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
+function validateTrackPayload(data){
+  if(data?.apiVersion&&data.apiVersion!==TRACK_API_VERSION)throw new Error("หน้าแสดงผลและระบบติดตามเป็นคนละรุ่น กรุณาเปิดหน้าใหม่");
+  const v=data?.vehicle;
+  if(!v||!v.autoId||!Number(v.gateInAt)||!Array.isArray(data.timeline))throw new Error("ข้อมูลติดตามไม่ครบถ้วน กรุณาลองใหม่");
+  if(v.status==="CLOSED"&&!data.closed)throw new Error("สถานะการติดตามยังไม่สอดคล้อง กรุณาลองใหม่");
+  const generatedAt=Number(data.generatedAt||0),now=Math.floor(Date.now()/1000);
+  if(generatedAt&&now-generatedAt>120)throw new Error("ข้อมูลที่ได้รับเก่าเกินไป กรุณาลองใหม่");
 }
 
 function render(data){
@@ -1354,7 +1366,7 @@ function render(data){
   $("trackMain").innerHTML=`<article class="track-card ${showGateOutQr?"has-gateout-qr":""}">
     <section class="track-status ${data.closed?"closed":""}">
       <small>สถานะปัจจุบัน</small><h1>${esc(v.statusLabel||"กำลังดำเนินการ")}</h1>
-      <p>${data.closed?"รถออกจากพื้นที่และสิ้นสุดขั้นตอนแล้ว":"หน้านี้อัปเดตสถานะให้อัตโนมัติ"}</p>
+      <p>${data.closed?"รถออกจากพื้นที่และสิ้นสุดขั้นตอนแล้ว":"สถานะจะอัปเดตให้อัตโนมัติ"}</p>
     </section>
     <section class="track-identity"><div><small>หมายเลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><dl class="track-identity-details"><div><dt>บริษัท</dt><dd>${esc(v.companyName||"ไม่ระบุบริษัท")}</dd></div>${v.driverName?`<div><dt>คนขับรถ</dt><dd>${esc(v.driverName)}</dd></div>`:""}<div><dt>ทะเบียนรถ</dt><dd>${esc(plate)}</dd></div></dl></section>
     <section class="track-instruction ${v.status==="READY_FOR_RECEIVING"?"attention":""}"><small>สิ่งที่ต้องทำ</small><b>${esc(instruction)}</b></section>
@@ -1388,7 +1400,7 @@ function instructionFor(status,door){
   if(status==="READY_FOR_RECEIVING")return"กรุณารอการเรียกเข้าตรวจรับ";
   if(status==="RECEIVING_IN_PROGRESS")return door?`กรุณาดำเนินการตรวจรับที่ประตู ${door}`:"กำลังตรวจรับสินค้า";
   if(status==="WAITING_DOCUMENT_RETURN")return"กรุณารอรับเอกสารคืน";
-  if(status==="WAITING_GATE_OUT")return"รับเอกสารแล้ว กรุณาดำเนินการออกจากพื้นที่";
+  if(status==="WAITING_GATE_OUT")return"รับเอกสารคืนแล้ว ใช้ QR ด้านล่างสำหรับออกจากคลัง";
   if(status==="CLOSED")return"รายการเสร็จสิ้นแล้ว";
   return"กรุณาตรวจสอบสถานะบนหน้านี้";
 }
