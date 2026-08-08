@@ -104,3 +104,7 @@ html,body,.queue-shell{overscroll-behavior:none}
 
 /* Round 74 — queue voice */
 #soundButton:disabled{opacity:.68;cursor:not-allowed;filter:saturate(.55)}
+
+/* Round 76: called vehicle marker */
+.next-item.is-called { box-shadow: inset 4px 0 0 rgba(247,170,18,.9); }
+.next-item.is-called .next-wait { font-weight:800; }

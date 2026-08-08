@@ -189,7 +189,7 @@ function normalizeQueueData(raw) {
   const counts = raw.counts && typeof raw.counts === "object" ? raw.counts : {};
 
   const recentCalls = Array.isArray(raw.recentCalls)
-    ? raw.recentCalls.filter(item => item && typeof item === "object").map(normalizeItem).sort((a,b)=>(a.receivingStartedAt||0)-(b.receivingStartedAt||0))
+    ? raw.recentCalls.filter(item => item && typeof item === "object").map(normalizeItem).sort((a,b)=>(a.calledAt||0)-(b.calledAt||0))
     : (calling ? [calling] : []);
 
   return {
@@ -214,6 +214,11 @@ function normalizeItem(item) {
     ...item,
     autoId: cleanText(item.autoId),
     callId: cleanText(item.callId),
+    callType: cleanText(item.callType),
+    reasonCode: cleanText(item.reasonCode),
+    callCount: Math.max(0, Number(item.callCount) || 0),
+    calledAt: Number(item.calledAt) || 0,
+    previousDoorCode: cleanText(item.previousDoorCode),
     appointmentNo: cleanText(item.appointmentNo),
     companyName: cleanText(item.companyName),
     vehiclePlate: cleanText(item.vehiclePlate),
@@ -258,7 +263,7 @@ function renderUnavailable() {
 function renderSummary(data) {
   const c = data.counts || {};
   const defs = [
-    ["รอ", "รอเรียกตรวจรับ", c.READY_FOR_RECEIVING || 0, "ready"],
+    ["รอ", "รอเข้าตรวจรับ", c.READY_FOR_RECEIVING || 0, "ready"],
     ["รับ", "กำลังตรวจรับ", c.RECEIVING_IN_PROGRESS || 0, "progress"],
     ["คืน", "รอรับเอกสารคืน", c.WAITING_DOCUMENT_RETURN || 0, "return"],
     ["ออก", "รอออกจากพื้นที่", c.WAITING_GATE_OUT || 0, "out"]
@@ -298,10 +303,11 @@ function renderCall(item) {
   $("callPlate").textContent = plateText(item);
   $("callDoor").textContent = item.doorCode || "–";
   doorBox.hidden = !item.doorCode;
-  $("callInstructionPrefix").textContent = "กรุณาเข้ารับการตรวจรับ";
+  const changedDoor=item.callType==="DOOR_CHANGED";
+  $("callInstructionPrefix").textContent = changedDoor ? "มีการเปลี่ยนประตู กรุณาเข้ารับการตรวจรับ" : item.callType==="RECALL" ? "เรียกอีกครั้ง กรุณาเข้ารับการตรวจรับ" : "กรุณาเข้ารับการตรวจรับ";
   $("callInstruction").textContent = item.doorCode ? `ที่ประตู ${item.doorCode}` : "ได้ทันที";
 
-  const key = [item.appointmentNo, item.receivingStartedAt].join(":");
+  const key = item.callId || [item.appointmentNo, item.calledAt].join(":");
   if (key !== lastCallKey) {
     lastCallKey = key;
     sessionStorage.setItem("queueLastCallKey", key);
@@ -358,14 +364,16 @@ function renderNext(data, animate = false) {
   const list = $("nextQueue");
   list.innerHTML = shown.length
     ? shown.map(nextItem).join("")
-    : '<div class="queue-empty">ไม่มีรถรอเรียกตรวจรับ</div>';
+    : '<div class="queue-empty">ไม่มีรถรอเข้าตรวจรับ</div>';
 
   if (animate) fadePage(list);
-  $("rotationLabel").textContent = pages > 1 ? `รอเรียกตรวจรับ ${nextPage + 1}/${pages}` : "";
+  $("rotationLabel").textContent = pages > 1 ? `รอเข้าตรวจรับ ${nextPage + 1}/${pages}` : "";
 }
 
 function nextItem(item) {
-  return `<article class="next-item"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(plateText(item))}</div><div class="next-wait">${shortDuration(item.elapsedSeconds)}</div></article>`;
+  const called=Number(item.calledAt||0)>0;
+  const waitText=called?`เรียกแล้ว ${Math.max(1,Number(item.callCount||1))} ครั้ง`:shortDuration(item.elapsedSeconds);
+  return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(plateText(item))}</div><div class="next-wait">${esc(waitText)}</div></article>`;
 }
 
 function renderWork(data, animate = false) {
@@ -510,7 +518,7 @@ function saveVoiceSeenCalls(){
   voiceSeenCalls=Object.fromEntries(entries);
   try{localStorage.setItem(VOICE_SEEN_STORAGE,JSON.stringify(voiceSeenCalls))}catch{}
 }
-function voiceCallKey(item){return String(item?.callId||[item?.autoId||item?.appointmentNo||"",item?.receivingStartedAt||""].join(":"))}
+function voiceCallKey(item){return String(item?.callId||[item?.autoId||item?.appointmentNo||"",item?.calledAt||item?.receivingStartedAt||""].join(":"))}
 function markVoiceCallSeen(item){const key=voiceCallKey(item);if(!key)return;voiceSeenCalls[key]=Date.now();saveVoiceSeenCalls()}
 function isVoiceCallSeen(item){const key=voiceCallKey(item);return Boolean(key&&voiceSeenCalls[key])}
 function markCurrentCallsSeen(){for(const item of latestData?.recentCalls||[])markVoiceCallSeen(item)}

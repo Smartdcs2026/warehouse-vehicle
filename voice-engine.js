@@ -138,7 +138,8 @@
     }
 
     bodySequence(item){
-      const seq=["appointment",...this.appointmentKeys(item?.appointmentNo)];
+      const isRecall=["RECALL","DOOR_CHANGED"].includes(String(item?.callType||"").toUpperCase());
+      const seq=[...(isRecall&&this.manifest?.files?.repeatAgain?["repeat"]:[]),"appointment",...this.appointmentKeys(item?.appointmentNo)];
       const mayReadDoor=item?.useDoor!==false&&this.settings.readDoor!==false;
       const doorKeys=mayReadDoor?this.doorKeys(item?.doorCode):[];
       if(doorKeys.length)seq.push("pleaseAt",...doorKeys);
@@ -179,7 +180,8 @@
       const body=this.bodySequence(item);
       for(let round=0;round<this.settings.repeatCount;round++){
         if(round>0){await this.sleep(this.settings.repeatDelaySeconds*1000);await this.playSequence(["repeat"])}
-        const seq=round===0&&this.settings.playDing?["ding",...body]:body;
+        const roundBody=round>0&&body[0]==="repeat"?body.slice(1):body;
+        const seq=round===0&&this.settings.playDing?["ding",...roundBody]:roundBody;
         await this.playSequence(seq);
       }
       return true;
@@ -187,7 +189,7 @@
 
     enqueue(item){
       if(!this.settings.enabled||!item)return false;
-      const callId=String(item.callId||[item.autoId||item.appointmentNo||"",item.receivingStartedAt||""].join(":"));
+      const callId=String(item.callId||[item.autoId||item.appointmentNo||"",item.calledAt||item.receivingStartedAt||""].join(":"));
       if(callId&&this.pending.some(x=>x.callId===callId))return false;
       this.pending.push({callId,item:{...item}});
       this.processQueue();
