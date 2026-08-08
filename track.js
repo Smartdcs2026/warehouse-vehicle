@@ -1268,10 +1268,12 @@ global.WVQRCode={toSvg};
 const cfg=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
-let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0;
+let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
+const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v1";
 
 document.addEventListener("DOMContentLoaded",()=>{
   siteClockTimer=window.setInterval(updateSiteClock,1000);
+  restoreTrackSnapshot();
   loadTrack(true);
   window.addEventListener("online",()=>{if(!terminalError)loadTrack(true)});
   window.addEventListener("offline",()=>{setFresh("off","เครือข่ายขัดข้อง");schedule(30000)});
@@ -1284,6 +1286,22 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 
 function token(){return new URLSearchParams(location.search).get("t")||""}
+function snapshotTokenKey(){const t=token();return t?`${t.slice(0,12)}:${t.slice(-12)}`:""}
+function saveTrackSnapshot(data){
+  try{sessionStorage.setItem(TRACK_SNAPSHOT_KEY,JSON.stringify({key:snapshotTokenKey(),savedAt:Date.now(),data}))}catch{}
+}
+function clearTrackSnapshot(){try{sessionStorage.removeItem(TRACK_SNAPSHOT_KEY)}catch{}}
+function restoreTrackSnapshot(){
+  try{
+    const raw=sessionStorage.getItem(TRACK_SNAPSHOT_KEY);if(!raw)return false;
+    const item=JSON.parse(raw);
+    if(!item||item.key!==snapshotTokenKey()||!item.data?.success||Date.now()-Number(item.savedAt||0)>10*60*1000){clearTrackSnapshot();return false}
+    render(item.data);lastFingerprint=JSON.stringify({v:item.data.vehicle,t:item.data.timeline,closed:item.data.closed,expiresAt:item.data.expiresAt,instruction:item.data.instruction,lifecycle:item.data.lifecycle});hasRendered=true;lastOk=Number(item.savedAt)||Date.now();
+    setFresh("wait",navigator.onLine?"กำลังตรวจสอบข้อมูลล่าสุด":"แสดงข้อมูลล่าสุดที่มี");
+    $("trackUpdated").textContent=`ข้อมูลล่าสุด ${new Date(lastOk).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+    return true;
+  }catch{clearTrackSnapshot();return false}
+}
 function schedule(ms){clearTimeout(timer);if(document.hidden||terminalError)return;timer=setTimeout(()=>loadTrack(false),Math.max(8000,Number(ms)||20000))}
 
 async function loadTrack(force){
@@ -1298,12 +1316,12 @@ async function loadTrack(force){
     clearTimeout(cut);
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.success){
-      if(data.expired||data.reason==="LINK_EXPIRED")return showTerminal("การติดตามรายการนี้สิ้นสุดแล้ว","ลิงก์หมดอายุตามระยะเวลาที่ระบบกำหนด");
+      if(data.expired||data.reason==="LINK_EXPIRED"){clearTrackSnapshot();return showTerminal("การติดตามรายการนี้สิ้นสุดแล้ว","ลิงก์หมดอายุตามระยะเวลาที่ระบบกำหนด")}
       if(data.disabled||data.reason==="TRACKING_DISABLED")return showTerminal("การติดตามถูกปิดใช้งานชั่วคราว","กรุณาติดต่อจุดบริการหากต้องการตรวจสอบสถานะ");
-      if(data.reason==="INVALID_LINK"||data.reason==="TRACK_NOT_FOUND")return showTerminal("ไม่สามารถใช้ลิงก์นี้ได้",data.message||"กรุณาสแกน QR Code ใหม่จากจุดบริการ");
+      if(data.reason==="INVALID_LINK"||data.reason==="TRACK_NOT_FOUND"){clearTrackSnapshot();return showTerminal("ไม่สามารถใช้ลิงก์นี้ได้",data.message||"กรุณาสแกน QR Code ใหม่จากจุดบริการ")}
       throw new Error(data.message||"ตรวจสอบสถานะไม่สำเร็จ");
     }
-    lastOk=Date.now();
+    lastOk=Date.now();retryDelay=15000;saveTrackSnapshot(data);
     const fingerprint=JSON.stringify({v:data.vehicle,t:data.timeline,closed:data.closed,expiresAt:data.expiresAt,instruction:data.instruction,lifecycle:data.lifecycle});
     if(force||fingerprint!==lastFingerprint||!hasRendered){render(data);lastFingerprint=fingerprint;hasRendered=true}
     setFresh(data.closed?"done":"",data.closed?"เสร็จสิ้น":"ข้อมูลล่าสุด");
@@ -1311,8 +1329,13 @@ async function loadTrack(force){
     const seconds=Math.max(10,Math.min(60,Number(data.refreshSeconds)||20));
     schedule(seconds*1000);
   }catch(error){
-    if(hasRendered||lastOk){setFresh("wait",navigator.onLine?"รออัปเดตข้อมูล":"เครือข่ายขัดข้อง");schedule(navigator.onLine?15000:30000)}
-    else{showRetry(error.name==="AbortError"?"การเชื่อมต่อใช้เวลานานเกินไป":error.message);schedule(15000)}
+    const online=navigator.onLine;
+    if(hasRendered||lastOk){
+      const age=lastOk?Math.max(0,Math.floor((Date.now()-lastOk)/1000)):0;
+      setFresh("wait",online?(age>60?`ข้อมูลล่าสุด ${Math.floor(age/60)} นาทีที่แล้ว`:"รออัปเดตข้อมูล"):"เครือข่ายขัดข้อง");
+      schedule(online?retryDelay:30000);
+      if(online)retryDelay=Math.min(60000,retryDelay*2);
+    }else{showRetry(error.name==="AbortError"?"การเชื่อมต่อใช้เวลานานเกินไป":error.message);schedule(retryDelay);retryDelay=Math.min(60000,retryDelay*2)}
   }finally{inFlight=false}
 }
 
