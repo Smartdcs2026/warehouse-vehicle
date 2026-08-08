@@ -215,3 +215,76 @@ body{min-height:100dvh;background:#eef3fb}
  .track-card.has-gateout-qr .gateout-qr-code{width:min(48vw,150px,25dvh)}
  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:9px}.track-card.has-gateout-qr .gateout-autoid small{display:none}.track-card.has-gateout-qr .gateout-autoid strong{font-size:7.5px}
 }
+
+/* Round 69: Exit QR card polish — QR dominates, copy always visible */
+.track-card.has-gateout-qr .track-gateout-qr{
+  flex:1 1 auto;
+  min-height:0;
+  margin:0 11px 5px;
+  padding:5px 7px 7px;
+  gap:5px;
+  justify-content:flex-start;
+  overflow:visible;
+}
+.track-card.has-gateout-qr .gateout-qr-code{
+  width:min(78vw,340px,38dvh);
+  max-width:calc(100% - 4px);
+  padding:2px;
+  border-radius:12px;
+  flex:0 0 auto;
+}
+.track-card.has-gateout-qr .gateout-qr-copy{
+  flex:0 0 auto;
+  padding:0 4px;
+}
+.track-card.has-gateout-qr .gateout-qr-copy small{
+  display:block;
+  margin:0 0 2px;
+  color:#56719e;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:700;
+}
+.track-card.has-gateout-qr .gateout-qr-copy b{
+  display:block;
+  color:#1748a6;
+  font-size:11.5px;
+  line-height:1.2;
+  white-space:normal;
+  overflow:visible;
+}
+.track-card.has-gateout-qr .gateout-autoid{
+  flex:0 0 auto;
+  padding:0 4px 2px;
+}
+.track-card.has-gateout-qr .gateout-autoid small{
+  display:block;
+  font-size:8.5px;
+  line-height:1.1;
+}
+.track-card.has-gateout-qr .gateout-autoid strong{
+  display:block;
+  font-size:10px;
+  line-height:1.15;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+@media(max-width:390px){
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(80vw,315px,37dvh)}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:10.5px}
+}
+@media(max-height:760px){
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(68vw,260px,31dvh)}
+  .track-card.has-gateout-qr .gateout-qr-copy small{font-size:8.5px}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:9.5px}
+  .track-card.has-gateout-qr .gateout-autoid strong{font-size:8.5px}
+}
+@media(max-height:620px){
+  .track-card.has-gateout-qr .track-gateout-qr{gap:2px;padding:3px 5px 4px}
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(54vw,185px,25dvh);padding:1px}
+  .track-card.has-gateout-qr .gateout-qr-copy small{font-size:7.5px}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:8px;line-height:1.1}
+  .track-card.has-gateout-qr .gateout-autoid small{display:block;font-size:7px}
+  .track-card.has-gateout-qr .gateout-autoid strong{font-size:7.5px}
+}
