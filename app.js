@@ -1749,12 +1749,12 @@ async function renderAdmin() {
 }
 
 function renderAdminShell(){
-  const tabs=[["users","ผู้ใช้งาน"],["workflow","ขั้นตอนงาน"],["doors","ประตู"],["shifts","กะทำงาน"],["alerts","เวลาแจ้งเตือน"],["data","การใช้ข้อมูล"],["tracking","ติดตามคนขับ"],["queue","จอคิว"]];
+  const tabs=[["users","ผู้ใช้งาน"],["workflow","ขั้นตอนงาน"],["doors","ประตู"],["shifts","กะทำงาน"],["alerts","เวลาแจ้งเตือน"],["data","การใช้ข้อมูล"],["export","ส่งออกข้อมูล"],["tracking","ติดตามคนขับ"],["queue","จอคิว"]];
   $("pageContent").innerHTML=`<section class="admin-hero"><div><span class="eyebrow">ศูนย์ควบคุมระบบ</span><h2>ตั้งค่าการทำงาน</h2><p>การเปลี่ยนขั้นตอนและกะมีผลกับงานใหม่ ประวัติงานเดิมยังคงเดิม</p></div><span class="admin-build">พร้อมใช้งาน</span></section><nav class="admin-tabs">${tabs.map(([id,label])=>`<button data-admin-tab="${id}" class="${adminState.tab===id?"active":""}">${label}</button>`).join("")}</nav><section id="adminPanel" class="admin-panel"></section>`;
   document.querySelectorAll("[data-admin-tab]").forEach(button=>button.addEventListener("click",()=>{adminState.tab=button.dataset.adminTab;renderAdminShell()}));renderAdminPanel();
 }
 
-function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="tracking")renderAdminTracking();else renderAdminQueue()}
+function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="export")renderAdminMonthlyExport();else if(adminState.tab==="tracking")renderAdminTracking();else renderAdminQueue()}
 
 function renderAdminUsers(){const users=adminState.data.users||[];$("adminPanel").innerHTML=`<div class="admin-section-head"><div><h3>ผู้ใช้งานและสิทธิ์</h3><p>บัญชีที่จัดการจากหน้านี้จะไม่ถูก PASS Sheet เขียนทับ</p></div><button id="addAdminUser" class="primary">เพิ่มผู้ใช้งาน</button></div><div class="admin-table users-admin-table"><div class="admin-table-row admin-table-header"><span>ชื่อผู้ใช้</span><span>สิทธิ์</span><span>ที่มา</span><span>สถานะ</span><span></span></div>${users.map(user=>`<div class="admin-table-row"><b>${escapeHtml(user.name)}</b><span>${roleLabel(user.access_rights)}</span><span>${user.managed_source==="ADMIN"?"หน้า Admin":"PASS Sheet"}</span><span class="admin-status ${user.is_active?"on":"off"}">${user.is_active?"ใช้งาน":"ปิดใช้งาน"}</span><span class="admin-row-actions"><button data-edit-user="${escapeHtml(user.user_id)}">แก้ไข</button><button data-toggle-user="${escapeHtml(user.user_id)}">${user.is_active?"ปิด":"เปิด"}</button></span></div>`).join("")}</div>`;$("addAdminUser").addEventListener("click",()=>editAdminUser());document.querySelectorAll("[data-edit-user]").forEach(button=>button.addEventListener("click",()=>editAdminUser(users.find(user=>user.user_id===button.dataset.editUser))));document.querySelectorAll("[data-toggle-user]").forEach(button=>button.addEventListener("click",()=>toggleAdminUser(users.find(user=>user.user_id===button.dataset.toggleUser))))}
 
@@ -1836,6 +1836,34 @@ async function renderAdminDataUsage(){
     $("refreshDataUsage")?.addEventListener("click",renderAdminDataUsage)
   }catch(error){panel.innerHTML=`<div class="empty-state"><b>ตรวจสอบการใช้ข้อมูลไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryDataUsage" class="primary">ลองใหม่</button></div>`;$("retryDataUsage")?.addEventListener("click",renderAdminDataUsage)}
 }
+
+
+function currentBangkokMonth(){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:cfg.timezone,year:"numeric",month:"2-digit"}).formatToParts(new Date());const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));return `${p.year}-${p.month}`}
+function renderAdminMonthlyExport(){
+  const panel=$("adminPanel");if(!panel)return;
+  const month=currentBangkokMonth();
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head export-head"><div><h3>ส่งออกข้อมูลรายเดือน</h3><p>เลือกเดือนแล้วดาวน์โหลดข้อมูลรถและช่วงเวลาการทำงานจากประวัติในระบบ ไฟล์ไม่แก้ไขข้อมูลต้นทาง</p></div></div><section class="monthly-export-card"><div class="monthly-export-controls"><label><span>เดือนที่ต้องการ</span><input id="monthlyExportMonth" type="month" value="${month}" min="2020-01" max="2100-12"></label><div class="monthly-export-format"><small>รูปแบบไฟล์</small><b>CSV สำหรับ Excel</b><span>รองรับภาษาไทยและเปิดด้วย Microsoft Excel ได้</span></div><button id="monthlyExportButton" class="primary" type="button">ดาวน์โหลดข้อมูล</button></div><div id="monthlyExportStatus" class="monthly-export-status"><b>ข้อมูลที่จะส่งออก</b><span>Auto ID, หมายเลขนัดหมาย, บริษัท, คนขับ, ทะเบียน, กะ, ประตู, เวลาทุกขั้นตอน และระยะเวลาแต่ละช่วง</span></div></section><section class="monthly-export-note"><b>หลักการเลือกข้อมูล</b><span>ใช้วันที่ Gate In เป็นเดือนหลักของไฟล์ รถที่เข้าพื้นที่ในเดือนที่เลือกจะอยู่ในไฟล์เดียวกัน แม้ Gate Out จะเกิดในเดือนถัดไป</span></section>`;
+  $("monthlyExportButton")?.addEventListener("click",downloadMonthlyExport);
+}
+async function downloadMonthlyExport(){
+  const month=String($("monthlyExportMonth")?.value||"").trim(),button=$("monthlyExportButton"),status=$("monthlyExportStatus");
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)){await showNotice("warning","กรุณาเลือกเดือนที่ต้องการส่งออก");return}
+  if(button?.disabled)return;const original=button?.textContent||"ดาวน์โหลดข้อมูล";if(button){button.disabled=true;button.textContent="กำลังเตรียมไฟล์"}
+  try{
+    const data=await api(`/api/admin/monthly-export?month=${encodeURIComponent(month)}`),items=Array.isArray(data.items)?data.items:[];
+    if(!items.length){if(status)status.innerHTML=`<b>ไม่พบข้อมูล</b><span>ไม่มีรถที่ Gate In ในเดือน ${escapeHtml(month)}</span>`;await showNotice("info","ไม่พบข้อมูลในเดือนที่เลือก");return}
+    const headers=["Auto ID","หมายเลขนัดหมาย","บริษัท","ชื่อคนขับ","โทรศัพท์","ทะเบียนรถ","จังหวัด","ประเภทรถ","กะ","ประตู","Gate In","ยื่นเอกสาร","เริ่มตรวจรับ","รับสินค้าเสร็จ","รับเอกสารคืน","Gate Out","สถานะสุดท้าย","Gate In → ยื่นเอกสาร","ยื่นเอกสาร → เริ่มตรวจรับ","ระยะเวลาตรวจรับ","รับสินค้าเสร็จ → รับเอกสารคืน","รับเอกสารคืน → Gate Out","เวลารวมในพื้นที่"];
+    const rows=items.map(item=>[item.autoId,item.appointmentNo,item.companyName,item.driverName,item.phone,item.vehiclePlate,item.province,item.vehicleType,item.shiftName,item.doorCode,formatDate(item.gateInAt),formatDate(item.documentSubmittedAt),formatDate(item.receivingStartedAt),formatDate(item.receivingCompletedAt),formatDate(item.documentReturnedAt),formatDate(item.gateOutAt),monthlyExportStatusLabel(item.currentStatus,item.gateOutAt),formatExportDuration(item.gateToDocumentSeconds),formatExportDuration(item.documentToReceivingSeconds),formatExportDuration(item.receivingSeconds),formatExportDuration(item.receivingToReturnSeconds),formatExportDuration(item.returnToGateOutSeconds),formatExportDuration(item.totalInSiteSeconds)]);
+    const csv="\uFEFF"+[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download=`Warehouse_Vehicle_${month}.csv`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+    if(status)status.innerHTML=`<b>สร้างไฟล์สำเร็จ ${Number(data.total||items.length).toLocaleString("th-TH")} รายการ</b><span>${escapeHtml(data.periodLabel||month)} • ${escapeHtml(link.download)}</span>`;
+    await showNotice("success",`ดาวน์โหลดข้อมูล ${items.length.toLocaleString("th-TH")} รายการแล้ว`);
+  }catch(error){if(status)status.innerHTML=`<b>ส่งออกข้อมูลไม่สำเร็จ</b><span>${escapeHtml(error.message||"กรุณาลองใหม่")}</span>`;await showNotice("error",error.message||"ส่งออกข้อมูลไม่สำเร็จ")}
+  finally{if(button){button.disabled=false;button.textContent=original}}
+}
+function csvCell(value){const text=String(value==null?"":value);return `"${text.replace(/"/g,'""')}"`}
+function formatExportDuration(seconds){const value=Number(seconds);if(!Number.isFinite(value)||value<0)return "-";const total=Math.floor(value),h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=total%60;return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`}
+function monthlyExportStatusLabel(status,gateOutAt){if(gateOutAt)return"ออกจากพื้นที่แล้ว";return({WAITING_DOCUMENT_SUBMISSION:"รอยื่นเอกสาร",READY_FOR_RECEIVING:"พร้อมตรวจรับ",RECEIVING_IN_PROGRESS:"กำลังตรวจรับ",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",WAITING_GATE_OUT:"รอออกจากพื้นที่",CLOSED:"ออกจากพื้นที่แล้ว"})[status]||status||"-"}
 
 function formatStorage(bytes){const value=Math.max(0,Number(bytes)||0);if(value>=1024**3)return`${(value/1024**3).toFixed(value>=10*1024**3?0:2)} GB`;if(value>=1024**2)return`${(value/1024**2).toFixed(value>=100*1024**2?0:1)} MB`;if(value>=1024)return`${(value/1024).toFixed(1)} KB`;return`${Math.round(value)} B`}
 function dataCountCard(label,value){return`<article><small>${label}</small><b>${Number(value||0).toLocaleString("th-TH")}</b></article>`}
