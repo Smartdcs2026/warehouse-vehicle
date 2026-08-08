@@ -1569,7 +1569,9 @@ async function confirmInboundSubmit(autoId,source){
   finally{submitState.busy=false;restoreInboundMainDisplay()}
 }
 
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r52`,location.href).href}
+const inboundTrackingQrCache=new Map();
+function trackingQrSvg(url){if(inboundTrackingQrCache.has(url))return inboundTrackingQrCache.get(url);const svg=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;inboundTrackingQrCache.set(url,svg);if(inboundTrackingQrCache.size>24)inboundTrackingQrCache.delete(inboundTrackingQrCache.keys().next().value);return svg}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260808-r53`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
@@ -1577,7 +1579,7 @@ function showInboundTracking(tracking,vehicle,seconds){
   if(!tracking?.token){renderInboundTrackingUnavailable(vehicle);return}
   const duration=Math.max(8,Math.min(60,Number(tracking.displaySeconds||seconds||15))),url=trackingPageUrl(tracking.token),appointment=vehicle?.appointmentNo??vehicle?.appointment_no??vehicle?.autoId??vehicle?.auto_id??"-",company=vehicle?.companyName??vehicle?.company_name??"ไม่ระบุบริษัท",plate=[vehicle?.vehiclePlate??vehicle?.vehicle_plate,vehicle?.province].filter(Boolean).join(" ")||"ไม่ระบุทะเบียน";
   inboundTrackPanel.active=true;inboundTrackPanel.until=Date.now()+duration*1000;panel.classList.add("is-active");
-  const qr=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;
+  const qr=trackingQrSvg(url);
   body.innerHTML=`<div class="driver-qr-code">${qr}</div><div class="driver-qr-caption"><div class="driver-qr-meta"><span><small>หมายเลขนัดหมาย</small><b>${escapeHtml(appointment)}</b></span><span><small>บริษัท</small><strong>${escapeHtml(company)}</strong></span><span><small>ทะเบียนรถ</small><strong>${escapeHtml(plate)}</strong></span></div><p>สแกนด้วยโทรศัพท์เพื่อติดตามสถานะรถ</p></div>`;
   const tick=()=>{const remain=Math.max(0,Math.ceil((inboundTrackPanel.until-Date.now())/1000)),timer=$("driverQrTimer");if(timer){timer.hidden=false;timer.textContent=`${remain} วินาที`}if(remain<=0){window.clearInterval(inboundTrackPanel.timer);inboundTrackPanel.timer=0;expireInboundTrackingPanel()}};tick();inboundTrackPanel.timer=window.setInterval(tick,500);
 }
@@ -1791,6 +1793,15 @@ function renderAdminQueue(){
   $("trackingCreate")?.addEventListener("click",createDriverTrackingLink);
   $("trackingSearch")?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();createDriverTrackingLink()}});
 }
+async function renderAdminDataUsage(){
+  const panel=$("adminPanel");if(!panel)return;
+  panel.innerHTML=`<div class="admin-data-loading"><span></span><b>กำลังตรวจสอบการใช้ข้อมูล</b></div>`;
+  try{const data=await api("/api/admin/data-usage"),used=Number(data.sizeBytes||0),limit=Number(data.maxDatabaseBytes||0),remaining=Number(data.remainingBytes||0),percent=Math.max(0,Math.min(100,Number(data.percent||0))),tone=percent>=95?"danger":percent>=85?"warning":percent>=70?"watch":"ok",status=percent>=95?"ใกล้เต็ม":percent>=85?"ควรตรวจสอบ":percent>=70?"เริ่มใช้พื้นที่มาก":"ปกติ",c=data.counts||{};
+    panel.innerHTML=`<div class="admin-section-head clean-admin-head data-usage-head"><div><h3>การใช้ข้อมูล</h3><p>ดูพื้นที่ที่ใช้ จำนวนข้อมูล และประวัติการทำงานสำคัญของระบบ</p></div><button id="refreshDataUsage" class="quiet-button" type="button">โหลดใหม่</button></div><section class="data-usage-summary"><article class="data-usage-main ${tone}"><div><small>พื้นที่ฐานข้อมูล</small><b>${formatStorage(used)} <em>/ ${formatStorage(limit)}</em></b><span>${status}</span></div><div class="data-usage-ring" style="--usage:${percent}%"><strong>${percent.toFixed(1)}%</strong></div><div class="data-usage-progress"><i style="width:${percent}%"></i></div><footer><span>ใช้แล้ว <b>${formatStorage(used)}</b></span><span>คงเหลือ <b>${formatStorage(remaining)}</b></span></footer></article><article class="data-plan-card"><small>แพ็กเกจปัจจุบัน</small><b>${data.plan==="PAID"?"แบบชำระเงิน":"แบบฟรี"}</b><span>ขีดจำกัดต่อฐานข้อมูล ${formatStorage(limit)}</span></article></section><section class="data-count-grid">${dataCountCard("รถทั้งหมด",c.vehicles)}${dataCountCard("รถที่ยังอยู่ในพื้นที่",c.activeVehicles)}${dataCountCard("ประวัติขั้นตอน",c.workflowEvents)}${dataCountCard("ประวัติการจัดการ",c.auditLogs)}${dataCountCard("ผู้ใช้งาน",c.users)}${dataCountCard("ประตู",c.doors)}${dataCountCard("รอบรับข้อมูล",c.syncRuns)}</section><section class="data-history-card"><header><div><h3>ประวัติการทำงานล่าสุด</h3><p>แสดงรายการสำคัญที่ระบบมีบันทึกไว้ ไม่เพิ่มภาระการทำงานของหน้างาน</p></div><span>${formatDate(data.generatedAt)}</span></header><div class="data-history-list">${renderDataActivity(data.activity||[])}</div><footer>ระบบไม่ได้เก็บข้อความคำสั่งฐานข้อมูลทุกครั้งย้อนหลัง แต่รายการสำคัญที่ระบบบันทึกไว้จะแสดงในส่วนนี้</footer></section>`;
+    $("refreshDataUsage")?.addEventListener("click",renderAdminDataUsage)
+  }catch(error){panel.innerHTML=`<div class="empty-state"><b>ตรวจสอบการใช้ข้อมูลไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryDataUsage" class="primary">ลองใหม่</button></div>`;$("retryDataUsage")?.addEventListener("click",renderAdminDataUsage)}
+}
+
 function formatStorage(bytes){const value=Math.max(0,Number(bytes)||0);if(value>=1024**3)return`${(value/1024**3).toFixed(value>=10*1024**3?0:2)} GB`;if(value>=1024**2)return`${(value/1024**2).toFixed(value>=100*1024**2?0:1)} MB`;if(value>=1024)return`${(value/1024).toFixed(1)} KB`;return`${Math.round(value)} B`}
 function dataCountCard(label,value){return`<article><small>${label}</small><b>${Number(value||0).toLocaleString("th-TH")}</b></article>`}
 function renderDataActivity(items){if(!items.length)return`<div class="empty-state">ยังไม่มีประวัติการทำงาน</div>`;return items.map(item=>`<div class="data-history-row"><time>${formatDate(item.event_time)}</time><span class="data-history-kind ${String(item.event_group||"").toLowerCase()}">${dataActivityLabel(item.event_code)}</span><b>${escapeHtml(item.actor||"ระบบ")}</b><span>${escapeHtml(dataActivityReference(item))}</span></div>`).join("")}
