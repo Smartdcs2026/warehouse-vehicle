@@ -198,6 +198,7 @@ function normalizeQueueData(raw) {
     calling,
     recentCalls,
     voice: raw.voice && typeof raw.voice === "object" ? raw.voice : null,
+    doorSettings: raw.doorSettings && typeof raw.doorSettings === "object" ? raw.doorSettings : null,
     items,
     counts: {
       READY_FOR_RECEIVING: safeCount(counts.READY_FOR_RECEIVING, items, "READY_FOR_RECEIVING"),
@@ -218,6 +219,7 @@ function normalizeItem(item) {
     vehiclePlate: cleanText(item.vehiclePlate),
     province: cleanText(item.province),
     doorCode: cleanText(item.doorCode),
+    useDoor: item.useDoor !== false,
     status: cleanText(item.status),
     elapsedSeconds: Math.max(0, Number(item.elapsedSeconds) || 0),
     stageSince: Number(item.stageSince) || 0,

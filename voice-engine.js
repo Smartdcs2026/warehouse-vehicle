@@ -54,7 +54,7 @@
       const response=await fetch(this.manifestUrl(),{cache:"no-store",headers:{Accept:"application/json"}});
       if(!response.ok)throw new Error("ไม่พบชุดเสียงส่วนกลาง");
       const manifest=await response.json();
-      if(!manifest||!manifest.files||!manifest.files.digits||!manifest.files.letters)throw new Error("ข้อมูลชุดเสียงไม่สมบูรณ์");
+      if(!manifest||!manifest.files||!manifest.files.digits||!manifest.files.letters||!manifest.files.appointment||!manifest.files.pleaseEnterDeliveryAt||!manifest.files.pleaseEnterDelivery||!manifest.files.door)throw new Error("ข้อมูลชุดเสียงไม่สมบูรณ์ กรุณาอัปเดตชุดเสียงล่าสุด");
       const version=String(manifest.version||"1");
       if(this.manifestVersion&&this.manifestVersion!==version){this.buffers.clear();this.ready=false}
       this.manifest=manifest;this.manifestVersion=version;
@@ -71,7 +71,7 @@
 
     clipMap(){
       const f=this.manifest?.files||{},map={
-        ding:f.ding,appointment:f.appointment,please:f.pleaseEnterDeliveryAt,door:f.door,
+        ding:f.ding,appointment:f.appointment,pleaseAt:f.pleaseEnterDeliveryAt,pleaseNoDoor:f.pleaseEnterDelivery,door:f.door,
         repeat:f.repeatAgain,thanks:f.thankYou
       };
       for(const [digit,file] of Object.entries(f.digits||{}))map["digit_"+digit]=file;
@@ -139,8 +139,10 @@
 
     bodySequence(item){
       const seq=["appointment",...this.appointmentKeys(item?.appointmentNo)];
-      const doorKeys=this.settings.readDoor?this.doorKeys(item?.doorCode):[];
-      if(doorKeys.length)seq.push("please","door",...doorKeys);
+      const mayReadDoor=item?.useDoor!==false&&this.settings.readDoor!==false;
+      const doorKeys=mayReadDoor?this.doorKeys(item?.doorCode):[];
+      if(doorKeys.length)seq.push("pleaseAt","door",...doorKeys);
+      else seq.push("pleaseNoDoor");
       if(this.settings.playThanks)seq.push("thanks");
       return seq;
     }
