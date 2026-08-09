@@ -4807,3 +4807,66 @@ button:disabled { cursor: wait; opacity: .7; }
 
 /* R79 voice pack selector */
 .voice-admin-form .field-help{display:block;margin-top:6px;color:#6b7280;font-size:12px;font-weight:500}.voice-admin-form select{width:100%}
+
+/* Round 80: receiving action colors — blue = call, orange = start, green = complete */
+.receiving-card .call-vehicle-button {
+  background: linear-gradient(135deg, #4A90D9, #2563B8);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 7px 18px rgba(37, 99, 184, .20);
+}
+.receiving-card .call-vehicle-button:hover {
+  background: linear-gradient(135deg, #3279C5, #174F9C);
+}
+.receiving-card .recall-button:not(:disabled) {
+  background: #fff;
+  color: #245DA8;
+  border: 1.5px solid #8BB3E6;
+  box-shadow: none;
+}
+.receiving-card .recall-button:not(:disabled):hover {
+  background: #F2F7FD;
+  border-color: #4A90D9;
+}
+.receiving-card .start-receiving-button {
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #C85000, #9A3412);
+  color: #fff;
+  font-weight: 850;
+  box-shadow: 0 7px 18px rgba(154, 52, 18, .20);
+}
+.receiving-card .start-receiving-button:hover {
+  background: linear-gradient(135deg, #B54708, #7C2D12);
+}
+.receiving-card .complete-button {
+  background: linear-gradient(135deg, #4F9D36, #2F7124);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(47, 113, 36, .22);
+}
+.receiving-card .complete-button:hover {
+  background: linear-gradient(135deg, #3D842B, #245A1C);
+}
+.receiving-card .receiving-actionbar button:disabled {
+  background: #E8EDF3 !important;
+  border-color: #D5DDE7 !important;
+  color: #8A96A6 !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+.wfv-swal-start {
+  background: linear-gradient(135deg, #C85000, #9A3412) !important;
+  color: #fff !important;
+}
+.wfv-swal-start:hover {
+  background: linear-gradient(135deg, #B54708, #7C2D12) !important;
+}
+.wfv-swal-complete {
+  background: linear-gradient(135deg, #4F9D36, #2F7124) !important;
+  color: #fff !important;
+}
+.wfv-swal-complete:hover {
+  background: linear-gradient(135deg, #3D842B, #245A1C) !important;
+}
+
