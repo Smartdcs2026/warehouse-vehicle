@@ -288,3 +288,85 @@ body{min-height:100dvh;background:#eef3fb}
   .track-card.has-gateout-qr .gateout-autoid small{display:block;font-size:7px}
   .track-card.has-gateout-qr .gateout-autoid strong{font-size:7.5px}
 }
+
+/* Round 80.1: Gate-Out QR safe-fit hotfix
+   Keep the QR large, but reserve enough vertical room for the full guidance
+   and Auto ID so no text is clipped by the fixed one-screen card. */
+.track-card.has-gateout-qr .track-timeline{
+  padding-bottom:3px;
+}
+.track-card.has-gateout-qr .track-site-time{
+  margin-bottom:4px;
+}
+.track-card.has-gateout-qr .track-gateout-qr{
+  min-height:0;
+  margin:0 11px 6px;
+  padding:4px 7px 7px;
+  gap:3px;
+  overflow:hidden;
+  justify-content:flex-start;
+}
+.track-card.has-gateout-qr .gateout-qr-code{
+  width:min(68vw,290px,30dvh);
+  max-width:calc(100% - 4px);
+  flex:0 1 auto;
+  padding:2px;
+}
+.track-card.has-gateout-qr .gateout-qr-copy{
+  width:100%;
+  min-width:0;
+  flex:0 0 auto;
+  padding:0 5px;
+  overflow:visible;
+}
+.track-card.has-gateout-qr .gateout-qr-copy small{
+  margin:0 0 1px;
+  font-size:9.5px;
+  line-height:1.12;
+}
+.track-card.has-gateout-qr .gateout-qr-copy b{
+  font-size:10.5px;
+  line-height:1.16;
+  white-space:normal;
+  overflow:visible;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.track-card.has-gateout-qr .gateout-autoid{
+  width:100%;
+  min-width:0;
+  flex:0 0 auto;
+  padding:0 5px 1px;
+}
+.track-card.has-gateout-qr .gateout-autoid small{
+  font-size:8px;
+  line-height:1.05;
+  margin-bottom:1px;
+}
+.track-card.has-gateout-qr .gateout-autoid strong{
+  font-size:9px;
+  line-height:1.08;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+@media(max-width:390px){
+  .track-card.has-gateout-qr .track-gateout-qr{margin-left:9px;margin-right:9px;padding-left:6px;padding-right:6px}
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(70vw,270px,29dvh)}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:10px}
+}
+@media(max-height:760px){
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(60vw,230px,26dvh)}
+  .track-card.has-gateout-qr .gateout-qr-copy small{font-size:8px}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:9px;line-height:1.12}
+  .track-card.has-gateout-qr .gateout-autoid small{font-size:7px}
+  .track-card.has-gateout-qr .gateout-autoid strong{font-size:8px}
+}
+@media(max-height:620px){
+  .track-card.has-gateout-qr .track-gateout-qr{gap:2px;padding:3px 5px 4px}
+  .track-card.has-gateout-qr .gateout-qr-code{width:min(48vw,160px,21dvh);padding:1px}
+  .track-card.has-gateout-qr .gateout-qr-copy small{font-size:7px}
+  .track-card.has-gateout-qr .gateout-qr-copy b{font-size:7.5px;line-height:1.08}
+  .track-card.has-gateout-qr .gateout-autoid small{font-size:6.5px}
+  .track-card.has-gateout-qr .gateout-autoid strong{font-size:7px}
+}

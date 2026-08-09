@@ -1284,6 +1284,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(!terminalError)loadTrack(true);
   });
   window.addEventListener("pageshow",()=>{if(!document.hidden&&!terminalError)loadTrack(true)});
+  window.addEventListener("resize",()=>requestAnimationFrame(fitGateOutQr));
+  window.addEventListener("orientationchange",()=>setTimeout(fitGateOutQr,120));
 });
 
 function token(){return new URLSearchParams(location.search).get("t")||""}
@@ -1378,6 +1380,26 @@ function render(data){
     <section class="track-expiry"><span>${data.closed?"ลิงก์นี้ใช้ตรวจสอบย้อนหลังได้ถึง":"ติดตามได้ถึง"}</span><b>${esc(expiry)}</b></section>
   </article>`;
   updateSiteClock();
+  requestAnimationFrame(()=>{fitGateOutQr();requestAnimationFrame(fitGateOutQr)});
+}
+
+function fitGateOutQr(){
+  const card=document.querySelector(".track-card.has-gateout-qr");
+  const section=card?.querySelector(".track-gateout-qr");
+  const qr=section?.querySelector(".gateout-qr-code");
+  const copy=section?.querySelector(".gateout-qr-copy");
+  const auto=section?.querySelector(".gateout-autoid");
+  if(!section||!qr)return;
+  qr.style.width="";qr.style.height="";
+  const cs=getComputedStyle(section);
+  const px=v=>Math.max(0,parseFloat(v)||0);
+  const gap=px(cs.rowGap||cs.gap);
+  const innerW=Math.max(0,section.clientWidth-px(cs.paddingLeft)-px(cs.paddingRight));
+  const reserved=px(cs.paddingTop)+px(cs.paddingBottom)+(copy?.scrollHeight||0)+(auto?.scrollHeight||0)+gap*2+4;
+  const byHeight=Math.max(0,section.clientHeight-reserved);
+  const cap=window.innerHeight<=620?160:window.innerHeight<=760?230:290;
+  const size=Math.floor(Math.min(cap,innerW,byHeight));
+  if(size>=96){qr.style.width=`${size}px`;qr.style.height=`${size}px`;}
 }
 
 function siteElapsedSeconds(){
