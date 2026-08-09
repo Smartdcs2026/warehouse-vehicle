@@ -4870,3 +4870,45 @@ button:disabled { cursor: wait; opacity: .7; }
   background: linear-gradient(135deg, #3D842B, #245A1C) !important;
 }
 
+
+
+/* Round 81 — Queue call history on receiving cards */
+.queue-history-button{
+  margin-left:auto;
+  align-self:center;
+  min-height:34px;
+  padding:7px 11px;
+  border:1px solid #b9cbe3;
+  border-radius:9px;
+  background:#fff;
+  color:#245da8;
+  font:800 11px/1.2 inherit;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.queue-history-button:hover{background:#eef5ff;border-color:#6f9bd4;box-shadow:0 3px 10px rgba(36,93,168,.10)}
+.queue-history-button:focus-visible{outline:3px solid rgba(65,111,195,.16);outline-offset:2px}
+.queue-history-modal{display:grid;gap:12px;text-align:left;color:#1f3555}
+.queue-history-vehicle{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #e1e8f2;border-radius:12px;background:#f8fbff}
+.queue-history-vehicle small{color:#77859a;font-size:11px}.queue-history-vehicle b{color:#174d9b;font-size:19px}
+.queue-history-summary{display:grid;grid-template-columns:.65fr 1.35fr 1fr;gap:8px}
+.queue-history-summary>span{display:grid;gap:3px;min-width:0;padding:10px 11px;border:1px solid #e3e9f1;border-radius:11px;background:#fff}
+.queue-history-summary small{color:#7b8798;font-size:10px;font-weight:750}.queue-history-summary b{overflow-wrap:anywhere;color:#183b69;font-size:12px}
+.queue-history-list{display:grid;gap:8px;max-height:min(48vh,430px);overflow:auto;padding:2px 2px 2px 0}
+.queue-history-item{display:grid;grid-template-columns:34px minmax(0,1fr);gap:9px;position:relative}
+.queue-history-marker{display:flex;justify-content:center;position:relative}.queue-history-marker:after{content:"";position:absolute;top:30px;bottom:-12px;width:2px;background:#dfe7f2}.queue-history-item:last-child .queue-history-marker:after{display:none}
+.queue-history-marker span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#edf3fb;border:1px solid #cbd9eb;color:#4e6d96;font-size:11px;font-weight:900;z-index:1}
+.queue-history-item.is-latest .queue-history-marker span{background:#2f6fc4;border-color:#2f6fc4;color:#fff}
+.queue-history-content{display:grid;gap:6px;padding:10px 11px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.queue-history-item.is-latest .queue-history-content{border-color:#b9d1f1;background:#f8fbff}
+.queue-history-content header{display:flex;align-items:center;justify-content:space-between;gap:10px}.queue-history-content header b{color:#174d9b;font-size:13px}.queue-history-content time{color:#6f7e92;font-size:10.5px;font-weight:700;white-space:nowrap}
+.queue-history-content p{margin:0;color:#465d79;font-size:12px;font-weight:700}
+.queue-history-meta{display:flex;gap:12px;flex-wrap:wrap}.queue-history-meta span{display:flex;align-items:baseline;gap:5px}.queue-history-meta small{color:#8792a3;font-size:10px}.queue-history-meta strong{color:#344d6e;font-size:11px}
+.queue-history-note{padding:7px 9px;border-radius:8px;background:#f6f8fb;color:#627187;font-size:11px;line-height:1.4}
+.queue-history-more,.queue-history-last{color:#78869a;font-size:10.5px;text-align:center}.queue-history-more{padding:7px;border-radius:9px;background:#f7f9fc}
+@media(max-width:720px){
+  .queue-call-strip .queue-history-button{grid-column:1/-1;width:100%;margin-left:0}
+  .queue-history-summary{grid-template-columns:1fr 1fr}.queue-history-summary>span:last-child{grid-column:1/-1}
+  .queue-history-content header{align-items:flex-start;flex-direction:column;gap:2px}.queue-history-content time{white-space:normal}
+}

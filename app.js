@@ -1315,7 +1315,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260809-r76",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260809-r81",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; openApp(); } catch { clearSession(); } }
 }
 
@@ -1395,6 +1395,7 @@ function renderOperations() {
     const action=button.dataset.receivingAction;
     if(action==="call")callVehicle(vehicle,false);
     else if(action==="recall")callVehicle(vehicle,true);
+    else if(action==="history")showQueueCallHistory(vehicle);
     else if(action==="start")startReceiving(vehicle);
     else if(action==="complete")completeReceiving(vehicle);
   });
@@ -1402,10 +1403,10 @@ function renderOperations() {
 
 function renderJobCards(items) {
   $("jobGrid").innerHTML = items.length ? items.map(v => {
-    const inProgress=v.current_status==="RECEIVING_IN_PROGRESS",busy=receivingState.busyIds.has(String(v.auto_id)),called=!inProgress&&Number(v.queue_called_at||0)>0;
+    const inProgress=v.current_status==="RECEIVING_IN_PROGRESS",busy=receivingState.busyIds.has(String(v.auto_id)),hasCalls=Number(v.queue_call_count||0)>0,called=!inProgress&&Number(v.queue_called_at||0)>0;
     const doorLabel=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุประตู";
     const statusText=inProgress?statusLabel(v.current_status):called?"เรียกแล้ว รอรถเข้า":"พร้อมเรียก";
-    const callInfo=called?`<div class="queue-call-strip"><span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>จำนวนครั้ง</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>${Number(v.use_door)!==0&&v.door_code?`<span><small>ประตูล่าสุด</small><b>${escapeHtml(v.door_code)}</b></span>`:""}</div>`:"";
+    const callInfo=hasCalls?`<div class="queue-call-strip"><span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>จำนวนครั้ง</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>${Number(v.use_door)!==0&&v.door_code?`<span><small>ประตูล่าสุด</small><b>${escapeHtml(v.door_code)}</b></span>`:""}<button class="queue-history-button" type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ดูประวัติการเรียก</button></div>`:"";
     const actions=inProgress
       ? `<button class="complete-button" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button>`
       : called
@@ -1413,6 +1414,30 @@ function renderJobCards(items) {
         : `<button class="primary call-vehicle-button" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
     return `<article class="job-card receiving-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><span class="badge receiving-badge">${escapeHtml(statusText)}</span><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${actions}</div></article>`;
   }).join("") : `<div class="empty-state receiving-empty"><b>ไม่มีงานรอตรวจรับ</b><span>พื้นที่ทำงานว่าง รายการใหม่จะแสดงทันทีเมื่อยื่นเอกสารแล้ว</span></div>`;
+}
+
+function queueHistoryTypeLabel(type){return({FIRST:"เรียกครั้งแรก",RECALL:"เรียกซ้ำ",DOOR_CHANGED:"เปลี่ยนประตูและเรียก"})[String(type||"").toUpperCase()]||"เรียกรถ"}
+function queueHistoryReasonLabel(reason){return reason==="FIRST"?"":(QUEUE_REASON_LABELS[String(reason||"").toUpperCase()]||"เรียกซ้ำทั่วไป")}
+function queueHistoryDoorText(call,useDoor){
+  if(!useDoor)return"";
+  const current=String(call?.doorCode||"").trim(),previous=String(call?.previousDoorCode||"").trim(),type=String(call?.callType||"").toUpperCase();
+  if(type==="DOOR_CHANGED"&&previous&&current&&previous!==current)return`${escapeHtml(previous)} → ${escapeHtml(current)}`;
+  return current?escapeHtml(current):"ไม่ระบุประตู";
+}
+async function showQueueCallHistory(vehicle){
+  const autoId=String(vehicle?.auto_id||"").trim();if(!autoId||Number(vehicle?.queue_call_count||0)<=0)return;
+  try{
+    if(window.Swal)Swal.fire({title:"กำลังโหลดประวัติการเรียก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:430});
+    const data=await api(`/api/workflow/queue-call-history?autoId=${encodeURIComponent(autoId)}`),calls=Array.isArray(data.calls)?data.calls:[],useDoor=Boolean(data.useDoor);
+    const items=calls.map((call,index)=>{
+      const type=String(call.callType||"").toUpperCase(),reason=queueHistoryReasonLabel(call.reasonCode),door=queueHistoryDoorText(call,useDoor),note=String(call.note||"").trim();
+      return `<article class="queue-history-item ${index===0?"is-latest":""}"><div class="queue-history-marker"><span>${Number(call.callNo||0)||""}</span></div><div class="queue-history-content"><header><b>${escapeHtml(queueHistoryTypeLabel(type))}</b><time>${formatDate(call.calledAt)}</time></header>${reason?`<p>${escapeHtml(reason)}</p>`:""}<div class="queue-history-meta">${door?`<span><small>ประตู</small><strong>${door}</strong></span>`:""}<span><small>ผู้ดำเนินการ</small><strong>${escapeHtml(call.actorName||"ระบบ")}</strong></span></div>${note?`<div class="queue-history-note">${escapeHtml(note)}</div>`:""}</div></article>`;
+    }).join("");
+    const first=data.firstCalledAt?formatDate(data.firstCalledAt):"-",last=data.lastCalledAt?formatDate(data.lastCalledAt):"-",elapsed=data.firstCalledAt?formatDuration(Math.max(0,Number(data.receivingStartedAt||unixNow())-Number(data.firstCalledAt))):"-";
+    const truncation=Number(data.total||0)>calls.length?`<div class="queue-history-more">แสดง ${calls.length} รายการล่าสุด จากทั้งหมด ${Number(data.total||0)} ครั้ง</div>`:"";
+    const html=`<div class="queue-history-modal"><div class="queue-history-vehicle"><small>หมายเลขนัดหมาย</small><b>${escapeHtml(data.appointmentNo||vehicle.appointment_no||autoId)}</b></div><div class="queue-history-summary"><span><small>รวม</small><b>${Number(data.total||0)} ครั้ง</b></span><span><small>เรียกครั้งแรก</small><b>${escapeHtml(first)}</b></span><span><small>${data.receivingStartedAt?"ถึงเริ่มตรวจรับ":"เรียกมาแล้ว"}</small><b>${escapeHtml(elapsed)}</b></span></div>${truncation}<div class="queue-history-list">${items||`<div class="empty-state">ยังไม่มีประวัติการเรียก</div>`}</div><div class="queue-history-last">เรียกล่าสุด ${escapeHtml(last)}</div></div>`;
+    if(window.Swal)await Swal.fire({title:"ประวัติการเรียกรถ",html,confirmButtonText:"ปิด",customClass:swalClasses(),buttonsStyling:false,width:590});
+  }catch(error){if(window.Swal)Swal.close();await showNotice("error",error.message)}
 }
 
 function queueReasonOptions(selected="GENERAL",usesDoor=true){
