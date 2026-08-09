@@ -6,8 +6,11 @@ const FETCH_TIMEOUT_MS = 4500;
 const ROTATE_MS = 10000;
 const CALL_HOLD_MS = 20000;
 const STALE_AFTER_MS = 20000;
+const QUEUE_TOKEN_KEY = "wvfQueueDisplayToken";
 
 let lastCallKey = sessionStorage.getItem("queueLastCallKey") || "";
+let queueToken = sessionStorage.getItem(QUEUE_TOKEN_KEY) || "";
+let runtimeStarted = false;
 let audioEnabled = false;
 let voiceSettings = null;
 let voiceAdminEnabled = false;
@@ -30,6 +33,7 @@ const $ = id => document.getElementById(id);
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
+  $("queueLoginForm")?.addEventListener("submit", loginQueue);
   $("soundButton")?.addEventListener("click", toggleSound);
   $("fullButton")?.addEventListener("click", toggleFull);
 
@@ -75,6 +79,17 @@ function init() {
     }, 120);
   });
 
+  if (queueToken) {
+    showQueueApp();
+    startQueueRuntime();
+  } else {
+    showQueueLogin();
+  }
+}
+
+function startQueueRuntime() {
+  if (runtimeStarted) return;
+  runtimeStarted = true;
   applyDensity();
   tick();
   setInterval(() => {
@@ -95,6 +110,62 @@ function init() {
       lastRotateAt = Date.now();
     }
   }, 1000);
+}
+
+function showQueueLogin(message = "") {
+  $("queueApp").hidden = true;
+  $("queueLogin").hidden = false;
+  const error = $("queueLoginError");
+  error.textContent = message;
+  error.hidden = !message;
+  setTimeout(() => $("queueLoginName")?.focus(), 0);
+}
+
+function showQueueApp() {
+  $("queueLogin").hidden = true;
+  $("queueApp").hidden = false;
+}
+
+async function loginQueue(event) {
+  event.preventDefault();
+  const button = $("queueLoginButton");
+  const username = $("queueLoginName").value.trim();
+  const password = $("queueLoginPassword").value;
+  const error = $("queueLoginError");
+  error.hidden = true;
+  button.disabled = true;
+  button.textContent = "กำลังเข้าสู่ระบบ…";
+  try {
+    const base = String(cfg.apiBaseUrl || "").replace(/\/$/, "");
+    if (!base) throw new Error("ไม่พบที่อยู่ระบบ");
+    const response = await fetch(base + "/api/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ name: username, password })
+    });
+    const raw = await response.json().catch(() => null);
+    if (!response.ok || !raw?.success || !raw?.token) throw new Error(raw?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    const access = String(raw.user?.accessRights || "").toUpperCase();
+    if (!new Set(["ADMIN", "USER"]).has(access)) throw new Error("บัญชีนี้ไม่มีสิทธิ์เปิดจอคิว");
+    queueToken = raw.token;
+    sessionStorage.setItem(QUEUE_TOKEN_KEY, queueToken);
+    $("queueLoginPassword").value = "";
+    showQueueApp();
+    startQueueRuntime();
+    loadQueue(true);
+  } catch (err) {
+    showQueueLogin(err?.message || "เข้าสู่ระบบไม่สำเร็จ");
+  } finally {
+    button.disabled = false;
+    button.textContent = "เข้าสู่จอคิว";
+  }
+}
+
+function expireQueueSession(message) {
+  queueToken = "";
+  sessionStorage.removeItem(QUEUE_TOKEN_KEY);
+  latestData = null;
+  showQueueLogin(message || "กรุณาเข้าสู่ระบบอีกครั้ง");
 }
 
 function resetPages() {
@@ -127,6 +198,7 @@ function tick() {
 }
 
 async function loadQueue(force = false) {
+  if (!queueToken) return;
   if (loading && !force) return;
   if (!navigator.onLine) {
     setHealth("offline", latestData ? "เครือข่ายขัดข้อง — แสดงข้อมูลล่าสุด" : "เครือข่ายขัดข้อง");
@@ -144,10 +216,14 @@ async function loadQueue(force = false) {
     const response = await fetch(base + "/api/public/queue", {
       cache: "no-store",
       signal: controller.signal,
-      headers: { Accept: "application/json" }
+      headers: { Accept: "application/json", Authorization: `Bearer ${queueToken}` }
     });
 
     const raw = await response.json().catch(() => null);
+    if (response.status === 401 || response.status === 403) {
+      expireQueueSession(raw?.message || "กรุณาเข้าสู่ระบบอีกครั้ง");
+      return;
+    }
     if (!response.ok || !raw || raw.success === false) {
       throw new Error(raw?.message || "โหลดข้อมูลไม่สำเร็จ");
     }
@@ -279,7 +355,6 @@ function renderSummary(data) {
 
 function renderCall(item) {
   const panel = $("callPanel");
-  const doorBox = $("callDoorBox");
   const num = $("callNumber");
 
   if (!item || !item.appointmentNo) {
@@ -288,8 +363,6 @@ function renderCall(item) {
     fitAppointmentNumber(num, "รอการเรียกคิว");
     $("callCompany").textContent = "–";
     $("callPlate").textContent = "–";
-    $("callDoor").textContent = "–";
-    doorBox.hidden = false;
     $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
     $("callInstruction").textContent = "รอการเรียกคิว";
     return;
@@ -301,8 +374,6 @@ function renderCall(item) {
   fitAppointmentNumber(num, appt);
   $("callCompany").textContent = item.companyName || "ไม่ระบุบริษัท";
   $("callPlate").textContent = plateText(item);
-  $("callDoor").textContent = item.doorCode || "–";
-  doorBox.hidden = !item.doorCode;
   const changedDoor=item.callType==="DOOR_CHANGED";
   $("callInstructionPrefix").textContent = changedDoor ? "มีการเปลี่ยนประตู กรุณาเข้ารับการตรวจรับ" : item.callType==="RECALL" ? "เรียกอีกครั้ง กรุณาเข้ารับการตรวจรับ" : "กรุณาเข้ารับการตรวจรับ";
   $("callInstruction").textContent = item.doorCode ? `ที่ประตู ${item.doorCode}` : "ได้ทันที";

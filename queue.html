@@ -6,10 +6,26 @@
   <meta name="theme-color" content="#eef5ff">
   <title>สถานะคิวรถขนส่ง</title>
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="stylesheet" href="./queue.css?v=20260809-r79">
+  <link rel="stylesheet" href="./queue.css?v=20260809-r82">
 </head>
-<body data-queue-build="20260809-r79">
-  <main class="queue-shell">
+<body data-queue-build="20260809-r82-queue-auth">
+  <section id="queueLogin" class="queue-login">
+    <div class="queue-login-card">
+      <img src="./icon-192.png" alt="" aria-hidden="true">
+      <div class="queue-login-copy">
+        <small>จอแสดงสถานะคิว</small>
+        <h1>เข้าสู่จอคิว</h1>
+        <p>ใช้บัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p>
+      </div>
+      <form id="queueLoginForm" autocomplete="on">
+        <label>ชื่อผู้ใช้<input id="queueLoginName" name="username" autocomplete="username" required></label>
+        <label>รหัสผ่าน<input id="queueLoginPassword" name="password" type="password" autocomplete="current-password" required></label>
+        <p id="queueLoginError" class="queue-login-error" role="alert" hidden></p>
+        <button id="queueLoginButton" type="submit">เข้าสู่จอคิว</button>
+      </form>
+    </div>
+  </section>
+  <main id="queueApp" class="queue-shell" hidden>
     <header class="queue-header">
       <div class="queue-brand">
         <img class="brand-logo" src="./icon-192.png" alt="SMART DC">
@@ -42,9 +58,9 @@
             <strong id="callCompany">–</strong>
           </div>
         </div>
-        <div class="call-detail-row">
-          <div><span class="detail-icon detail-plate" aria-hidden="true"></span><small>ทะเบียนรถ</small><b id="callPlate">–</b></div>
-          <div id="callDoorBox"><span class="detail-icon detail-door" aria-hidden="true"></span><small>ประตู</small><b id="callDoor">–</b></div>
+        <div class="call-vehicle-card">
+          <span class="detail-icon detail-plate" aria-hidden="true"></span>
+          <div><small>ทะเบียนรถ</small><b id="callPlate">–</b></div>
         </div>
       </div>
       <div class="call-instruction">
@@ -87,8 +103,8 @@
       <span id="rotationLabel" hidden></span>
     </footer>
   </main>
-  <script src="./config.js?v=20260809-r79"></script>
-  <script src="./voice-engine.js?v=20260809-r79"></script>
-  <script src="./queue.js?v=20260809-r79"></script>
+  <script src="./config.js?v=20260809-r82"></script>
+  <script src="./voice-engine.js?v=20260809-r82"></script>
+  <script src="./queue.js?v=20260809-r82"></script>
 </body>
 </html>

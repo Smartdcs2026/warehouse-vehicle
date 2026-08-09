@@ -1579,23 +1579,6 @@ function metricIcon(type){const icons={
 
 function submitManualAutoId(source="manual"){const input=$("autoSearch"),autoId=normalizeAutoId(input?.value);if(input)input.value="";renderInboundRows(state.vehicles);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
 
-const gateArrivalWait={attempts:20,delayMs:3000};
-function waitForGateArrival(ms){return new Promise(resolve=>window.setTimeout(resolve,ms))}
-async function submitInboundScanWithGateWait(value,idempotencyKey,source){
-  let lastError=null;
-  for(let attempt=0;attempt<gateArrivalWait.attempts;attempt+=1){
-    try{return await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}})}
-    catch(error){
-      lastError=error;
-      if(error.status!==404)throw error;
-      if(attempt===0)showKioskMessage("อ่าน QR แล้ว กำลังรอข้อมูลรถเข้าพื้นที่ กรุณารอสักครู่",true);
-      if(attempt+1<gateArrivalWait.attempts)await waitForGateArrival(gateArrivalWait.delayMs);
-    }
-  }
-  const error=new Error("ยังไม่พบข้อมูลรถเข้าพื้นที่ กรุณาติดต่อจุด Gate In แล้วลองสแกนอีกครั้ง");
-  error.status=404;error.data=lastError?.data||null;throw error;
-}
-
 async function startCamera(){
   if(scannerState.active)return;
   unlockAudio();
@@ -1657,7 +1640,7 @@ async function confirmInboundSubmit(autoId,source){
   if(!window.Swal){
     if(!automatic&&!window.confirm(`${confirmationTitle} Auto ID: ${value}`))return;
     submitState.busy=true;
-    try{const idempotencyKey=createIdempotencyKey(),result=await submitInboundScanWithGateWait(value,idempotencyKey,source);mergeVehicleUpdate(result.vehicle);playFeedbackSound(result.duplicate?"duplicate":"success");showInboundTracking(result.tracking,result.vehicle||vehicle,result.duplicate?20:15);showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay())}
+    try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});mergeVehicleUpdate(result.vehicle);playFeedbackSound(result.duplicate?"duplicate":"success");showInboundTracking(result.tracking,result.vehicle||vehicle,result.duplicate?20:15);showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay())}
     catch(error){playFeedbackSound("error");showKioskMessage(error.message,false)}
     finally{submitState.busy=false;restoreInboundMainDisplay()}
     return;
@@ -1671,7 +1654,7 @@ async function confirmInboundSubmit(autoId,source){
   }
   const idempotencyKey=createIdempotencyKey();
   try{
-    const result=await submitInboundScanWithGateWait(value,idempotencyKey,source);
+    const result=await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});
     const duplicate=Boolean(result.duplicate);playFeedbackSound(duplicate?"duplicate":"success");mergeVehicleUpdate(result.vehicle);
     showInboundTracking(result.tracking,result.vehicle||vehicle,duplicate?20:15);
     if(automatic){
@@ -1755,7 +1738,7 @@ function renderDashboard() {
   $("dashboardMenuButton").addEventListener("click",toggleDashboardMenu);$("dashboardQueueButton")?.addEventListener("click",openPublicQueue);$("dashboardMobileQueue")?.addEventListener("click",()=>{closeDashboardMobileMenu();openPublicQueue()});$("dashboardFullscreen").addEventListener("click",toggleFullscreen);$("dashboardCalendarButton").addEventListener("click",()=>{closeDashboardMobileMenu();toggleDashboardCalendar()});$("dashboardMoreButton").addEventListener("click",toggleDashboardMobileMenu);$("dashboardMobileFullscreen").addEventListener("click",()=>{closeDashboardMobileMenu();toggleFullscreen()});$("dashboardMobileInfo").addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardInfo()});$("dashboardMobileTheme")?.addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardThemeDialog()});$("dashboardThemeButton")?.addEventListener("click",event=>{event.stopPropagation();toggleDashboardThemeMenu()});document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.addEventListener("click",()=>setDashboardTheme(button.dataset.dashboardTheme)));document.querySelector(".dashboard-global-info")?.addEventListener("click",()=>showDashboardInfo());document.addEventListener("click",closeDashboardThemeMenu,{once:true});applyDashboardTheme();updateFullscreenButton();loadDashboard(true);
 }
 
-function openPublicQueue(){window.open(new URL("./queue.html?v=20260809-r79",location.href).href,"_blank","noopener")}
+function openPublicQueue(){window.open(new URL("./queue.html?v=20260809-r82",location.href).href,"_blank","noopener")}
 async function showDashboardThemeDialog(){const options=[["blue","ฟ้าเรียบง่าย"],["green","เขียวสบายตา"],["dark","เข้มทันสมัย"],["warm","อบอุ่นนุ่มนวล"]],result=await Swal.fire({title:"เลือกธีม Dashboard",html:`<div class="dashboard-theme-dialog">${options.map(([id,label])=>`<button type="button" data-dialog-theme="${id}" class="${dashboardState.theme===id?"active":""}"><i class="theme-${id}"></i><span>${label}</span></button>`).join("")}</div>`,showConfirmButton:false,showCloseButton:true,customClass:swalClasses(),width:360,didOpen:()=>document.querySelectorAll("[data-dialog-theme]").forEach(button=>button.addEventListener("click",()=>{setDashboardTheme(button.dataset.dialogTheme);Swal.close()}))});return result}
 function applyDashboardTheme(){const allowed=["blue","green","dark","warm"],theme=allowed.includes(dashboardState.theme)?dashboardState.theme:"blue",shell=$("appView");if(shell)shell.dataset.dashboardTheme=theme;document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.classList.toggle("active",button.dataset.dashboardTheme===theme));const button=$("dashboardThemeButton");if(button)button.dataset.activeTheme=theme}
 function setDashboardTheme(theme){dashboardState.theme=["blue","green","dark","warm"].includes(theme)?theme:"blue";localStorage.setItem("wvf_dashboard_theme",dashboardState.theme);applyDashboardTheme();closeDashboardThemeMenu()}
@@ -2002,8 +1985,8 @@ async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",doorCo
 
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;
-  const queueUrl=new URL("./queue.html?v=20260809-r79",location.href).href;
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง อ่านข้อมูลอย่างเดียว ไม่เปลี่ยนสถานะงาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260809-r79" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  const queueUrl=new URL("./queue.html?v=20260809-r82",location.href).href;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260809-r82" target="_blank" rel="noopener">เปิดจอคิว</a></div>
   <section class="admin-queue-guide"><article><b>เรียกรถแยกจากเริ่มตรวจรับ</b><p>พนักงานกด “เรียกรถ” ก่อน เมื่อรถเข้าจุดตรวจรับจริงจึงกด “เริ่มตรวจรับ” เพื่อให้เวลาทำงานตรงกับเหตุการณ์จริง</p></article><article><b>เรียกซ้ำและเปลี่ยนประตู</b><p>รถที่ยังไม่เข้าจุดตรวจรับสามารถเรียกซ้ำได้ และเมื่อเปิดใช้ประตูสามารถเปลี่ยนประตูพร้อมเรียกใหม่โดยเก็บประวัติเดิมไว้</p></article><article><b>กรณีปิดประตู</b><p>เมื่อผู้ดูแลปิดการใช้ประตู ระบบจะไม่บังคับ ไม่แสดง และไม่อ่านหมายเลขประตูในการเรียกรถ</p></article></section>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
 }

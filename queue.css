@@ -108,3 +108,17 @@ html,body,.queue-shell{overscroll-behavior:none}
 /* Round 76: called vehicle marker */
 .next-item.is-called { box-shadow: inset 4px 0 0 rgba(247,170,18,.9); }
 .next-item.is-called .next-wait { font-weight:800; }
+
+/* Round 82: authenticated queue screen and clearer vehicle plate */
+[hidden]{display:none!important}
+.queue-login{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 10%,#f8fbff 0,#eef4fb 48%,#e6eef9 100%)}
+.queue-login-card{width:min(430px,100%);background:#fff;border:1px solid #d5e2f2;border-radius:22px;padding:30px;box-shadow:0 20px 55px rgba(21,66,125,.14);display:grid;grid-template-columns:64px 1fr;gap:18px}
+.queue-login-card>img{width:64px;height:64px;border-radius:16px;object-fit:contain}.queue-login-copy small{color:#1765cc;font-weight:900}.queue-login-copy h1{margin:3px 0 0;font-size:28px}.queue-login-copy p{margin:4px 0 0;color:#61738c;font-size:14px}
+.queue-login-form,.queue-login-card form{grid-column:1/-1;display:grid;gap:14px}.queue-login-card label{display:grid;gap:6px;font-size:14px;font-weight:850;color:#173963}.queue-login-card input{height:50px;border:1px solid #bfd0e6;border-radius:12px;padding:0 14px;font:inherit;font-size:17px;outline:none}.queue-login-card input:focus{border-color:#1765cc;box-shadow:0 0 0 3px rgba(23,101,204,.12)}
+.queue-login-card button{height:50px;border:0;border-radius:12px;background:#1765cc;color:#fff;font:inherit;font-weight:900;font-size:17px;cursor:pointer}.queue-login-card button:disabled{opacity:.65;cursor:wait}.queue-login-error{margin:0;padding:10px 12px;border-radius:10px;background:#fff0f0;color:#b32626;font-size:13px;font-weight:800}
+.call-vehicle-card{justify-self:start;min-width:min(100%,460px);max-width:620px;border:1px solid #bcd0eb;border-left:5px solid #1765cc;background:#f7faff;border-radius:12px;display:grid;grid-template-columns:38px minmax(0,1fr);align-items:center;gap:10px;padding:8px 16px;overflow:visible}
+.call-vehicle-card .detail-icon{grid-row:auto}.call-vehicle-card small{display:block;margin:0;color:#50657f;font-size:10px;font-weight:800}.call-vehicle-card b{display:block;color:#154f9f;font-size:18px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-instruction{overflow:visible}.call-instruction>div{min-width:0;overflow:visible}.call-instruction strong{line-height:1.28;padding-block:.08em;overflow:visible;text-overflow:clip;white-space:normal;word-break:keep-all}
+@media(max-width:1250px){.call-vehicle-card{min-width:min(100%,360px);padding:6px 12px}.call-vehicle-card b{font-size:15px}}
+@media(max-height:780px){.call-vehicle-card{padding:4px 10px}.call-vehicle-card b{font-size:14px}}
+@media(max-width:520px){.queue-login{padding:14px}.queue-login-card{padding:22px;grid-template-columns:52px 1fr}.queue-login-card>img{width:52px;height:52px}.queue-login-copy h1{font-size:24px}}
