@@ -23,10 +23,13 @@
     }
 
     configure(settings={}){
+      const previousPack=String(this.settings.packId||"")+"|"+String(this.settings.assetBasePath||"");
       this.settings={...this.settings,...settings};
       this.settings.volume=Math.max(10,Math.min(100,Number(this.settings.volume)||80));
       this.settings.repeatCount=Math.max(1,Math.min(3,Math.round(Number(this.settings.repeatCount)||1)));
       this.settings.repeatDelaySeconds=Math.max(3,Math.min(30,Math.round(Number(this.settings.repeatDelaySeconds)||7)));
+      const nextPack=String(this.settings.packId||"")+"|"+String(this.settings.assetBasePath||"");
+      if(previousPack!==nextPack){this.manifest=null;this.manifestVersion="";this.buffers.clear();this.ready=false;this.clearPending()}
       if(this.masterGain)this.masterGain.gain.value=this.settings.volume/100;
       return this.settings;
     }
@@ -79,7 +82,7 @@
       return map;
     }
 
-    cacheName(){return CACHE_PREFIX+(this.manifestVersion||"current").replace(/[^A-Za-z0-9._-]/g,"_")}
+    cacheName(){const pack=String(this.settings.packId||"pack").replace(/[^A-Za-z0-9._-]/g,"_"),version=String(this.manifestVersion||"current").replace(/[^A-Za-z0-9._-]/g,"_");return CACHE_PREFIX+pack+"-"+version}
     clipUrl(file){return this.assetBase()+encodeURIComponent(file).replace(/%2F/gi,"/")+"?v="+encodeURIComponent(this.manifestVersion||"1")}
 
     async fetchArrayBuffer(file){
