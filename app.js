@@ -1579,6 +1579,23 @@ function metricIcon(type){const icons={
 
 function submitManualAutoId(source="manual"){const input=$("autoSearch"),autoId=normalizeAutoId(input?.value);if(input)input.value="";renderInboundRows(state.vehicles);if(!autoId){playFeedbackSound("error");showNotice("warning","กรุณากรอก Auto ID");input?.focus();return}if(source!=="scanner")playFeedbackSound("scan");confirmInboundSubmit(autoId,source)}
 
+const gateArrivalWait={attempts:20,delayMs:3000};
+function waitForGateArrival(ms){return new Promise(resolve=>window.setTimeout(resolve,ms))}
+async function submitInboundScanWithGateWait(value,idempotencyKey,source){
+  let lastError=null;
+  for(let attempt=0;attempt<gateArrivalWait.attempts;attempt+=1){
+    try{return await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}})}
+    catch(error){
+      lastError=error;
+      if(error.status!==404)throw error;
+      if(attempt===0)showKioskMessage("อ่าน QR แล้ว กำลังรอข้อมูลรถเข้าพื้นที่ กรุณารอสักครู่",true);
+      if(attempt+1<gateArrivalWait.attempts)await waitForGateArrival(gateArrivalWait.delayMs);
+    }
+  }
+  const error=new Error("ยังไม่พบข้อมูลรถเข้าพื้นที่ กรุณาติดต่อจุด Gate In แล้วลองสแกนอีกครั้ง");
+  error.status=404;error.data=lastError?.data||null;throw error;
+}
+
 async function startCamera(){
   if(scannerState.active)return;
   unlockAudio();
@@ -1640,7 +1657,7 @@ async function confirmInboundSubmit(autoId,source){
   if(!window.Swal){
     if(!automatic&&!window.confirm(`${confirmationTitle} Auto ID: ${value}`))return;
     submitState.busy=true;
-    try{const idempotencyKey=createIdempotencyKey(),result=await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});mergeVehicleUpdate(result.vehicle);playFeedbackSound(result.duplicate?"duplicate":"success");showInboundTracking(result.tracking,result.vehicle||vehicle,result.duplicate?20:15);showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay())}
+    try{const idempotencyKey=createIdempotencyKey(),result=await submitInboundScanWithGateWait(value,idempotencyKey,source);mergeVehicleUpdate(result.vehicle);playFeedbackSound(result.duplicate?"duplicate":"success");showInboundTracking(result.tracking,result.vehicle||vehicle,result.duplicate?20:15);showKioskMessage(result.message||"บันทึกเรียบร้อย",true);await refreshInboundKioskData().catch(()=>restoreInboundMainDisplay())}
     catch(error){playFeedbackSound("error");showKioskMessage(error.message,false)}
     finally{submitState.busy=false;restoreInboundMainDisplay()}
     return;
@@ -1654,7 +1671,7 @@ async function confirmInboundSubmit(autoId,source){
   }
   const idempotencyKey=createIdempotencyKey();
   try{
-    const result=await api("/api/workflow/inbound-scan",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId:value,idempotencyKey,source}});
+    const result=await submitInboundScanWithGateWait(value,idempotencyKey,source);
     const duplicate=Boolean(result.duplicate);playFeedbackSound(duplicate?"duplicate":"success");mergeVehicleUpdate(result.vehicle);
     showInboundTracking(result.tracking,result.vehicle||vehicle,duplicate?20:15);
     if(automatic){
