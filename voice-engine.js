@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const ENGINE_BUILD="2026.08.10-r83.5-faster-no-door";
+  const ENGINE_BUILD="2026.08.10-r83.6-no-door-full-door-word";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
     enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,
@@ -176,7 +176,10 @@
         seq.push("pleaseAt",...doorKeys);
       }else{
         if(this.clipMap().please)seq.push("please");
-        seq.push("pleaseNoDoor");
+        // female-02: แม้ไม่มีเลขประตู ให้จบคำสั่งด้วยคำว่า "ที่ประตู"
+        // แต่ไม่ต่อ R/S หรือหมายเลขประตู
+        if(this.settings.supportsPlateProvince===true)seq.push("pleaseAt");
+        else seq.push("pleaseNoDoor");
       }
       if(this.settings.playThanks&&this.clipMap().thanks)seq.push("thanks");
       return seq;
