@@ -1269,11 +1269,18 @@ const cfg=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
-const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v3";
+const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v4";
 const TRACK_API_VERSION="2026-08-track-v2";
+const TRACK_ALERT_PREF_KEY="wv_track_alert_enabled_v1";
+const TRACK_ALERT_SEEN_PREFIX="wv_track_alert_seen_v1:";
+let trackAlertEnabled=readBoolStorage(TRACK_ALERT_PREF_KEY);
+let trackAlertContext=null,trackAlertUnlocked=false,trackAlertPending=null,trackAlertTimers=[];
+let trackAlertLastLiveKey="";
 
 document.addEventListener("DOMContentLoaded",()=>{
   siteClockTimer=window.setInterval(updateSiteClock,1000);
+  initTrackAlert();
+  applyTrackDensity();
   restoreTrackSnapshot();
   loadTrack(true);
   window.addEventListener("online",()=>{if(!terminalError)loadTrack(true)});
@@ -1284,15 +1291,21 @@ document.addEventListener("DOMContentLoaded",()=>{
     if(!terminalError)loadTrack(true);
   });
   window.addEventListener("pageshow",()=>{if(!document.hidden&&!terminalError)loadTrack(true)});
-  window.addEventListener("resize",()=>requestAnimationFrame(fitGateOutQr));
-  window.addEventListener("orientationchange",()=>setTimeout(fitGateOutQr,120));
+  window.addEventListener("resize",()=>requestAnimationFrame(()=>{applyTrackDensity();fitGateOutQr()}));
+  window.addEventListener("orientationchange",()=>setTimeout(()=>{applyTrackDensity();fitGateOutQr()},120));
   document.addEventListener("click",event=>{
+    if(event.target.closest("#trackAlertToggle")){toggleTrackAlert();return}
     if(event.target.closest("#trackOpenQr"))openGateOutQr();
     if(event.target.closest("[data-close-track-qr]"))closeGateOutQr();
-    const modal=event.target.closest("#trackQrModal");
-    if(modal&&event.target===modal)closeGateOutQr();
+    if(event.target.closest("#trackHistoryOpen"))openTrackHistory();
+    if(event.target.closest("[data-close-track-history]"))closeTrackHistory();
+    const qrModal=event.target.closest("#trackQrModal");
+    if(qrModal&&event.target===qrModal)closeGateOutQr();
+    const historyModal=event.target.closest("#trackHistoryModal");
+    if(historyModal&&event.target===historyModal)closeTrackHistory();
+    if(trackAlertEnabled&&!trackAlertUnlocked)unlockTrackAlert(false);
   });
-  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeGateOutQr()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"){closeGateOutQr();closeTrackHistory()}});
 });
 
 function token(){return new URLSearchParams(location.search).get("t")||""}
@@ -1336,9 +1349,11 @@ async function loadTrack(force){
     lastOk=Date.now();retryDelay=15000;saveTrackSnapshot(data);
     const fingerprint=trackFingerprint(data);
     if(force||fingerprint!==lastFingerprint||!hasRendered){render(data);lastFingerprint=fingerprint;hasRendered=true}
+    handleTrackCallAlert(data);
     setFresh(data.closed?"done":"",data.closed?"เสร็จสิ้น":"ข้อมูลล่าสุด");
     $("trackUpdated").textContent=`อัปเดต ${timeText(data.generatedAt)}`;
-    const seconds=Math.max(10,Math.min(60,Number(data.refreshSeconds)||20));
+    const suggested=Math.max(10,Math.min(60,Number(data.refreshSeconds)||20));
+    const seconds=data.vehicle?.status==="READY_FOR_RECEIVING"?Math.min(10,suggested):suggested;
     schedule(seconds*1000);
   }catch(error){
     const online=navigator.onLine;
@@ -1398,19 +1413,104 @@ function render(data){
 
 function renderQueueStatus(q,status){
   const called=Boolean(q?.called),latestLabel=called?(q.statusLabel||queueCallTypeLabel(q.callType)):"ยังไม่เรียก";
-  const door=called&&q.doorCode?q.doorCode:"–",latest=called&&q.calledAt?timeText(q.calledAt):"–",count=Math.max(0,Number(q.callCount||0));
+  const door=called&&q.doorCode?q.doorCode:called?"ยังไม่ระบุ":"–",latest=called&&q.calledAt?timeText(q.calledAt):"–",count=Math.max(0,Number(q.callCount||0));
   const helper=!called&&status==="READY_FOR_RECEIVING"?"กรุณารอการเรียกเข้าตรวจรับสินค้า":called&&q.callType==="DOOR_CHANGED"&&q.previousDoorCode&&q.doorCode?`เปลี่ยนจาก ${q.previousDoorCode} เป็น ${q.doorCode}`:called?"โปรดตรวจสอบประตูปัจจุบันทุกครั้งก่อนเคลื่อนรถ":"ยังไม่มีข้อมูลการเรียก";
   return `<section class="track-call-status"><header><div><h2>สถานะการเรียก</h2><span>${esc(helper)}</span></div></header><div class="track-call-metrics"><div><small>สถานะล่าสุด</small><b class="metric-call">${esc(latestLabel)}</b></div><div><small>ประตูปัจจุบัน</small><b>${esc(door)}</b></div><div><small>เวลาที่เรียกล่าสุด</small><b>${esc(latest)}</b></div><div><small>จำนวนครั้งที่เรียก</small><b>${count.toLocaleString("th-TH")} ครั้ง</b></div></div></section>`;
 }
 function renderCallHistory(history){
-  const rows=history.slice(0,5).map(row=>{
-    const label=row.callTypeLabel||queueCallTypeLabel(row.callType);
-    const door=row.callType==="DOOR_CHANGED"&&row.previousDoorCode&&row.doorCode?`${row.previousDoorCode} → ${row.doorCode}`:(row.doorCode||"ไม่ระบุประตู");
-    return `<div class="track-history-row"><time>${esc(row.calledAt?timeText(row.calledAt):"-")}</time><b>${esc(label)}</b><span>${esc(door)}</span><small>${esc(row.calledAt?shortDateText(row.calledAt):"-")}</small></div>`;
+  const latest=history[0];if(!latest)return"";
+  const label=latest.callTypeLabel||queueCallTypeLabel(latest.callType);
+  const door=latest.callType==="DOOR_CHANGED"&&latest.previousDoorCode&&latest.doorCode?`${latest.previousDoorCode} → ${latest.doorCode}`:(latest.doorCode||"ไม่ระบุประตู");
+  const row=`<div class="track-history-row compact"><time>${esc(latest.calledAt?timeText(latest.calledAt):"-")}</time><b>${esc(label)}</b><span>${esc(door)}</span><small>${esc(latest.calledAt?shortDateText(latest.calledAt):"-")}</small></div>`;
+  const allRows=history.slice(0,5).map(item=>{
+    const itemLabel=item.callTypeLabel||queueCallTypeLabel(item.callType);
+    const itemDoor=item.callType==="DOOR_CHANGED"&&item.previousDoorCode&&item.doorCode?`${item.previousDoorCode} → ${item.doorCode}`:(item.doorCode||"ไม่ระบุประตู");
+    return `<div class="track-history-row"><time>${esc(item.calledAt?timeText(item.calledAt):"-")}</time><b>${esc(itemLabel)}</b><span>${esc(itemDoor)}</span><small>${esc(item.calledAt?shortDateText(item.calledAt):"-")}</small></div>`;
   }).join("");
-  return `<section class="track-call-history"><header><h2>ประวัติการเรียกล่าสุด</h2><span>แสดงสูงสุด 5 รายการ</span></header>${rows}</section>`;
+  return `<section class="track-call-history"><header><h2>การเรียกล่าสุด</h2><button id="trackHistoryOpen" type="button">ดูทั้งหมด ${history.length>1?`(${history.length})`:""}</button></header>${row}</section>
+  <div id="trackHistoryModal" class="track-history-modal" hidden><section class="track-history-sheet" role="dialog" aria-modal="true" aria-labelledby="trackHistoryTitle"><header><div><small>ข้อมูลการเรียกรถ</small><h2 id="trackHistoryTitle">ประวัติการเรียกล่าสุด</h2></div><button type="button" data-close-track-history aria-label="ปิดประวัติ">×</button></header><div class="track-history-list">${allRows}</div><button class="track-history-close" type="button" data-close-track-history>ปิด</button></section></div>`;
 }
 function queueCallTypeLabel(type){return({FIRST:"เรียกครั้งแรก",RECALL:"เรียกซ้ำ",DOOR_CHANGED:"เปลี่ยนประตู"})[String(type||"").toUpperCase()]||"เรียกเข้าตรวจรับ"}
+
+function openTrackHistory(){const modal=$("trackHistoryModal");if(!modal)return;modal.hidden=false;document.body.classList.add("track-modal-open");modal.querySelector("[data-close-track-history]")?.focus()}
+function closeTrackHistory(){const modal=$("trackHistoryModal");if(!modal||modal.hidden)return;modal.hidden=true;document.body.classList.remove("track-modal-open");$("trackHistoryOpen")?.focus()}
+
+function readBoolStorage(key){try{return localStorage.getItem(key)==="1"}catch{return false}}
+function writeBoolStorage(key,value){try{localStorage.setItem(key,value?"1":"0")}catch{}}
+function alertSeenStorageKey(){return TRACK_ALERT_SEEN_PREFIX+snapshotTokenKey()}
+function readSeenAlertKey(){try{return sessionStorage.getItem(alertSeenStorageKey())||""}catch{return""}}
+function writeSeenAlertKey(value){try{sessionStorage.setItem(alertSeenStorageKey(),String(value||""))}catch{}}
+function currentTrackCallKey(data){
+  const q=data?.queueCall||{},latest=Array.isArray(data?.callHistory)?data.callHistory[0]:null;
+  if(!q.called)return"";
+  return String(latest?.callId||[q.callType||"CALL",q.calledAt||0,q.doorCode||"",q.callCount||0].join(":"));
+}
+function initTrackAlert(){updateTrackAlertButton();document.documentElement.dataset.trackDensity="normal"}
+function applyTrackDensity(){
+  const h=window.innerHeight||700,w=window.innerWidth||390;
+  let density="normal";
+  if(w<=760&&h<=680)density="micro";else if(w<=760&&h<=860)density="compact";else if(w<=760)density="mobile";
+  document.documentElement.dataset.trackDensity=density;
+}
+async function toggleTrackAlert(){
+  if(trackAlertEnabled&&!trackAlertUnlocked){
+    updateTrackAlertButton("กำลังเปิด...");const ok=await unlockTrackAlert(true);updateTrackAlertButton();if(ok&&trackAlertPending)playTrackCallAlert(trackAlertPending);return;
+  }
+  if(trackAlertEnabled){
+    trackAlertEnabled=false;writeBoolStorage(TRACK_ALERT_PREF_KEY,false);clearTrackAlertTimers();trackAlertPending=null;try{navigator.vibrate?.(0)}catch{};updateTrackAlertButton();return;
+  }
+  trackAlertEnabled=true;writeBoolStorage(TRACK_ALERT_PREF_KEY,true);updateTrackAlertButton("กำลังเปิด...");
+  const ok=await unlockTrackAlert(true);updateTrackAlertButton();
+  if(ok&&trackAlertPending)playTrackCallAlert(trackAlertPending);
+}
+async function unlockTrackAlert(fromGesture){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return false;
+    if(!trackAlertContext)trackAlertContext=new AudioCtx();
+    if(trackAlertContext.state!=="running")await trackAlertContext.resume();
+    trackAlertUnlocked=trackAlertContext.state==="running";
+    if(trackAlertUnlocked&&fromGesture)playTone(520,0.055,0.035);
+    updateTrackAlertButton();return trackAlertUnlocked;
+  }catch{trackAlertUnlocked=false;updateTrackAlertButton();return false}
+}
+function updateTrackAlertButton(forcedLabel=""){
+  const btn=$("trackAlertToggle"),label=$("trackAlertLabel");if(!btn||!label)return;
+  btn.setAttribute("aria-pressed",trackAlertEnabled?"true":"false");
+  btn.classList.toggle("is-on",trackAlertEnabled);btn.classList.toggle("needs-tap",trackAlertEnabled&&!trackAlertUnlocked&&Boolean(trackAlertPending));
+  label.textContent=forcedLabel||(trackAlertEnabled?(trackAlertUnlocked?"เสียงเตือนเปิด":trackAlertPending?"แตะเปิดเสียง":"เสียงเตือน"):(trackAlertPending?"เปิดเสียงเตือน":"เสียงเตือน"));
+}
+function handleTrackCallAlert(data){
+  const q=data?.queueCall||{},v=data?.vehicle||{};
+  if(v.status!=="READY_FOR_RECEIVING"||!q.called){trackAlertPending=null;updateTrackAlertButton();return}
+  const key=currentTrackCallKey(data);if(!key||key===trackAlertLastLiveKey&&key===readSeenAlertKey())return;
+  trackAlertLastLiveKey=key;if(readSeenAlertKey()===key)return;
+  trackAlertPending={key,callType:String(q.callType||"FIRST"),doorCode:String(q.doorCode||""),callCount:Number(q.callCount||1),calledAt:Number(q.calledAt||0)};
+  const instruction=document.querySelector(".track-instruction");if(instruction){instruction.classList.remove("alerting");void instruction.offsetWidth;instruction.classList.add("alerting");setTimeout(()=>instruction.classList.remove("alerting"),9000)}
+  updateTrackAlertButton();
+  if(trackAlertEnabled&&trackAlertUnlocked)playTrackCallAlert(trackAlertPending);
+}
+function clearTrackAlertTimers(){for(const id of trackAlertTimers)clearTimeout(id);trackAlertTimers=[]}
+function playTrackCallAlert(alert){
+  if(!alert||!trackAlertEnabled||!trackAlertUnlocked||!trackAlertContext||trackAlertContext.state!=="running")return false;
+  clearTrackAlertTimers();
+  const type=String(alert.callType||"FIRST").toUpperCase();
+  const pattern=type==="DOOR_CHANGED"?[[0,720],[260,1080],[650,720],[910,1080]]:type==="RECALL"?[[0,980],[210,980],[420,980],[760,1180]]:[[0,860],[300,1040],[600,1180]];
+  for(let cycle=0;cycle<3;cycle++){
+    const base=cycle*2600;
+    for(const [offset,freq] of pattern)trackAlertTimers.push(setTimeout(()=>playTone(freq,.15,.18),base+offset));
+  }
+  try{navigator.vibrate?.(type==="DOOR_CHANGED"?[450,180,450,350,700,1200,450,180,450]:type==="RECALL"?[300,150,300,150,500,1000,300,150,500]:[450,220,450,220,650])}catch{}
+  writeSeenAlertKey(alert.key);trackAlertPending=null;updateTrackAlertButton();return true;
+}
+function playTone(freq,duration=0.14,volume=0.16){
+  try{
+    const ctx=trackAlertContext;if(!ctx||ctx.state!=="running")return;
+    const osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
+    osc.type="sine";osc.frequency.setValueAtTime(Math.max(180,Number(freq)||880),now);
+    gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(Math.max(.02,Math.min(.3,volume)),now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+Math.max(.05,duration));
+    osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+Math.max(.06,duration)+.03);
+  }catch{}
+}
 
 function openGateOutQr(){
   const modal=$("trackQrModal");if(!modal)return;

@@ -452,7 +452,9 @@ function renderNext(data, animate = false) {
 function nextItem(item) {
   const called=Number(item.calledAt||0)>0,count=Math.max(1,Number(item.callCount||1));
   const callLabel=!called?shortDuration(item.elapsedSeconds):item.callType==="DOOR_CHANGED"?`เปลี่ยนประตู · ครั้งที่ ${count}`:item.callType==="RECALL"?`เรียกซ้ำครั้งที่ ${count}`:`เรียกแล้ว ${count} ครั้ง`;
-  const doorBadge=called&&item.doorCode?`<span class="next-door-badge">${esc(item.doorCode)}</span>`:"";
+  const doorBadge=item.doorCode
+    ? `<span class="next-door-badge" title="ประตู ${esc(item.doorCode)}">${esc(item.doorCode)}</span>`
+    : `<span class="next-door-badge is-placeholder" title="ยังไม่ระบุประตู">ประตู</span>`;
   return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(item.vehiclePlate || "–")}</div><div class="next-province">${esc(item.province || "–")}</div><div class="next-status"><span>${esc(callLabel)}</span>${doorBadge}</div></article>`;
 }
 

@@ -140,3 +140,10 @@ html[data-queue-density="compact"] .call-center{grid-template-rows:minmax(0,1fr)
 @media(max-height:780px){.queue-shell{grid-template-rows:64px 180px 66px minmax(0,1fr) 28px}.call-center{padding:7px 12px}}
 html[data-queue-density="compact"] .queue-shell{grid-template-rows:70px 188px 76px minmax(0,1fr) 30px}
 @media(max-height:650px){.queue-shell{grid-template-rows:58px 158px 58px minmax(0,1fr) 24px}.call-center{padding:4px 9px}}
+
+
+/* Round 85: make door badge readable and keep a stable placeholder when no door is assigned */
+.next-status>.next-door-badge{color:#fff!important;background:#0f5fc9!important;border:1px solid #0b4fa9;box-shadow:0 1px 3px rgba(15,53,109,.18);text-shadow:0 1px 1px rgba(0,0,0,.18)}
+.next-status>.next-door-badge.is-placeholder{color:#56677d!important;background:#f1f4f8!important;border-color:#d5dee9;box-shadow:none;text-shadow:none;font-weight:850;letter-spacing:0}
+.next-item.is-called .next-status>.next-door-badge{color:#fff!important}
+.next-item.is-called .next-status>.next-door-badge.is-placeholder{color:#56677d!important}
