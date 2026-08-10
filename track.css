@@ -266,3 +266,21 @@ html[data-track-density="compact"] .track-step span{font-size:7.5px!important}
 html[data-track-density="compact"] .track-site-time>div{padding:8px 9px!important}
 html[data-track-density="compact"] .track-site-time b{font-size:11px!important}
 html[data-track-density="compact"] .track-foot{font-size:7px!important}
+
+/* Round 87.1 — keep driver title + first name + last name on one line */
+.track-identity-grid > div:nth-child(4){
+  grid-column:1 / -1;
+}
+.track-identity-grid > div:nth-child(4) b{
+  white-space:nowrap!important;
+  overflow:visible!important;
+  overflow-wrap:normal!important;
+  word-break:keep-all!important;
+  text-overflow:clip!important;
+}
+@media(max-width:760px) and (orientation:portrait){
+  .track-identity-grid > div:nth-child(4) b{
+    font-size:clamp(12px,3.45vw,15px)!important;
+    line-height:1.2!important;
+  }
+}
