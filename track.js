@@ -1270,7 +1270,7 @@ const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
 const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v4";
-const TRACK_API_VERSION="2026-08-track-v2";
+const TRACK_API_VERSION="2026-08-track-v3";
 const TRACK_ALERT_PREF_KEY="wv_track_alert_enabled_v1";
 const TRACK_ALERT_SEEN_PREFIX="wv_track_alert_seen_v1:";
 let trackAlertEnabled=readBoolStorage(TRACK_ALERT_PREF_KEY);
@@ -1366,7 +1366,11 @@ async function loadTrack(force){
   }finally{inFlight=false}
 }
 
-function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,q:data?.queueCall,h:data?.callHistory,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
+function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,q:data?.queueCall,h:data?.callHistory,n:data?.queueNotice,nh:data?.noticeHistory,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
+function recentQueueNotice(data,maxAgeSeconds=900){
+  const notice=data?.queueNotice;if(!notice?.noticeId||!Number(notice.notifiedAt||0))return null;
+  return Math.max(0,Math.floor(Date.now()/1000)-Number(notice.notifiedAt))<=maxAgeSeconds?notice:null;
+}
 function validateTrackPayload(data){
   if(data?.apiVersion&&data.apiVersion!==TRACK_API_VERSION)throw new Error("หน้าแสดงผลและระบบติดตามเป็นคนละรุ่น กรุณาเปิดหน้าใหม่");
   const v=data?.vehicle;
@@ -1386,8 +1390,9 @@ function render(data){
   const showGateOutQr=v.status==="WAITING_GATE_OUT"&&returned&&!v.gateOutAt&&Boolean(v.autoId);
   const autoId=String(v.autoId||"");
   const qrSvg=showGateOutQr&&window.WVQRCode?.toSvg?window.WVQRCode.toSvg(autoId,{margin:4}):"";
-  const calledToDoor=v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode;
-  const mainInstruction=calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction;
+  const calledToDoor=v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode,notice=recentQueueNotice(data);
+  const mainInstruction=notice?.label|| (calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction);
+  const instructionNote=notice?`ข้อความล่าสุดจากเจ้าหน้าที่ · ${timeText(notice.notifiedAt)}`:(calledToDoor?instruction:"");
   siteClockGateIn=Number(v.gateInAt||0);
   siteClockGateOut=Number(v.gateOutAt||0);
   $("trackMain").innerHTML=`<article class="track-card">
@@ -1395,9 +1400,9 @@ function render(data){
       <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(v.statusLabel||"กำลังดำเนินการ")}</span></header>
       <div class="track-identity-grid"><div><small>บริษัท</small><b>${esc(v.companyName||"ไม่ระบุบริษัท")}</b></div><div><small>ทะเบียนรถ</small><b>${esc(v.vehiclePlate||"ไม่ระบุ")}</b></div><div><small>จังหวัด</small><b>${esc(v.province||"ไม่ระบุ")}</b></div>${v.driverName?`<div><small>คนขับรถ</small><b>${esc(v.driverName)}</b></div>`:""}</div>
     </section>
-    <section class="track-instruction ${q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${v.status==="WAITING_GATE_OUT"?"exit-ready":""}">
-      <div class="track-instruction-mark" aria-hidden="true">${q.called&&v.status==="READY_FOR_RECEIVING"?"→":v.status==="WAITING_GATE_OUT"?"QR":"i"}</div>
-      <div><small>สิ่งที่ต้องทำตอนนี้</small><b>${esc(mainInstruction)}</b>${calledToDoor?`<span>${esc(instruction)}</span>`:""}</div>
+    <section class="track-instruction ${notice?"officer-notice":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${v.status==="WAITING_GATE_OUT"?"exit-ready":""}">
+      <div class="track-instruction-mark" aria-hidden="true">${notice?"!":q.called&&v.status==="READY_FOR_RECEIVING"?"→":v.status==="WAITING_GATE_OUT"?"QR":"i"}</div>
+      <div><small>${notice?"ข้อความจากเจ้าหน้าที่":"สิ่งที่ต้องทำตอนนี้"}</small><b>${esc(mainInstruction)}</b>${instructionNote?`<span>${esc(instructionNote)}</span>`:""}</div>
     </section>
     ${renderQueueStatus(q,v.status)}
     ${history.length?renderCallHistory(history):""}
@@ -1441,6 +1446,7 @@ function alertSeenStorageKey(){return TRACK_ALERT_SEEN_PREFIX+snapshotTokenKey()
 function readSeenAlertKey(){try{return sessionStorage.getItem(alertSeenStorageKey())||""}catch{return""}}
 function writeSeenAlertKey(value){try{sessionStorage.setItem(alertSeenStorageKey(),String(value||""))}catch{}}
 function currentTrackCallKey(data){
+  const notice=recentQueueNotice(data);if(notice)return`notice:${notice.noticeId}`;
   const q=data?.queueCall||{},latest=Array.isArray(data?.callHistory)?data.callHistory[0]:null;
   if(!q.called)return"";
   return String(latest?.callId||[q.callType||"CALL",q.calledAt||0,q.doorCode||"",q.callCount||0].join(":"));
@@ -1480,11 +1486,11 @@ function updateTrackAlertButton(forcedLabel=""){
   label.textContent=forcedLabel||(trackAlertEnabled?(trackAlertUnlocked?"เสียงเตือนเปิด":trackAlertPending?"แตะเปิดเสียง":"เสียงเตือน"):(trackAlertPending?"เปิดเสียงเตือน":"เสียงเตือน"));
 }
 function handleTrackCallAlert(data){
-  const q=data?.queueCall||{},v=data?.vehicle||{};
-  if(v.status!=="READY_FOR_RECEIVING"||!q.called){trackAlertPending=null;updateTrackAlertButton();return}
+  const q=data?.queueCall||{},v=data?.vehicle||{},notice=recentQueueNotice(data);
+  if(!notice&&(v.status!=="READY_FOR_RECEIVING"||!q.called)){trackAlertPending=null;updateTrackAlertButton();return}
   const key=currentTrackCallKey(data);if(!key||key===trackAlertLastLiveKey&&key===readSeenAlertKey())return;
   trackAlertLastLiveKey=key;if(readSeenAlertKey()===key)return;
-  trackAlertPending={key,callType:String(q.callType||"FIRST"),doorCode:String(q.doorCode||""),callCount:Number(q.callCount||1),calledAt:Number(q.calledAt||0)};
+  trackAlertPending=notice?{key,callType:String(notice.noticeType||"NOTICE"),doorCode:String(notice.doorCode||""),callCount:1,calledAt:Number(notice.notifiedAt||0)}:{key,callType:String(q.callType||"FIRST"),doorCode:String(q.doorCode||""),callCount:Number(q.callCount||1),calledAt:Number(q.calledAt||0)};
   const instruction=document.querySelector(".track-instruction");if(instruction){instruction.classList.remove("alerting");void instruction.offsetWidth;instruction.classList.add("alerting");setTimeout(()=>instruction.classList.remove("alerting"),9000)}
   updateTrackAlertButton();
   if(trackAlertEnabled&&trackAlertUnlocked)playTrackCallAlert(trackAlertPending);
@@ -1494,7 +1500,7 @@ function playTrackCallAlert(alert){
   if(!alert||!trackAlertEnabled||!trackAlertUnlocked||!trackAlertContext||trackAlertContext.state!=="running")return false;
   clearTrackAlertTimers();
   const type=String(alert.callType||"FIRST").toUpperCase();
-  const pattern=type==="DOOR_CHANGED"?[[0,720],[260,1080],[650,720],[910,1080]]:type==="RECALL"?[[0,980],[210,980],[420,980],[760,1180]]:[[0,860],[300,1040],[600,1180]];
+  const pattern=type.startsWith("NOTICE_")?[[0,740],[180,980],[360,1220],[650,980],[830,1220]]:type==="DOOR_CHANGED"?[[0,720],[260,1080],[650,720],[910,1080]]:type==="RECALL"?[[0,980],[210,980],[420,980],[760,1180]]:[[0,860],[300,1040],[600,1180]];
   for(let cycle=0;cycle<3;cycle++){
     const base=cycle*2600;
     for(const [offset,freq] of pattern)trackAlertTimers.push(setTimeout(()=>playTone(freq,.15,.18),base+offset));

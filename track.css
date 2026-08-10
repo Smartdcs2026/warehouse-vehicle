@@ -144,3 +144,10 @@ html[data-track-density="micro"] .track-step i{width:10px!important;height:10px!
 html[data-track-density="micro"] .track-step:not(:last-child)::before{top:7px;left:calc(50% + 5px);width:calc(100% - 7px);height:1px}
 html[data-track-density="micro"] .track-step b{font-size:5.8px!important}
 html[data-track-density="micro"] .track-step span{font-size:5.2px!important}
+
+/* Round 86 — officer notice highlight */
+.track-instruction.officer-notice{border-color:#f0c98a;background:linear-gradient(135deg,#fff9ef,#fffdf8)}
+.track-instruction.officer-notice .track-instruction-mark{background:#fff1d8;color:#a85b00;border-color:#efc781}
+.track-instruction.officer-notice b{color:#8a4a00}
+html[data-track-density="compact"] .track-instruction.officer-notice,
+html[data-track-density="micro"] .track-instruction.officer-notice{padding-top:9px;padding-bottom:9px}

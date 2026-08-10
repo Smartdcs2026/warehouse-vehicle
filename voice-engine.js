@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const ENGINE_BUILD="2026.08.11-r84-adjustable-playback-rate";
+  const ENGINE_BUILD="2026.08.11-r86-extra-call-phrases";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
     enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,playbackRate:1,
@@ -63,7 +63,11 @@
         ding:f.ding,appointment:f.appointment,vehicleRegistration:f.vehicleRegistration,
         please:f.please,pleaseAt:f.pleaseEnterDeliveryAt,pleaseNoDoor:f.pleaseEnterDelivery,
         repeat:f.repeatAgain,recall:f.recall||f.optional?.recall,
-        changeDoor:f.changeDoor||f.optional?.changeDoor,thanks:f.thankYou
+        changeDoor:f.changeDoor||f.optional?.changeDoor,thanks:f.thankYou,
+        noticeDriver:"พนักงานขับรถทะเบียน.mp3",
+        noticeDocumentRoom:"กรุณาติดต่อที่ห้องเอกสาร.mp3",
+        noticeDoor:"กรุณาติดต่อที่ประตู.mp3",
+        noticeVehicle:"กรุณาติดต่อที่รถของท่าน.mp3"
       };
       for(const [digit,file] of Object.entries(f.digits||{}))map["digit_"+digit]=file;
       for(const [letter,file] of Object.entries(f.letters||{}))map["letter_"+String(letter).toUpperCase()]=file;
@@ -166,8 +170,32 @@
       return seq;
     }
 
+    noticeIdentitySequence(item){
+      const plate=this.plateKeys(item?.vehiclePlate),seq=[];
+      if(plate.length&&this.clipMap().noticeDriver){
+        seq.push("noticeDriver",...plate);
+        if(this.settings.readProvince!==false&&this.manifest?.files?.provinces){
+          const province=this.resolveProvince(item?.province);if(province)seq.push("province_"+province);
+        }
+        return seq;
+      }
+      return this.identitySequence(item);
+    }
+
+    noticeSequence(item){
+      const type=String(item?.callType||"").toUpperCase(),seq=[...this.noticeIdentitySequence(item)];
+      if(type==="NOTICE_DOCUMENT_ROOM")seq.push("noticeDocumentRoom");
+      else if(type==="NOTICE_VEHICLE")seq.push("noticeVehicle");
+      else if(type==="NOTICE_DOOR"){
+        seq.push("noticeDoor");
+        const door=this.doorKeys(item?.doorCode);if(door.length)seq.push(...door);
+      }
+      return seq;
+    }
+
     bodySequence(item,{includeCallPrefix=true}={}){
       const type=String(item?.callType||"").toUpperCase(),seq=[];
+      if(type.startsWith("NOTICE_"))return this.noticeSequence(item);
       if(includeCallPrefix&&["RECALL","DOOR_CHANGED"].includes(type)&&this.clipMap().recall)seq.push("recall");
       seq.push(...this.identitySequence(item));
       const mayReadDoor=item?.useDoor!==false&&this.settings.readDoor!==false,doorKeys=mayReadDoor?this.doorKeys(item?.doorCode):[];

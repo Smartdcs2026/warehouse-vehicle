@@ -1275,6 +1275,7 @@ const uiState = { detailsOpen:false };
 const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 const inboundTrackPanel = { timer:0, until:0, active:false };
 const adminState = { data:null, tab:"users", busy:false };
+const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const dashboardState = { range:"today", date:"", shiftId:"", tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue" };
 const DASHBOARD_INFO={
   dashboard:{title:"ข้อมูลใน Dashboard",meaning:"สรุปข้อมูลรถและขั้นตอนการทำงานตามวันที่ ช่วงเวลา และกะที่เลือก",source:"ข้อมูลรถมาจากระบบ Gate In/Gate Out แบบอ่านอย่างเดียว ส่วนขั้นตอน Inbound และตรวจรับมาจากประวัติการทำงานในระบบนี้",calculation:"ตัวเลขทุกจุดคำนวณจากข้อมูลใน D1 ณ เวลาที่ระบุว่าอัปเดตล่าสุด"},
@@ -1315,7 +1316,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260811-r85",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260811-r86",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; openApp(); } catch { clearSession(); } }
 }
 
@@ -1396,6 +1397,7 @@ function renderOperations() {
     if(action==="call")callVehicle(vehicle,false);
     else if(action==="recall")callVehicle(vehicle,true);
     else if(action==="history")showQueueCallHistory(vehicle);
+    else if(action==="notice")showAdditionalCall(vehicle);
     else if(action==="start")startReceiving(vehicle);
     else if(action==="complete")completeReceiving(vehicle);
   });
@@ -1407,13 +1409,69 @@ function renderJobCards(items) {
     const doorLabel=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุประตู";
     const statusText=inProgress?statusLabel(v.current_status):called?"เรียกแล้ว รอรถเข้า":"พร้อมเรียก";
     const callInfo=hasCalls?`<div class="queue-call-strip"><span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>จำนวนครั้ง</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>${Number(v.use_door)!==0&&v.door_code?`<span><small>ประตูล่าสุด</small><b>${escapeHtml(v.door_code)}</b></span>`:""}<button class="queue-history-button" type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ดูประวัติการเรียก</button></div>`:"";
+    const noticeInfo=v.queue_notice_at?`<div class="queue-notice-latest"><span class="queue-notice-icon">${receivingNoticeIcon("sound")}</span><div><small>เรียกเพิ่มเติมล่าสุด</small><b>${escapeHtml(queueNoticeTypeLabel(v.queue_notice_type,v.queue_notice_door_code))}</b></div><time>${formatDate(v.queue_notice_at)}</time></div>`:"";
     const actions=inProgress
       ? `<button class="complete-button" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button>`
       : called
         ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ${Number(v.use_door)!==0&&state.queueRecall?.allowDoorChange!==false?" / เปลี่ยนประตู":""}</button>`:`<button class="outline-button recall-button" type="button" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
         : `<button class="primary call-vehicle-button" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
-    return `<article class="job-card receiving-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><span class="badge receiving-badge">${escapeHtml(statusText)}</span><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${actions}</div></article>`;
+    return `<article class="job-card receiving-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><div class="receiving-head-tools"><span class="badge receiving-badge">${escapeHtml(statusText)}</span><button class="receiving-notice-button" type="button" data-receiving-action="notice" data-auto-id="${escapeHtml(v.auto_id)}" title="เรียกเพิ่มเติม" aria-label="เรียกเพิ่มเติม">${receivingNoticeIcon("sound")}<span>เรียกเพิ่มเติม</span></button></div><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}${noticeInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${actions}</div></article>`;
   }).join("") : `<div class="empty-state receiving-empty"><b>ไม่มีงานรอตรวจรับ</b><span>พื้นที่ทำงานว่าง รายการใหม่จะแสดงทันทีเมื่อยื่นเอกสารแล้ว</span></div>`;
+}
+
+
+function receivingNoticeIcon(type){
+  const icons={
+    sound:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l4 3V7L7 10H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 9.2a4 4 0 0 1 0 5.6M16.5 6.8a7.4 7.4 0 0 1 0 10.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    document:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4V20H6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3.5V8h4M9 12h6M9 15h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`,
+    door:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h11v17H6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 6.5h5v14H9z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12.8" cy="13.4" r=".8" fill="currentColor"/></svg>`,
+    truck:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h10v8h-10zM13.5 10h3l2 2.4v3.1h-5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="17.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="17.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`
+  };return icons[type]||icons.sound;
+}
+function queueNoticeTypeLabel(type,door){
+  const code=String(type||"").toUpperCase();
+  if(code==="NOTICE_DOCUMENT_ROOM")return"ติดต่อห้องเอกสาร";
+  if(code==="NOTICE_DOOR")return door?`ติดต่อที่ประตู ${door}`:"ติดต่อที่ประตู";
+  if(code==="NOTICE_VEHICLE")return"ติดต่อที่รถของท่าน";
+  return"เรียกเพิ่มเติม";
+}
+async function showAdditionalCall(vehicle){
+  if(!vehicle||!window.Swal)return;
+  const useDoor=Number(vehicle.use_door)!==0,hasDoors=useDoor&&Array.isArray(state.activeDoors)&&state.activeDoors.length>0;
+  const html=`${vehicleDetailsHtml(vehicle,vehicle.auto_id)}<div class="extra-call-choice-grid">
+    <button type="button" data-extra-call="NOTICE_DOCUMENT_ROOM"><span>${receivingNoticeIcon("document")}</span><div><b>ติดต่อห้องเอกสาร</b><small>ประกาศให้พนักงานขับรถมาติดต่อห้องเอกสาร</small></div></button>
+    <button type="button" data-extra-call="NOTICE_DOOR" ${hasDoors?"":"disabled"}><span>${receivingNoticeIcon("door")}</span><div><b>ติดต่อที่ประตู</b><small>${hasDoors?"เลือกประตูที่เปิดใช้งานแล้วประกาศ":"ยังไม่มีประตูที่เปิดใช้งาน"}</small></div></button>
+    <button type="button" data-extra-call="NOTICE_VEHICLE"><span>${receivingNoticeIcon("truck")}</span><div><b>ติดต่อที่รถของท่าน</b><small>ประกาศให้พนักงานขับรถกลับไปติดต่อที่รถ</small></div></button>
+  </div><p class="extra-call-note">การเรียกเพิ่มเติมไม่เปลี่ยนสถานะงานและไม่เปลี่ยนประตูของรถ</p>`;
+  await Swal.fire({title:"เรียกเพิ่มเติม",html,showConfirmButton:false,showCancelButton:true,cancelButtonText:"ปิด",customClass:swalClasses(),buttonsStyling:false,width:540,didOpen:()=>{
+    document.querySelectorAll("[data-extra-call]").forEach(button=>button.addEventListener("click",async()=>{
+      const type=button.dataset.extraCall;if(!type||button.disabled)return;Swal.close();
+      let doorCode=null;if(type==="NOTICE_DOOR"){doorCode=await chooseNoticeDoor(vehicle);if(!doorCode)return}
+      await submitQueueNotice(vehicle,type,doorCode);
+    }))
+  }});
+}
+async function chooseNoticeDoor(vehicle){
+  const doors=[...new Set(state.activeDoors||[])];if(!doors.length){await showNotice("warning","ยังไม่มีประตูที่เปิดใช้งาน");return null}
+  const defaultDoor=doors.includes(String(vehicle.door_code||""))?String(vehicle.door_code):doors[0];
+  if(window.Swal){
+    const options=doors.map(code=>`<option value="${escapeHtml(code)}"></option>`).join("");
+    const result=await Swal.fire({title:"เลือกประตูที่ต้องการให้ติดต่อ",html:`<div class="notice-door-picker"><label><span>ค้นหาหรือพิมพ์รหัสประตู</span><input id="noticeDoorCode" list="noticeDoorList" value="${escapeHtml(defaultDoor)}" autocomplete="off" placeholder="เช่น R12"><datalist id="noticeDoorList">${options}</datalist></label><small>เลือกได้เฉพาะประตูที่ Admin เปิดใช้งานอยู่</small></div>`,showCancelButton:true,confirmButtonText:"ใช้ประตูนี้",cancelButtonText:"ยกเลิก",customClass:swalClasses(),buttonsStyling:false,width:430,preConfirm:()=>{const code=String($("noticeDoorCode")?.value||"").trim().toUpperCase();if(!doors.includes(code)){Swal.showValidationMessage("กรุณาเลือกประตูที่เปิดใช้งาน");return false}return code}});
+    return result.isConfirmed?result.value:null;
+  }
+  const entered=window.prompt("กรอกรหัสประตู",defaultDoor);if(entered===null)return null;const code=String(entered).trim().toUpperCase();return doors.includes(code)?code:null;
+}
+async function submitQueueNotice(vehicle,noticeType,doorCode=null){
+  const autoId=String(vehicle?.auto_id||"");if(!autoId||receivingState.busyIds.has(autoId))return;
+  receivingState.busyIds.add(autoId);renderCurrentView();
+  try{
+    if(window.Swal)Swal.fire({title:"กำลังส่งการเรียกเพิ่มเติม",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:360});
+    const idempotencyKey=`notice:${autoId}:${noticeType}:${doorCode||"-"}:${Date.now()}:${crypto.randomUUID?.()||Math.random().toString(36).slice(2)}`;
+    const result=await api("/api/workflow/queue-notice",{method:"POST",headers:{"x-idempotency-key":idempotencyKey},body:{autoId,noticeType,doorCode,idempotencyKey}});
+    const data=await api("/api/vehicles/active");applyVehicleData(data);renderCurrentView();
+    if(window.Swal)await Swal.fire({icon:"success",title:"ส่งการเรียกเพิ่มเติมแล้ว",text:result.message||queueNoticeTypeLabel(noticeType,doorCode),timer:1600,showConfirmButton:false,customClass:swalClasses(),width:390});
+  }catch(error){await showNotice("error",error.message||"ส่งการเรียกเพิ่มเติมไม่สำเร็จ")}
+  finally{receivingState.busyIds.delete(autoId);if(state.view==="operations")renderCurrentView()}
 }
 
 function queueHistoryTypeLabel(type){return({FIRST:"เรียกครั้งแรก",RECALL:"เรียกซ้ำ",DOOR_CHANGED:"เปลี่ยนประตูและเรียก"})[String(type||"").toUpperCase()]||"เรียกรถ"}
@@ -1670,7 +1728,7 @@ async function confirmInboundSubmit(autoId,source){
 
 const inboundTrackingQrCache=new Map();
 function trackingQrSvg(url){if(inboundTrackingQrCache.has(url))return inboundTrackingQrCache.get(url);const svg=window.WVQRCode?.toSvg?window.WVQRCode.toSvg(url,{margin:4}):`<div class="driver-qr-fallback">QR ไม่พร้อมใช้งาน</div>`;inboundTrackingQrCache.set(url,svg);if(inboundTrackingQrCache.size>24)inboundTrackingQrCache.delete(inboundTrackingQrCache.keys().next().value);return svg}
-function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260811-r85`,location.href).href}
+function trackingPageUrl(token){return new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260811-r86`,location.href).href}
 function showInboundTracking(tracking,vehicle,seconds){
   if(!state.trackingEnabled)return;
   const panel=$("inboundDriverQr"),body=$("driverQrBody");if(!panel||!body)return;
@@ -1738,7 +1796,7 @@ function renderDashboard() {
   $("dashboardMenuButton").addEventListener("click",toggleDashboardMenu);$("dashboardQueueButton")?.addEventListener("click",openPublicQueue);$("dashboardMobileQueue")?.addEventListener("click",()=>{closeDashboardMobileMenu();openPublicQueue()});$("dashboardFullscreen").addEventListener("click",toggleFullscreen);$("dashboardCalendarButton").addEventListener("click",()=>{closeDashboardMobileMenu();toggleDashboardCalendar()});$("dashboardMoreButton").addEventListener("click",toggleDashboardMobileMenu);$("dashboardMobileFullscreen").addEventListener("click",()=>{closeDashboardMobileMenu();toggleFullscreen()});$("dashboardMobileInfo").addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardInfo()});$("dashboardMobileTheme")?.addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardThemeDialog()});$("dashboardThemeButton")?.addEventListener("click",event=>{event.stopPropagation();toggleDashboardThemeMenu()});document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.addEventListener("click",()=>setDashboardTheme(button.dataset.dashboardTheme)));document.querySelector(".dashboard-global-info")?.addEventListener("click",()=>showDashboardInfo());document.addEventListener("click",closeDashboardThemeMenu,{once:true});applyDashboardTheme();updateFullscreenButton();loadDashboard(true);
 }
 
-function openPublicQueue(){window.open(new URL("./queue.html?v=20260811-r85",location.href).href,"_blank","noopener")}
+function openPublicQueue(){window.open(new URL("./queue.html?v=20260811-r86",location.href).href,"_blank","noopener")}
 async function showDashboardThemeDialog(){const options=[["blue","ฟ้าเรียบง่าย"],["green","เขียวสบายตา"],["dark","เข้มทันสมัย"],["warm","อบอุ่นนุ่มนวล"]],result=await Swal.fire({title:"เลือกธีม Dashboard",html:`<div class="dashboard-theme-dialog">${options.map(([id,label])=>`<button type="button" data-dialog-theme="${id}" class="${dashboardState.theme===id?"active":""}"><i class="theme-${id}"></i><span>${label}</span></button>`).join("")}</div>`,showConfirmButton:false,showCloseButton:true,customClass:swalClasses(),width:360,didOpen:()=>document.querySelectorAll("[data-dialog-theme]").forEach(button=>button.addEventListener("click",()=>{setDashboardTheme(button.dataset.dialogTheme);Swal.close()}))});return result}
 function applyDashboardTheme(){const allowed=["blue","green","dark","warm"],theme=allowed.includes(dashboardState.theme)?dashboardState.theme:"blue",shell=$("appView");if(shell)shell.dataset.dashboardTheme=theme;document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.classList.toggle("active",button.dataset.dashboardTheme===theme));const button=$("dashboardThemeButton");if(button)button.dataset.activeTheme=theme}
 function setDashboardTheme(theme){dashboardState.theme=["blue","green","dark","warm"].includes(theme)?theme:"blue";localStorage.setItem("wvf_dashboard_theme",dashboardState.theme);applyDashboardTheme();closeDashboardThemeMenu()}
@@ -1863,9 +1921,133 @@ async function toggleAdminUser(user){const result=await Swal.fire({icon:"questio
 function renderAdminWorkflow(){const w=adminState.data.workflow||{};$("adminPanel").innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>ขั้นตอนการทำงาน</h3><p>การเปลี่ยนแปลงส่วนนี้ใช้กับรถที่เข้าพื้นที่หลังจากบันทึก รถที่กำลังทำงานอยู่จะทำตามขั้นตอนเดิมจนจบ</p></div></div><form id="workflowForm" class="workflow-admin-grid clean-setting-grid">${workflowSwitch("wfInboundFirst","ยื่นเอกสารก่อน","ให้พนักงาน Inbound บันทึกเวลายื่นเอกสาร",w.use_inbound_first)}${workflowSwitch("wfReceiving","ตรวจรับสินค้า","ส่งงานไปยังแผนกรับสินค้า",w.use_receiving)}${workflowSwitch("wfInboundSecond","รับเอกสารคืน","ให้พนักงาน Inbound บันทึกรับเอกสารคืน",w.use_inbound_second)}<div class="admin-form-actions"><button class="primary" type="submit">บันทึกขั้นตอนงาน</button></div></form>`;const receiving=$("wfReceiving");$("workflowForm").addEventListener("submit",event=>{event.preventDefault();adminMutation("/api/admin/workflow",{useInboundFirst:$("wfInboundFirst").checked,useReceiving:receiving.checked,useInboundSecond:$("wfInboundSecond").checked,useDoor:Number(w.use_door)!==0,requireDoor:Number(w.require_door)!==0})})}
 function workflowSwitch(id,title,description,checked){return `<label class="setting-switch-card"><span><b>${title}</b><small>${description}</small></span><input id="${id}" type="checkbox" ${Number(checked)?"checked":""}></label>`}
 
-function renderAdminDoors(){const doors=adminState.data.doors||[],w=adminState.data.workflow||{},activeCount=doors.filter(door=>Number(door.is_active)).length,useDoor=Number(w.use_door)!==0,requireDoor=useDoor&&Number(w.require_door)!==0;$("adminPanel").innerHTML=`<form id="doorsForm" class="door-settings-form"><section class="door-master-switch ${useDoor?"is-on":"is-off"}"><div><small>การใช้งานประตูรับสินค้า</small><h3 id="doorUseTitle">${useDoor?"เปิดใช้งาน":"ปิดใช้งาน"}</h3><p id="doorUseText">${useDoor?"พนักงานเลือกตัวอักษรหน้าประตูและกรอกหมายเลขก่อนเริ่มตรวจรับ":"พนักงานเริ่มตรวจรับได้โดยไม่ต้องกรอกประตู"}</p></div><label class="large-toggle"><input id="doorUseSwitch" type="checkbox" ${useDoor?"checked":""}><span></span></label></section><section id="doorOptions" class="door-options ${useDoor?"":"is-muted"}"><label class="setting-switch-card compact-setting"><span><b>ต้องระบุประตู</b><small>เปิดไว้เพื่อไม่ให้เริ่มตรวจรับจนกว่าจะกรอกหมายเลขประตู</small></span><input id="doorRequiredSwitch" type="checkbox" ${requireDoor?"checked":""} ${useDoor?"":"disabled"}></label><div class="admin-section-head clean-admin-head door-list-head"><div><h3>รายการประตู</h3><p>เปิดเฉพาะประตูที่ใช้งานอยู่ พนักงานจะกรอกหมายเลขเองเพื่อความรวดเร็ว</p><span class="clean-count">เปิดอยู่ ${activeCount} ประตู</span></div><button id="addDoorRow" type="button" class="primary">เพิ่มประตู</button></div><div id="doorAdminRows" class="door-admin-grid clean-door-grid">${doors.map(door=>doorAdminRow(door.door_code,door.is_active)).join("")}</div></section><div class="admin-form-actions clean-sticky-actions"><button class="primary" type="submit">บันทึกการตั้งค่าประตู</button></div></form>`;const useSwitch=$("doorUseSwitch"),required=$("doorRequiredSwitch"),options=$("doorOptions"),title=$("doorUseTitle"),text=$("doorUseText"),sync=()=>{const on=useSwitch.checked;required.disabled=!on;if(!on)required.checked=false;options.classList.toggle("is-muted",!on);title.textContent=on?"เปิดใช้งาน":"ปิดใช้งาน";text.textContent=on?"พนักงานเลือกตัวอักษรหน้าประตูและกรอกหมายเลขก่อนเริ่มตรวจรับ":"พนักงานเริ่มตรวจรับได้โดยไม่ต้องกรอกประตู";useSwitch.closest(".door-master-switch")?.classList.toggle("is-on",on);useSwitch.closest(".door-master-switch")?.classList.toggle("is-off",!on)};useSwitch.addEventListener("change",sync);sync();$("addDoorRow").addEventListener("click",()=>{$("doorAdminRows").insertAdjacentHTML("beforeend",doorAdminRow("",1));bindDoorRemove()});bindDoorRemove();$("doorsForm").addEventListener("submit",async event=>{event.preventDefault();const rows=[...document.querySelectorAll(".door-admin-row")].map(row=>({doorCode:row.querySelector("input[type=text]").value.trim().toUpperCase(),isActive:row.querySelector("input[type=checkbox]").checked})).filter(item=>item.doorCode);await saveDoorSettings({useDoor:useSwitch.checked,requireDoor:required.checked,doors:rows})})}
-function doorAdminRow(code,active){return `<div class="door-admin-row clean-door-row"><label><span>รหัสประตู</span><input type="text" value="${escapeHtml(code)}" maxlength="5" placeholder="เช่น R07"></label><label class="clean-door-toggle"><input type="checkbox" ${Number(active)?"checked":""}> <span>เปิดใช้งาน</span></label><button type="button" data-remove-door>ลบ</button></div>`}
-function bindDoorRemove(){document.querySelectorAll("[data-remove-door]").forEach(button=>button.onclick=()=>button.closest(".door-admin-row").remove())}
+function adminDoorIcon(type){
+  const icons={
+    plus:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    search:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15 15 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    open:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h10v16H6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 7h6v13h-6z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 12h3m-1.4-1.4L19 12l-1.4 1.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    close:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h11v16H6z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 7h5v13H9z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m16.2 9.2 4 4m0-4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`,
+    trash:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V4.5h6V7M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  };return icons[type]||icons.plus;
+}
+function normalizeDoorEditorCode(value){
+  const text=String(value||"").trim().toUpperCase(),match=text.match(/^(SS|RR|SR|RS|S|R)(\d{1,3})$/);
+  if(!match)return null;return{code:match[1]+match[2],group:match[1],number:Number(match[2])};
+}
+function sortDoorEditorItems(items){
+  const order={S:1,R:2,SS:3,RR:4,SR:5,RS:6};
+  return [...items].sort((a,b)=>(order[a.group]||99)-(order[b.group]||99)||Number(a.number)-Number(b.number)||String(a.code).localeCompare(String(b.code)));
+}
+function renderAdminDoors(){
+  const doors=adminState.data.doors||[],w=adminState.data.workflow||{},useDoor=Number(w.use_door)!==0,requireDoor=useDoor&&Number(w.require_door)!==0;
+  doorEditorState.items=sortDoorEditorItems(doors.map(door=>{const parsed=normalizeDoorEditorCode(door.door_code);return parsed?{...parsed,isActive:Number(door.is_active)!==0,selected:false}:null}).filter(Boolean));
+  doorEditorState.search="";doorEditorState.group="ALL";doorEditorState.status="ALL";
+  $("adminPanel").innerHTML=`<form id="doorsForm" class="door-settings-form door-manager-form">
+    <section class="door-master-switch ${useDoor?"is-on":"is-off"}"><div><small>การใช้งานประตูรับสินค้า</small><h3 id="doorUseTitle">${useDoor?"เปิดใช้งาน":"ปิดใช้งาน"}</h3><p id="doorUseText">${useDoor?"พนักงานเลือกได้เฉพาะประตูที่ Admin เปิดใช้งาน":"พนักงานเริ่มตรวจรับได้โดยไม่ต้องระบุประตู"}</p></div><label class="large-toggle"><input id="doorUseSwitch" type="checkbox" ${useDoor?"checked":""}><span></span></label></section>
+    <section id="doorOptions" class="door-options ${useDoor?"":"is-muted"}">
+      <label class="setting-switch-card compact-setting"><span><b>ต้องระบุประตู</b><small>เมื่อเปิดไว้ ระบบจะไม่ให้เรียกหรือเริ่มตรวจรับจนกว่าจะเลือกประตู</small></span><input id="doorRequiredSwitch" type="checkbox" ${requireDoor?"checked":""} ${useDoor?"":"disabled"}></label>
+
+      <section class="door-bulk-builder">
+        <header><div><h3>เพิ่มประตูแบบรวดเร็ว</h3><p>เหมาะกับคลังที่มีประตูจำนวนมาก สามารถสร้างเป็นช่วง หรือวางหลายรหัสพร้อมกัน</p></div><span id="doorTotalCount" class="clean-count"></span></header>
+        <div class="door-range-grid">
+          <label><span>กลุ่มประตู</span><select id="doorBulkPrefix"><option>S</option><option>R</option><option>SS</option><option>RR</option><option>SR</option><option>RS</option></select></label>
+          <label><span>เริ่มเลข</span><input id="doorBulkFrom" type="number" min="0" max="999" value="1"></label>
+          <label><span>ถึงเลข</span><input id="doorBulkTo" type="number" min="0" max="999" value="20"></label>
+          <label><span>รูปแบบเลข</span><select id="doorBulkPad"><option value="2">2 หลัก เช่น 01</option><option value="0">ไม่เติมศูนย์</option><option value="3">3 หลัก เช่น 001</option></select></label>
+          <button id="doorBulkAdd" type="button" class="primary door-icon-button">${adminDoorIcon("plus")}<span>เพิ่มช่วง</span></button>
+        </div>
+        <div class="door-paste-row"><label><span>เพิ่มรหัสเฉพาะ</span><input id="doorSingleInput" type="text" placeholder="เช่น R01, R05, S12"></label><button id="doorSingleAdd" type="button" class="outline-button door-icon-button">${adminDoorIcon("plus")}<span>เพิ่มรหัส</span></button></div>
+      </section>
+
+      <section class="door-manager-card">
+        <header class="door-manager-head"><div><h3>จัดการประตู</h3><p>ค้นหา เลือกหลายประตู แล้วเปิด ปิด หรือลบพร้อมกันได้</p></div><span id="doorActiveCount" class="clean-count"></span></header>
+        <div class="door-manager-filters">
+          <label class="door-search-field"><span>${adminDoorIcon("search")}</span><input id="doorAdminSearch" type="search" placeholder="ค้นหา เช่น R12"></label>
+          <select id="doorGroupFilter"><option value="ALL">ทุกกลุ่ม</option><option>S</option><option>R</option><option>SS</option><option>RR</option><option>SR</option><option>RS</option></select>
+          <select id="doorStatusFilter"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">เปิดใช้งาน</option><option value="INACTIVE">ปิดใช้งาน</option></select>
+        </div>
+        <div class="door-bulk-actions">
+          <label><input id="doorSelectVisible" type="checkbox"><span>เลือกทั้งหมดที่แสดง</span></label>
+          <div>
+            <button id="doorOpenSelected" type="button">${adminDoorIcon("open")}<span>เปิดที่เลือก</span></button>
+            <button id="doorCloseSelected" type="button">${adminDoorIcon("close")}<span>ปิดที่เลือก</span></button>
+            <button id="doorDeleteSelected" type="button" class="danger">${adminDoorIcon("trash")}<span>ลบที่เลือก</span></button>
+          </div>
+        </div>
+        <div id="doorManagerSummary" class="door-manager-summary"></div>
+        <div id="doorManagerGrid" class="door-manager-grid"></div>
+      </section>
+    </section>
+    <div class="admin-form-actions clean-sticky-actions"><button class="primary" type="submit">บันทึกการตั้งค่าประตู</button></div>
+  </form>`;
+
+  const useSwitch=$("doorUseSwitch"),required=$("doorRequiredSwitch"),options=$("doorOptions"),title=$("doorUseTitle"),text=$("doorUseText");
+  const syncMaster=()=>{const on=useSwitch.checked;required.disabled=!on;if(!on)required.checked=false;options.classList.toggle("is-muted",!on);title.textContent=on?"เปิดใช้งาน":"ปิดใช้งาน";text.textContent=on?"พนักงานเลือกได้เฉพาะประตูที่ Admin เปิดใช้งาน":"พนักงานเริ่มตรวจรับได้โดยไม่ต้องระบุประตู";useSwitch.closest(".door-master-switch")?.classList.toggle("is-on",on);useSwitch.closest(".door-master-switch")?.classList.toggle("is-off",!on)};
+  useSwitch.addEventListener("change",syncMaster);syncMaster();
+
+  $("doorAdminSearch").addEventListener("input",event=>{doorEditorState.search=String(event.target.value||"").trim().toUpperCase();renderDoorManagerGrid()});
+  $("doorGroupFilter").addEventListener("change",event=>{doorEditorState.group=event.target.value;renderDoorManagerGrid()});
+  $("doorStatusFilter").addEventListener("change",event=>{doorEditorState.status=event.target.value;renderDoorManagerGrid()});
+  $("doorBulkAdd").addEventListener("click",addDoorRange);
+  $("doorSingleAdd").addEventListener("click",addDoorCodesFromInput);
+  $("doorSingleInput").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();addDoorCodesFromInput()}});
+  $("doorOpenSelected").addEventListener("click",()=>bulkDoorActive(true));
+  $("doorCloseSelected").addEventListener("click",()=>bulkDoorActive(false));
+  $("doorDeleteSelected").addEventListener("click",deleteSelectedDoors);
+  $("doorSelectVisible").addEventListener("change",event=>{for(const item of visibleDoorEditorItems())item.selected=event.target.checked;renderDoorManagerGrid()});
+  $("doorManagerGrid").addEventListener("change",event=>{
+    const tile=event.target.closest("[data-door-code]");if(!tile)return;const item=doorEditorState.items.find(row=>row.code===tile.dataset.doorCode);if(!item)return;
+    if(event.target.matches("[data-door-select]"))item.selected=event.target.checked;
+    if(event.target.matches("[data-door-active]"))item.isActive=event.target.checked;
+    renderDoorManagerGrid();
+  });
+  $("doorsForm").addEventListener("submit",async event=>{event.preventDefault();const rows=sortDoorEditorItems(doorEditorState.items).map(item=>({doorCode:item.code,isActive:item.isActive}));await saveDoorSettings({useDoor:useSwitch.checked,requireDoor:required.checked,doors:rows})});
+  renderDoorManagerGrid();
+}
+function visibleDoorEditorItems(){
+  const query=doorEditorState.search;
+  return doorEditorState.items.filter(item=>(!query||item.code.includes(query))&&(doorEditorState.group==="ALL"||item.group===doorEditorState.group)&&(doorEditorState.status==="ALL"||(doorEditorState.status==="ACTIVE"&&item.isActive)||(doorEditorState.status==="INACTIVE"&&!item.isActive)));
+}
+function renderDoorManagerGrid(){
+  const grid=$("doorManagerGrid");if(!grid)return;
+  const visible=visibleDoorEditorItems(),active=doorEditorState.items.filter(item=>item.isActive).length,selected=doorEditorState.items.filter(item=>item.selected).length;
+  $("doorTotalCount").textContent=`ทั้งหมด ${doorEditorState.items.length} ประตู`;
+  $("doorActiveCount").textContent=`เปิด ${active} · ปิด ${doorEditorState.items.length-active}`;
+  $("doorManagerSummary").textContent=`แสดง ${visible.length} ประตู${selected?` · เลือกไว้ ${selected}`:""}`;
+  const selectVisible=$("doorSelectVisible");if(selectVisible){selectVisible.checked=Boolean(visible.length)&&visible.every(item=>item.selected);selectVisible.indeterminate=visible.some(item=>item.selected)&&!visible.every(item=>item.selected)}
+  grid.innerHTML=visible.length?visible.map(item=>`<article class="door-manage-tile ${item.isActive?"is-active":"is-inactive"} ${item.selected?"is-selected":""}" data-door-code="${escapeHtml(item.code)}"><label class="door-select-box"><input type="checkbox" data-door-select ${item.selected?"checked":""}><span></span></label><div class="door-code-copy"><b>${escapeHtml(item.code)}</b><small>กลุ่ม ${escapeHtml(item.group)} · หมายเลข ${item.number}</small></div><label class="door-state-switch"><input type="checkbox" data-door-active ${item.isActive?"checked":""}><span></span><em>${item.isActive?"เปิด":"ปิด"}</em></label></article>`).join(""):`<div class="empty-state"><b>ไม่พบประตูตามตัวกรอง</b><span>ลองเปลี่ยนคำค้นหา กลุ่ม หรือสถานะ</span></div>`;
+}
+function addDoorRange(){
+  const prefix=String($("doorBulkPrefix")?.value||"R"),from=Number($("doorBulkFrom")?.value),to=Number($("doorBulkTo")?.value),pad=Number($("doorBulkPad")?.value||0);
+  if(!Number.isInteger(from)||!Number.isInteger(to)||from<0||to>999||from>to){showNotice("warning","กรุณาตรวจสอบช่วงหมายเลขประตู");return}
+  const count=to-from+1;if(doorEditorState.items.length+count>1000){showNotice("warning","ระบบรองรับได้สูงสุด 1,000 ประตูต่อคลัง");return}
+  const existing=new Set(doorEditorState.items.map(item=>item.code));let added=0;
+  for(let n=from;n<=to;n++){const digits=pad>0?String(n).padStart(pad,"0"):String(n),parsed=normalizeDoorEditorCode(prefix+digits);if(parsed&&!existing.has(parsed.code)){doorEditorState.items.push({...parsed,isActive:true,selected:false});existing.add(parsed.code);added++}}
+  doorEditorState.items=sortDoorEditorItems(doorEditorState.items);renderDoorManagerGrid();showNotice("success",added?`เพิ่ม ${added} ประตูแล้ว`:"ไม่มีประตูใหม่ให้เพิ่ม");
+}
+function addDoorCodesFromInput(){
+  const input=$("doorSingleInput"),raw=String(input?.value||"").trim();if(!raw)return;
+  const parts=raw.split(/[\s,;]+/).map(value=>value.trim()).filter(Boolean),existing=new Set(doorEditorState.items.map(item=>item.code));let added=0,invalid=[],limitReached=false;
+  for(const part of parts){
+    const parsed=normalizeDoorEditorCode(part);if(!parsed){invalid.push(part);continue}if(existing.has(parsed.code))continue;
+    if(doorEditorState.items.length>=1000){limitReached=true;break}
+    doorEditorState.items.push({...parsed,isActive:true,selected:false});existing.add(parsed.code);added++;
+  }
+  doorEditorState.items=sortDoorEditorItems(doorEditorState.items);if(input)input.value="";renderDoorManagerGrid();
+  if(limitReached)showNotice("warning",`เพิ่ม ${added} ประตูแล้ว และหยุดที่จำนวนสูงสุด 1,000 ประตู`);
+  else if(invalid.length)showNotice("warning",`เพิ่ม ${added} ประตู · ข้ามรหัสที่ไม่ถูกต้อง: ${invalid.slice(0,5).join(", ")}`);
+  else showNotice("success",added?`เพิ่ม ${added} ประตูแล้ว`:"ไม่มีประตูใหม่ให้เพิ่ม");
+}
+function bulkDoorActive(active){
+  const selected=doorEditorState.items.filter(item=>item.selected);if(!selected.length){showNotice("warning","กรุณาเลือกประตูก่อน");return}
+  for(const item of selected)item.isActive=active;renderDoorManagerGrid();
+}
+async function deleteSelectedDoors(){
+  const selected=doorEditorState.items.filter(item=>item.selected);if(!selected.length){await showNotice("warning","กรุณาเลือกประตูก่อน");return}
+  let confirmed=true;if(window.Swal){const result=await Swal.fire({icon:"warning",title:`ลบ ${selected.length} ประตู?`,text:"ประตูที่ลบจะไม่อยู่ในรายการตั้งค่า แต่ประวัติงานเดิมยังคงอยู่",showCancelButton:true,confirmButtonText:"ลบที่เลือก",cancelButtonText:"ยกเลิก",customClass:swalClasses(),buttonsStyling:false,width:430});confirmed=result.isConfirmed}
+  if(!confirmed)return;const remove=new Set(selected.map(item=>item.code));doorEditorState.items=doorEditorState.items.filter(item=>!remove.has(item.code));renderDoorManagerGrid();
+}
+
 async function saveDoorSettings({useDoor,requireDoor,doors}){if(adminState.busy)return;adminState.busy=true;try{Swal.fire({title:"กำลังบันทึก",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:340});const w=adminState.data.workflow||{};await api("/api/admin/workflow",{method:"POST",body:{useInboundFirst:Number(w.use_inbound_first)!==0,useReceiving:Number(w.use_receiving)!==0,useInboundSecond:Number(w.use_inbound_second)!==0,useDoor,requireDoor:useDoor&&requireDoor}});await api("/api/admin/doors",{method:"POST",body:{doors}});adminState.data=await api("/api/admin/settings");renderAdminShell();await Swal.fire({icon:"success",title:useDoor?"เปิดใช้ประตูรับสินค้าแล้ว":"ปิดใช้ประตูรับสินค้าแล้ว",text:useDoor?"การตั้งค่านี้มีผลกับหน้ารับสินค้าทันที":"พนักงานไม่ต้องกรอกประตูก่อนเริ่มตรวจรับ",timer:1900,showConfirmButton:false,customClass:swalClasses(),width:390})}catch(error){await showNotice("error",error.message)}finally{adminState.busy=false}}
 
 function renderAdminShifts(){let shifts=adminState.data.shifts||[];if(!shifts.length)shifts=[{shift_name:"กะเช้า",start_minute:480,end_minute:1200,color:"#F7AA12"},{shift_name:"กะกลางคืน",start_minute:1200,end_minute:480,color:"#416FC3"}];$("adminPanel").innerHTML=`<div class="admin-section-head"><div><h3>กะทำงาน 24 ชั่วโมง</h3><p>กะข้ามวันได้ ทุกช่วงต้องต่อกันครบ 24 ชั่วโมงและห้ามซ้อนกัน</p></div><button id="addShiftRow" class="primary">เพิ่มกะ</button></div><form id="shiftsForm"><div id="shiftAdminRows" class="shift-admin-list">${shifts.map(shift=>shiftAdminRow(shift)).join("")}</div><div class="admin-form-actions"><button class="primary" type="submit">บันทึกกะทำงาน</button></div></form>`;$("addShiftRow").addEventListener("click",()=>{$("shiftAdminRows").insertAdjacentHTML("beforeend",shiftAdminRow({shift_name:"",start_minute:0,end_minute:0,color:"#416FC3"}));bindShiftRemove()});bindShiftRemove();$("shiftsForm").addEventListener("submit",event=>{event.preventDefault();const shifts=[...document.querySelectorAll(".shift-admin-row")].map(row=>({name:row.querySelector("[data-shift-name]").value.trim(),startMinute:timeToMinute(row.querySelector("[data-shift-start]").value),endMinute:timeToMinute(row.querySelector("[data-shift-end]").value),color:row.querySelector("[data-shift-color]").value}));adminMutation("/api/admin/shifts",{shifts})})}
@@ -2010,13 +2192,13 @@ function renderAdminVoice(){
 }
 function voicePackAssetPath(packId){return packId==="th-TH-female-02"?"/voice/queue/th-TH/female-02/":packId==="th-TH-female-01"?"/voice/queue/th-TH/female-01/":"/voice/queue/th-TH/standard-01/"}
 async function updateAdminVoiceReadyStatus(){const box=$("voiceReadyStatus");if(!box)return;const packId=$("voicePack")?.value||adminState.data.voice?.packId||"th-TH-standard-01";try{const base=String(cfg.apiBaseUrl||"").replace(/\/$/,""),response=await fetch(base+"/api/voice/status?packId="+encodeURIComponent(packId),{cache:"no-store"}),data=await response.json();if(!response.ok||!data.ready)throw new Error(data.message||"ยังไม่พร้อม");box.classList.add("ready");const c=data.components||{};box.innerHTML=data.supportsPlateProvince?`<b>${escapeHtml(data.packLabel||"ชุดเสียง")} พร้อมใช้งาน</b><span>ตัวเลข ${Number(c.digits||0)}/10 · พยัญชนะ ${Number(c.thaiLetters||0)}/44 · จังหวัด ${Number(c.provinces||0)}/77 · R/S ${Number(c.doorLetters||0)}/2</span>`:`<b>${escapeHtml(data.packLabel||"ชุดเสียง")} พร้อมใช้งาน</b><span>ชุดนี้ใช้การประกาศแบบเดิม ไม่อ่านทะเบียนและจังหวัด</span>`}catch(error){box.classList.remove("ready");box.innerHTML=`<b>ชุดเสียงนี้ยังไม่พร้อม</b><span>${escapeHtml(error.message||"กรุณาตรวจสอบชุดเสียง")}</span>`}}
-async function ensureQueueVoiceEngine(){if(window.SmartQueueVoice)return window.SmartQueueVoice;await new Promise((resolve,reject)=>{const existing=document.querySelector('script[data-queue-voice-engine]');if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return}const script=document.createElement("script");script.src="./voice-engine.js?v=20260811-r85";script.dataset.queueVoiceEngine="1";script.onload=resolve;script.onerror=()=>reject(new Error("โหลดระบบเสียงไม่สำเร็จ"));document.head.appendChild(script)});if(!window.SmartQueueVoice)throw new Error("ระบบเสียงยังไม่พร้อม");return window.SmartQueueVoice}
+async function ensureQueueVoiceEngine(){if(window.SmartQueueVoice)return window.SmartQueueVoice;await new Promise((resolve,reject)=>{const existing=document.querySelector('script[data-queue-voice-engine]');if(existing){existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return}const script=document.createElement("script");script.src="./voice-engine.js?v=20260811-r86";script.dataset.queueVoiceEngine="1";script.onload=resolve;script.onerror=()=>reject(new Error("โหลดระบบเสียงไม่สำเร็จ"));document.head.appendChild(script)});if(!window.SmartQueueVoice)throw new Error("ระบบเสียงยังไม่พร้อม");return window.SmartQueueVoice}
 async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",vehiclePlate:"3ฒส3718",province:"กทม",doorCode:"R07",useDoor:true,callType:"FIRST"},buttonId="voiceTestFirst"){const button=$(buttonId),original=button?.textContent||"ทดลองเสียง";if(button){button.disabled=true;button.textContent="กำลังเตรียมเสียง"}try{const engine=await ensureQueueVoiceEngine();engine.configure({...settings,enabled:true,apiBaseUrl:cfg.apiBaseUrl,repeatCount:1});await engine.unlockAndPrepare();await engine.announceNow(item);await showNotice("success","ทดลองประกาศแล้ว")}catch(error){await showNotice("error",error.message||"ทดลองเสียงไม่สำเร็จ")}finally{if(button){button.disabled=false;button.textContent=original}}}
 
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;
-  const queueUrl=new URL("./queue.html?v=20260811-r85",location.href).href;
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260811-r85" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  const queueUrl=new URL("./queue.html?v=20260811-r86",location.href).href;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260811-r86" target="_blank" rel="noopener">เปิดจอคิว</a></div>
   <section class="admin-queue-guide"><article><b>เรียกรถแยกจากเริ่มตรวจรับ</b><p>พนักงานกด “เรียกรถ” ก่อน เมื่อรถเข้าจุดตรวจรับจริงจึงกด “เริ่มตรวจรับ” เพื่อให้เวลาทำงานตรงกับเหตุการณ์จริง</p></article><article><b>เรียกซ้ำและเปลี่ยนประตู</b><p>รถที่ยังไม่เข้าจุดตรวจรับสามารถเรียกซ้ำได้ และเมื่อเปิดใช้ประตูสามารถเปลี่ยนประตูพร้อมเรียกใหม่โดยเก็บประวัติเดิมไว้</p></article><article><b>กรณีปิดประตู</b><p>เมื่อผู้ดูแลปิดการใช้ประตู ระบบจะไม่บังคับ ไม่แสดง และไม่อ่านหมายเลขประตูในการเรียกรถ</p></article></section>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
 }
@@ -2063,7 +2245,7 @@ function dataCountCard(label,value){return`<article><small>${label}</small><b>${
 function renderDataActivity(items){if(!items.length)return`<div class="empty-state">ยังไม่มีประวัติการทำงาน</div>`;return items.map(item=>`<div class="data-history-row"><time>${formatDate(item.event_time)}</time><span class="data-history-kind ${String(item.event_group||"").toLowerCase()}">${dataActivityLabel(item.event_code)}</span><b>${escapeHtml(item.actor||"ระบบ")}</b><span>${escapeHtml(dataActivityReference(item))}</span></div>`).join("")}
 function dataActivityReference(item){const ref=String(item.reference||"").trim(),detail=String(item.detail||"").trim();return [ref,detail&&dataActivityDetail(detail)].filter(Boolean).join(" · ")||"–"}
 function dataActivityDetail(value){return({COMPLETED:"สำเร็จ",RUNNING:"กำลังดำเนินการ",FAILED:"ไม่สำเร็จ",REJECTED:"ไม่รับรายการ"})[value]||value}
-function dataActivityLabel(code){return({GATE_IN:"รถเข้าพื้นที่",GATE_OUT:"รถออกจากพื้นที่",DOCUMENT_SUBMITTED:"ยื่นเอกสาร",RECEIVING_STARTED:"เริ่มตรวจรับ",RECEIVING_COMPLETED:"รับสินค้าเสร็จ",DOCUMENT_RETURNED:"รับเอกสารคืน",ADMIN_USER_SAVE:"บันทึกผู้ใช้งาน",ADMIN_USER_STATUS:"เปลี่ยนสถานะผู้ใช้",ADMIN_WORKFLOW_SAVE:"บันทึกขั้นตอนงาน",ADMIN_DOORS_SAVE:"บันทึกประตู",ADMIN_SHIFTS_SAVE:"บันทึกกะ",ADMIN_ALERTS_SAVE:"บันทึกเวลาแจ้งเตือน",ADMIN_QUEUE_RECALL_SETTINGS:"บันทึกการเรียกรถซ้ำ",QUEUE_CALL_FIRST:"เรียกรถ",QUEUE_CALL_RECALL:"เรียกรถซ้ำ",QUEUE_CALL_DOOR_CHANGED:"เปลี่ยนประตูและเรียกรถ",SYNC_GATE:"รับข้อมูลรถ"})[code]||"อัปเดตข้อมูล"}
+function dataActivityLabel(code){return({GATE_IN:"รถเข้าพื้นที่",GATE_OUT:"รถออกจากพื้นที่",DOCUMENT_SUBMITTED:"ยื่นเอกสาร",RECEIVING_STARTED:"เริ่มตรวจรับ",RECEIVING_COMPLETED:"รับสินค้าเสร็จ",DOCUMENT_RETURNED:"รับเอกสารคืน",ADMIN_USER_SAVE:"บันทึกผู้ใช้งาน",ADMIN_USER_STATUS:"เปลี่ยนสถานะผู้ใช้",ADMIN_WORKFLOW_SAVE:"บันทึกขั้นตอนงาน",ADMIN_DOORS_SAVE:"บันทึกประตู",ADMIN_SHIFTS_SAVE:"บันทึกกะ",ADMIN_ALERTS_SAVE:"บันทึกเวลาแจ้งเตือน",ADMIN_QUEUE_RECALL_SETTINGS:"บันทึกการเรียกรถซ้ำ",QUEUE_CALL_FIRST:"เรียกรถ",QUEUE_CALL_RECALL:"เรียกรถซ้ำ",QUEUE_CALL_DOOR_CHANGED:"เปลี่ยนประตูและเรียกรถ",QUEUE_NOTICE_DOCUMENT_ROOM:"เรียกติดต่อห้องเอกสาร",QUEUE_NOTICE_DOOR:"เรียกติดต่อที่ประตู",QUEUE_NOTICE_VEHICLE:"เรียกติดต่อที่รถ",SYNC_GATE:"รับข้อมูลรถ"})[code]||"อัปเดตข้อมูล"}
 
 async function createDriverTrackingLink(){
   const input=$("trackingSearch"),button=$("trackingCreate"),resultBox=$("trackingResult");
@@ -2075,7 +2257,7 @@ async function createDriverTrackingLink(){
   try{
     const result=await api("/api/track/link",{method:"POST",body:{search}}),token=String(result?.token||"").trim();
     if(!token)throw new Error("ไม่สามารถสร้างลิงก์ติดตามได้");
-    const vehicle=result.vehicle||{},url=new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260811-r85`,location.href).href;
+    const vehicle=result.vehicle||{},url=new URL(`./track.html?t=${encodeURIComponent(token)}&v=20260811-r86`,location.href).href;
     if(resultBox){
       resultBox.hidden=false;
       resultBox.innerHTML=`<div><small>หมายเลขนัดหมาย</small><b>${escapeHtml(vehicle.appointmentNo||vehicle.autoId||search)}</b><small>${escapeHtml(joinText(vehicle.companyName,vehicle.vehiclePlate,vehicle.province))}</small></div><label><span>ลิงก์ติดตาม</span><input id="trackingGeneratedLink" value="${escapeHtml(url)}" readonly></label><div class="driver-track-actions"><button id="trackingCopyLink" class="outline-button" type="button">คัดลอกลิงก์</button><a class="primary" href="${escapeHtml(url)}" target="_blank" rel="noopener">เปิดหน้า Track</a></div>`;
