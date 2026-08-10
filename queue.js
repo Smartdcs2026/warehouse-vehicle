@@ -339,8 +339,8 @@ function renderUnavailable() {
 function renderSummary(data) {
   const c = data.counts || {};
   const defs = [
-    ["รอ", "รอเข้าตรวจรับ", c.READY_FOR_RECEIVING || 0, "ready"],
-    ["รับ", "กำลังตรวจรับ", c.RECEIVING_IN_PROGRESS || 0, "progress"],
+    ["รอ", "รอเข้าตรวจรับสินค้า", c.READY_FOR_RECEIVING || 0, "ready"],
+    ["รับ", "กำลังตรวจรับสินค้า", c.RECEIVING_IN_PROGRESS || 0, "progress"],
     ["คืน", "รอรับเอกสารคืน", c.WAITING_DOCUMENT_RETURN || 0, "return"],
     ["ออก", "รอออกจากพื้นที่", c.WAITING_GATE_OUT || 0, "out"]
   ];
@@ -363,6 +363,10 @@ function renderCall(item) {
     fitAppointmentNumber(num, "รอการเรียกคิว");
     $("callCompany").textContent = "–";
     $("callPlate").textContent = "–";
+    $("callProvince").textContent = "–";
+    $("callDoor").textContent = "–";
+    $("callDoorWrap")?.classList.add("is-empty");
+    $("callStateText").textContent = "ยังไม่เรียก";
     $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
     $("callInstruction").textContent = "รอการเรียกคิว";
     return;
@@ -373,9 +377,13 @@ function renderCall(item) {
   num.textContent = appt;
   fitAppointmentNumber(num, appt);
   $("callCompany").textContent = item.companyName || "ไม่ระบุบริษัท";
-  $("callPlate").textContent = plateText(item);
-  const changedDoor=item.callType==="DOOR_CHANGED";
-  $("callInstructionPrefix").textContent = changedDoor ? "มีการเปลี่ยนประตู กรุณาเข้ารับการตรวจรับ" : item.callType==="RECALL" ? "เรียกอีกครั้ง กรุณาเข้ารับการตรวจรับ" : "กรุณาเข้ารับการตรวจรับ";
+  $("callPlate").textContent = item.vehiclePlate || "ไม่ระบุ";
+  $("callProvince").textContent = item.province || "ไม่ระบุ";
+  $("callDoor").textContent = item.doorCode || "–";
+  $("callDoorWrap")?.classList.toggle("is-empty",!item.doorCode);
+  const changedDoor=item.callType==="DOOR_CHANGED",recalled=item.callType==="RECALL",count=Math.max(1,Number(item.callCount||1));
+  $("callStateText").textContent = changedDoor ? `เปลี่ยนประตู · เรียกครั้งที่ ${count}` : recalled ? `เรียกซ้ำครั้งที่ ${count}` : `เรียกแล้ว ${count} ครั้ง`;
+  $("callInstructionPrefix").textContent = changedDoor ? "มีการเปลี่ยนประตู กรุณาเข้ารับการตรวจรับสินค้า" : recalled ? "เรียกอีกครั้ง กรุณาเข้ารับการตรวจรับสินค้า" : "กรุณาเข้ารับการตรวจรับสินค้า";
   $("callInstruction").textContent = item.doorCode ? `ที่ประตู ${item.doorCode}` : "ได้ทันที";
 
   const key = item.callId || [item.appointmentNo, item.calledAt].join(":");
@@ -435,22 +443,23 @@ function renderNext(data, animate = false) {
   const list = $("nextQueue");
   list.innerHTML = shown.length
     ? shown.map(nextItem).join("")
-    : '<div class="queue-empty">ไม่มีรถรอเข้าตรวจรับ</div>';
+    : '<div class="queue-empty">ไม่มีรถรอเข้าตรวจรับสินค้า</div>';
 
   if (animate) fadePage(list);
-  $("rotationLabel").textContent = pages > 1 ? `รอเข้าตรวจรับ ${nextPage + 1}/${pages}` : "";
+  $("rotationLabel").textContent = pages > 1 ? `รอเข้าตรวจรับสินค้า ${nextPage + 1}/${pages}` : "";
 }
 
 function nextItem(item) {
-  const called=Number(item.calledAt||0)>0;
-  const waitText=called?`เรียกแล้ว ${Math.max(1,Number(item.callCount||1))} ครั้ง`:shortDuration(item.elapsedSeconds);
-  return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(plateText(item))}</div><div class="next-wait">${esc(waitText)}</div></article>`;
+  const called=Number(item.calledAt||0)>0,count=Math.max(1,Number(item.callCount||1));
+  const callLabel=!called?shortDuration(item.elapsedSeconds):item.callType==="DOOR_CHANGED"?`เปลี่ยนประตู · ครั้งที่ ${count}`:item.callType==="RECALL"?`เรียกซ้ำครั้งที่ ${count}`:`เรียกแล้ว ${count} ครั้ง`;
+  const doorBadge=called&&item.doorCode?`<span class="next-door-badge">${esc(item.doorCode)}</span>`:"";
+  return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(item.vehiclePlate || "–")}</div><div class="next-province">${esc(item.province || "–")}</div><div class="next-status"><span>${esc(callLabel)}</span>${doorBadge}</div></article>`;
 }
 
 function renderWork(data, animate = false) {
   const all = data.items || [];
   const defs = [
-    ["กำลังตรวจรับ", "RECEIVING_IN_PROGRESS", "progress"],
+    ["กำลังตรวจรับสินค้า", "RECEIVING_IN_PROGRESS", "progress"],
     ["รอรับเอกสารคืน", "WAITING_DOCUMENT_RETURN", "return"],
     ["รอออกจากพื้นที่", "WAITING_GATE_OUT", "out"]
   ];

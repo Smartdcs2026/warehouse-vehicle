@@ -1269,8 +1269,8 @@ const cfg=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
-const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v2";
-const TRACK_API_VERSION="2026-08-track-v1";
+const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v3";
+const TRACK_API_VERSION="2026-08-track-v2";
 
 document.addEventListener("DOMContentLoaded",()=>{
   siteClockTimer=window.setInterval(updateSiteClock,1000);
@@ -1286,6 +1286,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   window.addEventListener("pageshow",()=>{if(!document.hidden&&!terminalError)loadTrack(true)});
   window.addEventListener("resize",()=>requestAnimationFrame(fitGateOutQr));
   window.addEventListener("orientationchange",()=>setTimeout(fitGateOutQr,120));
+  document.addEventListener("click",event=>{
+    if(event.target.closest("#trackOpenQr"))openGateOutQr();
+    if(event.target.closest("[data-close-track-qr]"))closeGateOutQr();
+    const modal=event.target.closest("#trackQrModal");
+    if(modal&&event.target===modal)closeGateOutQr();
+  });
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")closeGateOutQr()});
 });
 
 function token(){return new URLSearchParams(location.search).get("t")||""}
@@ -1299,6 +1306,7 @@ function restoreTrackSnapshot(){
     const raw=sessionStorage.getItem(TRACK_SNAPSHOT_KEY);if(!raw)return false;
     const item=JSON.parse(raw);
     if(!item||item.key!==snapshotTokenKey()||!item.data?.success||Date.now()-Number(item.savedAt||0)>10*60*1000){clearTrackSnapshot();return false}
+    validateTrackPayload(item.data);
     render(item.data);lastFingerprint=trackFingerprint(item.data);hasRendered=true;lastOk=Number(item.savedAt)||Date.now();
     setFresh("wait",navigator.onLine?"กำลังตรวจสอบข้อมูลล่าสุด":"แสดงข้อมูลล่าสุดที่มี");
     $("trackUpdated").textContent=`ข้อมูลล่าสุด ${new Date(lastOk).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
@@ -1315,7 +1323,7 @@ async function loadTrack(force){
   try{
     const controller=new AbortController();
     const cut=setTimeout(()=>controller.abort(),6000);
-    const response=await fetch(`${cfg.apiBaseUrl}/api/public/track?t=${encodeURIComponent(t)}`,{cache:"no-store",signal:controller.signal,headers:{"accept":"application/json"}});
+    const response=await fetch(`${String(cfg.apiBaseUrl||"").replace(/\/$/,"")}/api/public/track?t=${encodeURIComponent(t)}`,{cache:"no-store",signal:controller.signal,headers:{"accept":"application/json"}});
     clearTimeout(cut);
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.success){
@@ -1343,7 +1351,7 @@ async function loadTrack(force){
   }finally{inFlight=false}
 }
 
-function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
+function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,q:data?.queueCall,h:data?.callHistory,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
 function validateTrackPayload(data){
   if(data?.apiVersion&&data.apiVersion!==TRACK_API_VERSION)throw new Error("หน้าแสดงผลและระบบติดตามเป็นคนละรุ่น กรุณาเปิดหน้าใหม่");
   const v=data?.vehicle;
@@ -1354,52 +1362,66 @@ function validateTrackPayload(data){
 }
 
 function render(data){
-  const v=data.vehicle||{},steps=data.timeline||[],currentIndex=currentStepIndex(steps,v.status);
-  const instruction=String(data.instruction||instructionFor(v.status,v.doorCode));
+  const v=data.vehicle||{},steps=data.timeline||[],q=data.queueCall||{called:false,callCount:0},history=Array.isArray(data.callHistory)?data.callHistory:[];
+  const currentIndex=currentStepIndex(steps,v.status,q);
+  const instruction=String(data.instruction||instructionFor(v.status,v.doorCode,q));
   const expiry=data.expiresAt?dateText(data.expiresAt):"-";
-  const plate=[v.vehiclePlate,v.province].filter(Boolean).join(" ")||"ไม่ระบุ";
   const gateOut=v.gateOutAt?dateText(v.gateOutAt):"";
   const returned=steps.some(step=>step.code==="DOCUMENT_RETURNED"&&step.done);
   const showGateOutQr=v.status==="WAITING_GATE_OUT"&&returned&&!v.gateOutAt&&Boolean(v.autoId);
   const autoId=String(v.autoId||"");
   const qrSvg=showGateOutQr&&window.WVQRCode?.toSvg?window.WVQRCode.toSvg(autoId,{margin:4}):"";
+  const calledToDoor=v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode;
+  const mainInstruction=calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction;
   siteClockGateIn=Number(v.gateInAt||0);
   siteClockGateOut=Number(v.gateOutAt||0);
-  $("trackMain").innerHTML=`<article class="track-card ${showGateOutQr?"has-gateout-qr":""}">
-    <section class="track-status ${data.closed?"closed":""}">
-      <small>สถานะปัจจุบัน</small><h1>${esc(v.statusLabel||"กำลังดำเนินการ")}</h1>
-      <p>${data.closed?"รถออกจากพื้นที่และสิ้นสุดขั้นตอนแล้ว":"สถานะจะอัปเดตให้อัตโนมัติ"}</p>
+  $("trackMain").innerHTML=`<article class="track-card">
+    <section class="track-identity">
+      <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(v.statusLabel||"กำลังดำเนินการ")}</span></header>
+      <div class="track-identity-grid"><div><small>บริษัท</small><b>${esc(v.companyName||"ไม่ระบุบริษัท")}</b></div><div><small>ทะเบียนรถ</small><b>${esc(v.vehiclePlate||"ไม่ระบุ")}</b></div><div><small>จังหวัด</small><b>${esc(v.province||"ไม่ระบุ")}</b></div>${v.driverName?`<div><small>คนขับรถ</small><b>${esc(v.driverName)}</b></div>`:""}</div>
     </section>
-    <section class="track-identity"><div><small>หมายเลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><dl class="track-identity-details"><div><dt>บริษัท</dt><dd>${esc(v.companyName||"ไม่ระบุบริษัท")}</dd></div>${v.driverName?`<div><dt>คนขับรถ</dt><dd>${esc(v.driverName)}</dd></div>`:""}<div><dt>ทะเบียนรถ</dt><dd>${esc(plate)}</dd></div></dl></section>
-    <section class="track-instruction ${v.status==="READY_FOR_RECEIVING"?"attention":""}"><small>สิ่งที่ต้องทำ</small><b>${esc(instruction)}</b></section>
-    ${v.doorCode?`<section class="track-door"><span>ประตูรับสินค้า</span><b>${esc(v.doorCode)}</b></section>`:""}
-    <section class="track-timeline"><h2>ความคืบหน้า</h2>${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${!step.done&&index===currentIndex?"current":""}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</section>
+    <section class="track-instruction ${q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${v.status==="WAITING_GATE_OUT"?"exit-ready":""}">
+      <div class="track-instruction-mark" aria-hidden="true">${q.called&&v.status==="READY_FOR_RECEIVING"?"→":v.status==="WAITING_GATE_OUT"?"QR":"i"}</div>
+      <div><small>สิ่งที่ต้องทำตอนนี้</small><b>${esc(mainInstruction)}</b>${calledToDoor?`<span>${esc(instruction)}</span>`:""}</div>
+    </section>
+    ${renderQueueStatus(q,v.status)}
+    ${history.length?renderCallHistory(history):""}
+    <section class="track-timeline"><header><h2>ขั้นตอนการดำเนินงาน</h2><span>อัปเดตอัตโนมัติ</span></header><div class="track-timeline-steps">${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${index===currentIndex?"current":""}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</div></section>
     <section class="track-site-time"><div><small>เข้าพื้นที่</small><b>${esc(v.gateInAt?dateText(v.gateInAt):"-")}</b></div><div><small>${data.closed?"เวลารวมทั้งหมด":"อยู่ในพื้นที่แล้ว"}</small><b id="trackSiteDuration">${formatDuration(siteElapsedSeconds())}</b></div></section>
-    ${showGateOutQr?`<section class="track-gateout-qr"><div class="gateout-qr-code">${qrSvg}</div><div class="gateout-qr-copy"><small>QR Code สำหรับออกจากคลัง</small><b>ใช้สแกนออกจากคลังได้เช่นเดียวกับ QR Code ที่ได้รับตอนขาเข้า (Gate In)</b></div><div class="gateout-autoid"><small>Auto ID ขาเข้า</small><strong>${esc(autoId)}</strong></div></section>`:""}
+    ${showGateOutQr?`<section class="track-exit-action"><div><small>พร้อมสำหรับขั้นตอนออกจากพื้นที่</small><b>เปิด QR เฉพาะเมื่อต้องใช้ที่จุดออกจากพื้นที่</b></div><button id="trackOpenQr" type="button">เปิด QR สำหรับออกจากพื้นที่</button></section>
+    <div id="trackQrModal" class="track-qr-modal" hidden><section class="track-qr-sheet" role="dialog" aria-modal="true" aria-labelledby="trackQrTitle"><header><div><small>QR Code สำหรับออกจากพื้นที่</small><h2 id="trackQrTitle">แสดงต่อเจ้าหน้าที่หรือเครื่องสแกน</h2></div><button type="button" data-close-track-qr aria-label="ปิด QR">×</button></header><div class="gateout-qr-code">${qrSvg}</div><div class="gateout-qr-copy"><b>ใช้ Auto ID เดียวกับ QR ขาเข้า (Gate In)</b><span>เมื่อใช้งานเสร็จสามารถปิดหน้าต่างนี้เพื่อกลับไปดูสถานะรถ</span></div><div class="gateout-autoid"><small>Auto ID</small><strong>${esc(autoId)}</strong></div><button class="track-qr-close" type="button" data-close-track-qr>ปิด QR</button></section></div>`:""}
     ${data.closed&&gateOut?`<section class="track-complete"><small>ออกจากพื้นที่</small><b>${esc(gateOut)}</b></section>`:""}
-    <section class="track-expiry"><span>${data.closed?"ลิงก์นี้ใช้ตรวจสอบย้อนหลังได้ถึง":"ติดตามได้ถึง"}</span><b>${esc(expiry)}</b></section>
+    <section class="track-expiry"><span>${data.closed?"ตรวจสอบย้อนหลังได้ถึง":"ติดตามได้ถึง"}</span><b>${esc(expiry)}</b></section>
   </article>`;
   updateSiteClock();
-  requestAnimationFrame(()=>{fitGateOutQr();requestAnimationFrame(fitGateOutQr)});
 }
 
+function renderQueueStatus(q,status){
+  const called=Boolean(q?.called),latestLabel=called?(q.statusLabel||queueCallTypeLabel(q.callType)):"ยังไม่เรียก";
+  const door=called&&q.doorCode?q.doorCode:"–",latest=called&&q.calledAt?timeText(q.calledAt):"–",count=Math.max(0,Number(q.callCount||0));
+  const helper=!called&&status==="READY_FOR_RECEIVING"?"กรุณารอการเรียกเข้าตรวจรับสินค้า":called&&q.callType==="DOOR_CHANGED"&&q.previousDoorCode&&q.doorCode?`เปลี่ยนจาก ${q.previousDoorCode} เป็น ${q.doorCode}`:called?"โปรดตรวจสอบประตูปัจจุบันทุกครั้งก่อนเคลื่อนรถ":"ยังไม่มีข้อมูลการเรียก";
+  return `<section class="track-call-status"><header><div><h2>สถานะการเรียก</h2><span>${esc(helper)}</span></div></header><div class="track-call-metrics"><div><small>สถานะล่าสุด</small><b class="metric-call">${esc(latestLabel)}</b></div><div><small>ประตูปัจจุบัน</small><b>${esc(door)}</b></div><div><small>เวลาที่เรียกล่าสุด</small><b>${esc(latest)}</b></div><div><small>จำนวนครั้งที่เรียก</small><b>${count.toLocaleString("th-TH")} ครั้ง</b></div></div></section>`;
+}
+function renderCallHistory(history){
+  const rows=history.slice(0,5).map(row=>{
+    const label=row.callTypeLabel||queueCallTypeLabel(row.callType);
+    const door=row.callType==="DOOR_CHANGED"&&row.previousDoorCode&&row.doorCode?`${row.previousDoorCode} → ${row.doorCode}`:(row.doorCode||"ไม่ระบุประตู");
+    return `<div class="track-history-row"><time>${esc(row.calledAt?timeText(row.calledAt):"-")}</time><b>${esc(label)}</b><span>${esc(door)}</span><small>${esc(row.calledAt?shortDateText(row.calledAt):"-")}</small></div>`;
+  }).join("");
+  return `<section class="track-call-history"><header><h2>ประวัติการเรียกล่าสุด</h2><span>แสดงสูงสุด 5 รายการ</span></header>${rows}</section>`;
+}
+function queueCallTypeLabel(type){return({FIRST:"เรียกครั้งแรก",RECALL:"เรียกซ้ำ",DOOR_CHANGED:"เปลี่ยนประตู"})[String(type||"").toUpperCase()]||"เรียกเข้าตรวจรับ"}
+
+function openGateOutQr(){
+  const modal=$("trackQrModal");if(!modal)return;
+  modal.hidden=false;document.body.classList.add("track-modal-open");
+  requestAnimationFrame(()=>{fitGateOutQr();modal.querySelector("[data-close-track-qr]")?.focus()});
+}
+function closeGateOutQr(){const modal=$("trackQrModal");if(!modal||modal.hidden)return;modal.hidden=true;document.body.classList.remove("track-modal-open");$("trackOpenQr")?.focus()}
 function fitGateOutQr(){
-  const card=document.querySelector(".track-card.has-gateout-qr");
-  const section=card?.querySelector(".track-gateout-qr");
-  const qr=section?.querySelector(".gateout-qr-code");
-  const copy=section?.querySelector(".gateout-qr-copy");
-  const auto=section?.querySelector(".gateout-autoid");
-  if(!section||!qr)return;
-  qr.style.width="";qr.style.height="";
-  const cs=getComputedStyle(section);
-  const px=v=>Math.max(0,parseFloat(v)||0);
-  const gap=px(cs.rowGap||cs.gap);
-  const innerW=Math.max(0,section.clientWidth-px(cs.paddingLeft)-px(cs.paddingRight));
-  const reserved=px(cs.paddingTop)+px(cs.paddingBottom)+(copy?.scrollHeight||0)+(auto?.scrollHeight||0)+gap*2+4;
-  const byHeight=Math.max(0,section.clientHeight-reserved);
-  const cap=window.innerHeight<=620?160:window.innerHeight<=760?230:290;
-  const size=Math.floor(Math.min(cap,innerW,byHeight));
-  if(size>=96){qr.style.width=`${size}px`;qr.style.height=`${size}px`;}
+  const modal=$("trackQrModal");const qr=modal?.querySelector(".gateout-qr-code");if(!modal||modal.hidden||!qr)return;
+  const size=Math.floor(Math.min((window.innerWidth||360)*.78,(window.innerHeight||700)*.48,420));
+  qr.style.width=`${Math.max(190,size)}px`;qr.style.height=`${Math.max(190,size)}px`;
 }
 
 function siteElapsedSeconds(){
@@ -1413,23 +1435,25 @@ function formatDuration(total){
   const clock=[hours,minutes,seconds].map(v=>String(v).padStart(2,"0")).join(":");
   return days?`${days} วัน ${clock}`:clock;
 }
-function updateSiteClock(){
-  const el=$("trackSiteDuration");if(el)el.textContent=formatDuration(siteElapsedSeconds());
-}
+function updateSiteClock(){const el=$("trackSiteDuration");if(el)el.textContent=formatDuration(siteElapsedSeconds())}
 
-function instructionFor(status,door){
+function instructionFor(status,door,q={}){
   if(status==="WAITING_DOCUMENT_SUBMISSION")return"กรุณายื่นเอกสารที่จุดบริการ";
-  if(status==="READY_FOR_RECEIVING")return"กรุณารอการเรียกเข้าตรวจรับ";
-  if(status==="RECEIVING_IN_PROGRESS")return door?`กรุณาดำเนินการตรวจรับที่ประตู ${door}`:"กำลังตรวจรับสินค้า";
+  if(status==="READY_FOR_RECEIVING")return q.called?(door?`กรุณานำรถเข้าประตู ${door}`:"มีการเรียกเข้าตรวจรับสินค้าแล้ว"):"กรุณารอการเรียกเข้าตรวจรับสินค้า";
+  if(status==="RECEIVING_IN_PROGRESS")return door?`กรุณาดำเนินการตรวจรับสินค้าที่ประตู ${door}`:"กำลังตรวจรับสินค้า";
   if(status==="WAITING_DOCUMENT_RETURN")return"กรุณารอรับเอกสารคืน";
-  if(status==="WAITING_GATE_OUT")return"รับเอกสารคืนแล้ว ใช้ QR ด้านล่างสำหรับออกจากคลัง";
+  if(status==="WAITING_GATE_OUT")return"รับเอกสารคืนแล้ว กรุณาเปิด QR เมื่อต้องการใช้สำหรับออกจากพื้นที่";
   if(status==="CLOSED")return"รายการเสร็จสิ้นแล้ว";
   return"กรุณาตรวจสอบสถานะบนหน้านี้";
 }
-function currentStepIndex(steps,status){const map={WAITING_DOCUMENT_SUBMISSION:1,READY_FOR_RECEIVING:2,RECEIVING_IN_PROGRESS:3,WAITING_DOCUMENT_RETURN:4,WAITING_GATE_OUT:5,CLOSED:6},idx=map[status]??0;return Math.max(0,Math.min(steps.length-1,idx))}
+function currentStepIndex(steps,status,q={}){
+  const code=status==="WAITING_DOCUMENT_SUBMISSION"?"DOCUMENT_SUBMITTED":status==="READY_FOR_RECEIVING"?"QUEUE_CALLED":status==="RECEIVING_IN_PROGRESS"?"RECEIVING_STARTED":status==="WAITING_DOCUMENT_RETURN"?"RECEIVING_COMPLETED":status==="WAITING_GATE_OUT"?"DOCUMENT_RETURNED":status==="CLOSED"?"GATE_OUT":"GATE_IN";
+  const idx=steps.findIndex(step=>step.code===code);return idx>=0?idx:Math.max(0,steps.length-1);
+}
 function showRetry(message){$("trackMain").innerHTML=`<div class="track-error"><b>ยังไม่สามารถอัปเดตสถานะได้</b><span>${esc(message)}</span><button id="trackRetry" type="button">ลองใหม่</button></div>`;$("trackRetry")?.addEventListener("click",()=>loadTrack(true));setFresh("off","ตรวจสอบไม่สำเร็จ")}
 function showTerminal(title,message){terminalError=true;clearTimeout(timer);$("trackMain").innerHTML=`<div class="track-terminal"><div class="terminal-mark" aria-hidden="true"></div><b>${esc(title)}</b><span>${esc(message)}</span><small>ข้อมูลการปฏิบัติงานหลักไม่ได้รับผลกระทบ</small></div>`;setFresh("off","สิ้นสุดการติดตาม")}
 function setFresh(cls,text){const el=$("trackFresh");el.className=`track-fresh ${cls||""}`;el.textContent=text}
 function dateText(ts){if(!ts)return"-";return new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date(Number(ts)*1000))}
+function shortDateText(ts){if(!ts)return"-";return new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",day:"2-digit",month:"short",year:"numeric"}).format(new Date(Number(ts)*1000))}
 function timeText(ts){if(!ts)return"-";return new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date(Number(ts)*1000))}
 function esc(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}

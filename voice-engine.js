@@ -1,9 +1,9 @@
 "use strict";
 (function(){
-  const ENGINE_BUILD="2026.08.10-r83.6-no-door-full-door-word";
+  const ENGINE_BUILD="2026.08.11-r84-adjustable-playback-rate";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
-    enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,
+    enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,playbackRate:1,
     readDoor:true,readDoorLeadingZero:false,readPlate:true,readProvince:true,
     playDing:true,playThanks:true,speechPace:"normal",provinceAliases:[],
     packId:"th-TH-standard-01",assetBasePath:"/voice/queue/th-TH/standard-01/",apiBaseUrl:""
@@ -26,6 +26,7 @@
       this.settings.volume=Math.max(10,Math.min(100,Number(this.settings.volume)||80));
       this.settings.repeatCount=Math.max(1,Math.min(3,Math.round(Number(this.settings.repeatCount)||1)));
       this.settings.repeatDelaySeconds=Math.max(3,Math.min(30,Math.round(Number(this.settings.repeatDelaySeconds)||7)));
+      const rate=Number(this.settings.playbackRate);this.settings.playbackRate=Number((Math.round(Math.max(.9,Math.min(1.35,Number.isFinite(rate)?rate:1))*20)/20).toFixed(2));
       this.settings.speechPace=["compact","normal","clear"].includes(String(this.settings.speechPace||""))?String(this.settings.speechPace):"normal";
       this.settings.provinceAliases=Array.isArray(this.settings.provinceAliases)?this.settings.provinceAliases:[];
       const nextPack=String(this.settings.packId||"")+"|"+String(this.settings.assetBasePath||"");
@@ -186,7 +187,7 @@
     }
 
     async playClip(key,gapMs=0){
-      const buffer=await this.fetchBuffer(key);await new Promise((resolve,reject)=>{const source=this.ctx.createBufferSource();source.buffer=buffer;source.connect(this.masterGain);let settled=false;const done=()=>{if(settled)return;settled=true;resolve()};source.onended=done;source.start();setTimeout(()=>{if(!settled){settled=true;try{source.stop()}catch{}reject(new Error("เล่นเสียงใช้เวลานานเกินไป"))}},Math.max(5000,Math.ceil(buffer.duration*2500)))});if(gapMs>0)await this.sleep(gapMs);
+      const buffer=await this.fetchBuffer(key);await new Promise((resolve,reject)=>{const source=this.ctx.createBufferSource();source.buffer=buffer;source.playbackRate.value=this.settings.playbackRate||1;source.connect(this.masterGain);let settled=false;const done=()=>{if(settled)return;settled=true;resolve()};source.onended=done;source.start();const effectiveDuration=buffer.duration/Math.max(.1,Number(this.settings.playbackRate)||1);setTimeout(()=>{if(!settled){settled=true;try{source.stop()}catch{}reject(new Error("เล่นเสียงใช้เวลานานเกินไป"))}},Math.max(5000,Math.ceil(effectiveDuration*2500)))});if(gapMs>0)await this.sleep(gapMs);
     }
 
     gapFor(key,nextKey){
@@ -196,7 +197,8 @@
       else if((key.startsWith("letter_")&&nextKey?.startsWith("digit_"))||(key.startsWith("digit_")&&nextKey?.startsWith("letter_")))gap=Number(d.letterGapMs)||105;
       else if(key.startsWith("province_"))gap=Number(d.provinceGapMs)||150;
       else gap=Number(d.phraseGapMs)||170;
-      return Math.max(35,Math.round(gap*scale));
+      const speedScale=1/Math.max(.9,Number(this.settings.playbackRate)||1);
+      return Math.max(30,Math.round(gap*scale*speedScale));
     }
     async playSequence(keys){const usable=keys.filter(key=>Boolean(key&&this.clipMap()[key]));for(let i=0;i<usable.length;i++)await this.playClip(usable[i],i<usable.length-1?this.gapFor(usable[i],usable[i+1]):0)}
 
@@ -214,7 +216,7 @@
     async processQueue(){if(this.processing||!this.unlocked||!this.settings.enabled)return;this.processing=true;try{while(this.pending.length&&this.settings.enabled){const next=this.pending.shift();this.currentCallId=next.callId;try{await this.announceNow(next.item)}catch(error){console.warn("queue voice announce failed",error?.message||error)}}}finally{this.currentCallId="";this.processing=false}}
     clearPending(){this.pending.length=0}
     sleep(ms){return new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(ms)||0)))}
-    status(){return{unlocked:this.unlocked,ready:this.ready,processing:this.processing,pending:this.pending.length,manifestVersion:this.manifestVersion,engineBuild:ENGINE_BUILD,lastProvinceRaw:this.lastProvinceRaw||"",lastProvinceResolved:this.lastProvinceResolved||null,readProvince:this.settings.readProvince!==false}}
+    status(){return{unlocked:this.unlocked,ready:this.ready,processing:this.processing,pending:this.pending.length,manifestVersion:this.manifestVersion,engineBuild:ENGINE_BUILD,lastProvinceRaw:this.lastProvinceRaw||"",lastProvinceResolved:this.lastProvinceResolved||null,readProvince:this.settings.readProvince!==false,playbackRate:this.settings.playbackRate}}
   }
 
   window.SmartQueueVoice=new QueueVoiceEngine();
