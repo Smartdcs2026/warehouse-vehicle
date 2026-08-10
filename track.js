@@ -1391,22 +1391,24 @@ function render(data){
   const autoId=String(v.autoId||"");
   const qrSvg=showGateOutQr&&window.WVQRCode?.toSvg?window.WVQRCode.toSvg(autoId,{margin:4}):"";
   const calledToDoor=v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode,notice=recentQueueNotice(data);
-  const mainInstruction=notice?.label|| (calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction);
-  const instructionNote=notice?`ข้อความล่าสุดจากเจ้าหน้าที่ · ${timeText(notice.notifiedAt)}`:(calledToDoor?instruction:"");
+  const mainInstruction=notice?.label||(calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction);
+  const workflowAfterNotice=notice?(calledToDoor?`เข้าตรวจรับสินค้าที่ประตู ${q.doorCode}`:instruction):"";
+  const instructionNote=notice?`ข้อความจากเจ้าหน้าที่ · ${timeText(notice.notifiedAt)}`:(calledToDoor?instruction:"");
+  const statusPillText=notice?"มีข้อความจากเจ้าหน้าที่":(v.statusLabel||"กำลังดำเนินการ");
   siteClockGateIn=Number(v.gateInAt||0);
   siteClockGateOut=Number(v.gateOutAt||0);
   $("trackMain").innerHTML=`<article class="track-card">
     <section class="track-identity">
-      <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(v.statusLabel||"กำลังดำเนินการ")}</span></header>
+      <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${notice?"officer":data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(statusPillText)}</span></header>
       <div class="track-identity-grid"><div><small>บริษัท</small><b>${esc(v.companyName||"ไม่ระบุบริษัท")}</b></div><div><small>ทะเบียนรถ</small><b>${esc(v.vehiclePlate||"ไม่ระบุ")}</b></div><div><small>จังหวัด</small><b>${esc(v.province||"ไม่ระบุ")}</b></div>${v.driverName?`<div><small>คนขับรถ</small><b>${esc(v.driverName)}</b></div>`:""}</div>
     </section>
     <section class="track-instruction ${notice?"officer-notice":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${v.status==="WAITING_GATE_OUT"?"exit-ready":""}">
       <div class="track-instruction-mark" aria-hidden="true">${notice?"!":q.called&&v.status==="READY_FOR_RECEIVING"?"→":v.status==="WAITING_GATE_OUT"?"QR":"i"}</div>
-      <div><small>${notice?"ข้อความจากเจ้าหน้าที่":"สิ่งที่ต้องทำตอนนี้"}</small><b>${esc(mainInstruction)}</b>${instructionNote?`<span>${esc(instructionNote)}</span>`:""}</div>
+      <div class="track-instruction-copy"><small>สิ่งที่ต้องทำตอนนี้</small><b>${esc(mainInstruction)}</b>${instructionNote?`<span class="track-instruction-source">${esc(instructionNote)}</span>`:""}${notice&&workflowAfterNotice?`<div class="track-followup"><small>งานหลักหลังจากนั้น</small><strong>${esc(workflowAfterNotice)}</strong></div>`:""}</div>
     </section>
     ${renderQueueStatus(q,v.status)}
     ${history.length?renderCallHistory(history):""}
-    <section class="track-timeline"><header><h2>ขั้นตอนการดำเนินงาน</h2><span>อัปเดตอัตโนมัติ</span></header><div class="track-timeline-steps">${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${index===currentIndex?"current":""}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</div></section>
+    <section class="track-timeline"><header><h2>ขั้นตอนการดำเนินงาน</h2><span>อัปเดตอัตโนมัติ</span></header><div class="track-timeline-steps">${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${index===currentIndex?"current":""}" data-step-index="${index}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</div></section>
     <section class="track-site-time"><div><small>เข้าพื้นที่</small><b>${esc(v.gateInAt?dateText(v.gateInAt):"-")}</b></div><div><small>${data.closed?"เวลารวมทั้งหมด":"อยู่ในพื้นที่แล้ว"}</small><b id="trackSiteDuration">${formatDuration(siteElapsedSeconds())}</b></div></section>
     ${showGateOutQr?`<section class="track-exit-action"><div><small>พร้อมสำหรับขั้นตอนออกจากพื้นที่</small><b>เปิด QR เฉพาะเมื่อต้องใช้ที่จุดออกจากพื้นที่</b></div><button id="trackOpenQr" type="button">เปิด QR สำหรับออกจากพื้นที่</button></section>
     <div id="trackQrModal" class="track-qr-modal" hidden><section class="track-qr-sheet" role="dialog" aria-modal="true" aria-labelledby="trackQrTitle"><header><div><small>QR Code สำหรับออกจากพื้นที่</small><h2 id="trackQrTitle">แสดงต่อเจ้าหน้าที่หรือเครื่องสแกน</h2></div><button type="button" data-close-track-qr aria-label="ปิด QR">×</button></header><div class="gateout-qr-code">${qrSvg}</div><div class="gateout-qr-copy"><b>ใช้ Auto ID เดียวกับ QR ขาเข้า (Gate In)</b><span>เมื่อใช้งานเสร็จสามารถปิดหน้าต่างนี้เพื่อกลับไปดูสถานะรถ</span></div><div class="gateout-autoid"><small>Auto ID</small><strong>${esc(autoId)}</strong></div><button class="track-qr-close" type="button" data-close-track-qr>ปิด QR</button></section></div>`:""}
@@ -1419,8 +1421,8 @@ function render(data){
 function renderQueueStatus(q,status){
   const called=Boolean(q?.called),latestLabel=called?(q.statusLabel||queueCallTypeLabel(q.callType)):"ยังไม่เรียก";
   const door=called&&q.doorCode?q.doorCode:called?"ยังไม่ระบุ":"–",latest=called&&q.calledAt?timeText(q.calledAt):"–",count=Math.max(0,Number(q.callCount||0));
-  const helper=!called&&status==="READY_FOR_RECEIVING"?"กรุณารอการเรียกเข้าตรวจรับสินค้า":called&&q.callType==="DOOR_CHANGED"&&q.previousDoorCode&&q.doorCode?`เปลี่ยนจาก ${q.previousDoorCode} เป็น ${q.doorCode}`:called?"โปรดตรวจสอบประตูปัจจุบันทุกครั้งก่อนเคลื่อนรถ":"ยังไม่มีข้อมูลการเรียก";
-  return `<section class="track-call-status"><header><div><h2>สถานะการเรียก</h2><span>${esc(helper)}</span></div></header><div class="track-call-metrics"><div><small>สถานะล่าสุด</small><b class="metric-call">${esc(latestLabel)}</b></div><div><small>ประตูปัจจุบัน</small><b>${esc(door)}</b></div><div><small>เวลาที่เรียกล่าสุด</small><b>${esc(latest)}</b></div><div><small>จำนวนครั้งที่เรียก</small><b>${count.toLocaleString("th-TH")} ครั้ง</b></div></div></section>`;
+  const helper=!called&&status==="READY_FOR_RECEIVING"?"กรุณารอการเรียกเข้าตรวจรับสินค้า":called&&q.callType==="DOOR_CHANGED"&&q.previousDoorCode&&q.doorCode?`เปลี่ยนจาก ${q.previousDoorCode} เป็น ${q.doorCode}`:called?"ตรวจสอบประตูปัจจุบันก่อนเคลื่อนรถทุกครั้ง":"ยังไม่มีข้อมูลการเรียก";
+  return `<section class="track-call-status"><header><div><h2>สถานะการเรียก</h2></div></header><div class="track-call-metrics"><div class="metric-status"><small>สถานะล่าสุด</small><b class="metric-call">${esc(latestLabel)}</b></div><div class="metric-door"><small>ประตูปัจจุบัน</small><b>${esc(door)}</b></div><div class="metric-count"><small>จำนวนครั้งที่เรียก</small><b>${count.toLocaleString("th-TH")} ครั้ง</b></div><div class="metric-time"><small>เวลาที่เรียกล่าสุด</small><b>${esc(latest)}</b></div></div><div class="track-call-helper">${esc(helper)}</div></section>`;
 }
 function renderCallHistory(history){
   const latest=history[0];if(!latest)return"";
@@ -1455,7 +1457,8 @@ function initTrackAlert(){updateTrackAlertButton();document.documentElement.data
 function applyTrackDensity(){
   const h=window.innerHeight||700,w=window.innerWidth||390;
   let density="normal";
-  if(w<=760&&h<=680)density="micro";else if(w<=760&&h<=860)density="compact";else if(w<=760)density="mobile";
+  // Prioritize legibility on phones. Short portrait screens may scroll rather than shrinking text to unreadable sizes.
+  if(w<=760&&h<=720)density="compact";else if(w<=760)density="mobile";
   document.documentElement.dataset.trackDensity=density;
 }
 async function toggleTrackAlert(){

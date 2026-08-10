@@ -151,3 +151,118 @@ html[data-track-density="micro"] .track-step span{font-size:5.2px!important}
 .track-instruction.officer-notice b{color:#8a4a00}
 html[data-track-density="compact"] .track-instruction.officer-notice,
 html[data-track-density="micro"] .track-instruction.officer-notice{padding-top:9px;padding-bottom:9px}
+
+/* Round 87 — clearer driver Track: one primary instruction, 2x2 call status, 4+3 workflow steps */
+.track-status-pill.officer{background:#fff4df;color:#8a5500;border:1px solid #efcd8d}
+.track-instruction-copy{min-width:0}
+.track-instruction-source{font-weight:800}
+.track-followup{margin-top:9px;padding:8px 10px;border-radius:11px;background:rgba(255,255,255,.78);border:1px solid rgba(183,142,69,.28);display:grid;gap:2px}
+.track-followup small{font-size:10px!important;color:#6f6250!important;font-weight:900!important}
+.track-followup strong{font-size:14px;line-height:1.3;color:#174b83}
+.track-call-helper{margin-top:8px;padding:7px 9px;border-radius:10px;background:#f5f8fc;color:#536a86;font-size:10px;font-weight:800;line-height:1.35;text-align:center}
+
+@media(max-width:760px) and (orientation:portrait){
+  body{overflow:auto!important}
+  .track-shell{min-height:100dvh;height:auto!important;overflow:visible!important}
+  .track-main{overflow:visible!important;padding-bottom:20px}
+  .track-card{height:auto!important;gap:10px!important}
+
+  .track-identity,.track-call-status,.track-call-history,.track-timeline{padding:12px!important;border-radius:15px!important}
+  .track-identity>header strong{font-size:30px!important}
+  .track-identity>header small{font-size:11px!important}
+  .track-status-pill{font-size:10px!important;line-height:1.25!important;padding:7px 9px!important}
+  .track-identity-grid small{font-size:10px!important}
+  .track-identity-grid b{font-size:15px!important;line-height:1.28!important;white-space:normal!important;overflow:visible!important}
+
+  .track-instruction{grid-template-columns:50px minmax(0,1fr)!important;padding:13px 14px!important;gap:11px!important;border-radius:16px!important}
+  .track-instruction-mark{width:44px!important;height:44px!important;font-size:22px!important}
+  .track-instruction-copy>small{font-size:10px!important}
+  .track-instruction b{font-size:21px!important;line-height:1.22!important}
+  .track-instruction-source{display:block!important;font-size:10px!important;line-height:1.3!important;margin-top:4px!important}
+  .track-followup{margin-top:8px;padding:8px 9px}
+  .track-followup small{font-size:9px!important}
+  .track-followup strong{font-size:13px!important}
+
+  .track-call-status h2,.track-call-history h2,.track-timeline h2{font-size:17px!important}
+  .track-call-status>header{margin-bottom:8px!important}
+  .track-call-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;border-radius:13px!important;overflow:hidden!important}
+  .track-call-metrics>div{padding:10px 7px!important;min-height:64px;display:grid;align-content:center}
+  .track-call-metrics>div:nth-child(3),.track-call-metrics>div:nth-child(4){border-top:1px solid #e1e8f1!important}
+  .track-call-metrics>div:nth-child(3){border-left:0!important}
+  .track-call-metrics small{font-size:9px!important;line-height:1.2!important}
+  .track-call-metrics b{font-size:18px!important;line-height:1.12!important;margin-top:4px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .track-call-metrics .metric-door b{font-size:21px!important;color:#145fc8}
+  .track-call-helper{font-size:10px;margin-top:8px;padding:7px 8px}
+
+  .track-call-history{padding-top:11px!important;padding-bottom:11px!important}
+  .track-call-history>header{padding-bottom:7px!important}
+  .track-call-history>header button{font-size:10px!important;padding:6px 9px!important}
+  .track-history-row{grid-template-columns:56px minmax(90px,.9fr) minmax(90px,1fr)!important;gap:7px!important;padding:8px 1px!important}
+  .track-history-row time,.track-history-row b,.track-history-row span{font-size:11px!important;line-height:1.25!important}
+  .track-history-row small{display:none!important}
+
+  .track-timeline{padding:12px!important;display:block!important;overflow:visible!important}
+  .track-timeline>header{margin-bottom:9px!important}
+  .track-timeline>header span{font-size:9px!important}
+  .track-timeline-steps{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;height:auto!important;overflow:visible!important;align-items:stretch!important}
+  .track-step{position:relative;min-width:0!important;min-height:88px!important;height:auto!important;padding:9px 5px 8px!important;border:1px solid #e2e8f0!important;border-radius:12px!important;background:#fafbfd!important;box-shadow:none!important;display:grid!important;grid-template-rows:24px minmax(30px,auto) 16px!important;align-content:start!important;justify-items:center!important;gap:4px!important;overflow:hidden!important}
+  .track-step:nth-child(5){grid-column:1/2}
+  .track-step:nth-child(6){grid-column:2/3}
+  .track-step:nth-child(7){grid-column:3/4}
+  .track-step:not(:last-child)::before{display:none!important}
+  .track-step.done{background:#f5fbf7!important;border-color:#c9e6d2!important}
+  .track-step.current{background:#eaf3ff!important;border-color:#68a0e7!important;box-shadow:inset 0 0 0 1px rgba(23,101,204,.12)!important}
+  .track-step i{width:22px!important;height:22px!important;border-width:2px!important}
+  .track-step.done i:after{display:block!important;width:7px!important;height:4px!important;left:5px!important;top:5px!important;border-width:2px!important}
+  .track-step b{font-size:10px!important;line-height:1.18!important;font-weight:900!important;display:block!important;overflow:visible!important;max-width:100%!important}
+  .track-step span{font-size:9px!important;line-height:1.1!important;white-space:normal!important;overflow:visible!important;color:#74849a!important}
+
+  .track-site-time{grid-template-columns:1fr 1fr!important;border-radius:14px!important}
+  .track-site-time>div{padding:11px 12px!important}
+  .track-site-time>div+div{border-left:1px solid #e1e8f1!important;border-top:0!important}
+  .track-site-time small{font-size:9px!important}
+  .track-site-time b{font-size:14px!important;line-height:1.25!important}
+
+  .track-exit-action{padding:12px!important;border-radius:14px!important;gap:9px!important}
+  .track-exit-action small{font-size:9px!important}
+  .track-exit-action b{display:block!important;font-size:12px!important;line-height:1.3!important}
+  .track-exit-action button{font-size:13px!important;padding:11px 12px!important}
+  .track-expiry{padding:9px 11px!important;border-radius:12px!important}
+  .track-expiry span,.track-expiry b{font-size:9px!important}
+}
+
+/* On short portrait phones, keep readable text and allow natural scrolling instead of micro typography. */
+html[data-track-density="compact"] .track-main{overflow:visible!important;padding:7px!important}
+html[data-track-density="compact"] .track-card{height:auto!important;gap:7px!important}
+html[data-track-density="compact"] .track-identity,
+html[data-track-density="compact"] .track-call-status,
+html[data-track-density="compact"] .track-call-history,
+html[data-track-density="compact"] .track-timeline{padding:9px!important;border-radius:12px!important}
+html[data-track-density="compact"] .track-identity>header strong{font-size:25px!important}
+html[data-track-density="compact"] .track-identity-grid small{font-size:8px!important}
+html[data-track-density="compact"] .track-identity-grid b{font-size:12px!important}
+html[data-track-density="compact"] .track-instruction{padding:9px 10px!important;grid-template-columns:40px minmax(0,1fr)!important}
+html[data-track-density="compact"] .track-instruction-mark{width:36px!important;height:36px!important;font-size:18px!important}
+html[data-track-density="compact"] .track-instruction b{font-size:17px!important}
+html[data-track-density="compact"] .track-instruction span{display:block!important;font-size:8px!important}
+html[data-track-density="compact"] .track-followup{padding:6px 7px!important;margin-top:6px!important}
+html[data-track-density="compact"] .track-followup strong{font-size:11px!important}
+html[data-track-density="compact"] .track-call-status h2,
+html[data-track-density="compact"] .track-call-history h2,
+html[data-track-density="compact"] .track-timeline h2{font-size:14px!important}
+html[data-track-density="compact"] .track-call-metrics>div{padding:7px 5px!important;min-height:54px!important}
+html[data-track-density="compact"] .track-call-metrics small{font-size:7.5px!important}
+html[data-track-density="compact"] .track-call-metrics b{font-size:14px!important}
+html[data-track-density="compact"] .track-call-metrics .metric-door b{font-size:17px!important}
+html[data-track-density="compact"] .track-call-helper{font-size:8px!important;padding:6px!important}
+html[data-track-density="compact"] .track-history-row{padding:6px 0!important}
+html[data-track-density="compact"] .track-history-row time,
+html[data-track-density="compact"] .track-history-row b,
+html[data-track-density="compact"] .track-history-row span{font-size:9px!important}
+html[data-track-density="compact"] .track-step{min-height:72px!important;grid-template-rows:20px minmax(25px,auto) 13px!important;padding:6px 3px!important}
+html[data-track-density="compact"] .track-step i{width:18px!important;height:18px!important}
+html[data-track-density="compact"] .track-step b{font-size:8.5px!important}
+html[data-track-density="compact"] .track-step span{font-size:7.5px!important}
+html[data-track-density="compact"] .track-site-time>div{padding:8px 9px!important}
+html[data-track-density="compact"] .track-site-time b{font-size:11px!important}
+html[data-track-density="compact"] .track-foot{font-size:7px!important}
