@@ -1,5 +1,6 @@
 "use strict";
 (function(){
+  const ENGINE_BUILD="2026.08.10-r83.4-province-resolver";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
     enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,
@@ -8,6 +9,10 @@
     packId:"th-TH-standard-01",assetBasePath:"/voice/queue/th-TH/standard-01/",apiBaseUrl:""
   };
   const PACE_SCALE={compact:0.78,normal:1,clear:1.25};
+  const BUILTIN_PROVINCE_ALIASES=[
+    ["กทม","กรุงเทพมหานคร"],["กท","กรุงเทพมหานคร"],["กรุงเทพ","กรุงเทพมหานคร"],["กรุงเทพฯ","กรุงเทพมหานคร"],
+    ["อยุธยา","พระนครศรีอยุธยา"],["อย","พระนครศรีอยุธยา"]
+  ];
 
   class QueueVoiceEngine{
     constructor(){
@@ -54,8 +59,9 @@
 
     clipMap(){
       const f=this.manifest?.files||{},map={
-        ding:f.ding,appointment:f.appointment,vehicleRegistration:f.vehicleRegistration,provinceLabel:f.province,
-        pleaseAt:f.pleaseEnterDeliveryAt,pleaseNoDoor:f.pleaseEnterDelivery,repeat:f.repeatAgain,recall:f.recall||f.optional?.recall,
+        ding:f.ding,appointment:f.appointment,vehicleRegistration:f.vehicleRegistration,
+        please:f.please,pleaseAt:f.pleaseEnterDeliveryAt,pleaseNoDoor:f.pleaseEnterDelivery,
+        repeat:f.repeatAgain,recall:f.recall||f.optional?.recall,
         changeDoor:f.changeDoor||f.optional?.changeDoor,thanks:f.thankYou
       };
       for(const [digit,file] of Object.entries(f.digits||{}))map["digit_"+digit]=file;
@@ -78,7 +84,7 @@
     async preload(){
       const map=this.clipMap();
       // ชุดทะเบียนมีไฟล์มากกว่า 130 ไฟล์ จึงโหลดเฉพาะเสียงหลักก่อน ส่วนพยัญชนะ/จังหวัดโหลดเมื่อถูกเรียกจริง
-      const keys=Object.keys(map).filter(key=>map[key]&&(key==="ding"||key==="appointment"||key==="vehicleRegistration"||key==="provinceLabel"||key==="pleaseAt"||key==="pleaseNoDoor"||key==="repeat"||key==="recall"||key==="changeDoor"||key==="thanks"||key.startsWith("digit_")||key==="letter_R"||key==="letter_S"));
+      const keys=Object.keys(map).filter(key=>map[key]&&(key==="ding"||key==="appointment"||key==="vehicleRegistration"||key==="please"||key==="pleaseAt"||key==="pleaseNoDoor"||key==="repeat"||key==="recall"||key==="changeDoor"||key==="thanks"||key.startsWith("digit_")||key==="letter_R"||key==="letter_S"));
       await Promise.all(keys.map(key=>this.fetchBuffer(key)));
       if("caches" in window){try{const keep=this.cacheName(),names=await caches.keys();await Promise.all(names.filter(n=>n.startsWith(CACHE_PREFIX)&&n!==keep).map(n=>caches.delete(n)))}catch{}}
       return keys.length;
@@ -89,14 +95,47 @@
     normalizeDoor(code){let raw=String(code??"").toUpperCase().replace(/\s+/g,"");if(/^\d{1,3}$/.test(raw))raw="R"+raw;const match=raw.match(/^([RS]+)(\d{1,3})$/);if(!match)return null;return{letters:match[1].split(""),digits:match[2]}}
     doorKeys(code){const parsed=this.normalizeDoor(code);if(!parsed)return[];let digits=parsed.digits;if(!this.settings.readDoorLeadingZero)digits=digits.replace(/^0+(?=\d)/,"")||"0";return[...parsed.letters.map(ch=>"letter_"+ch),...digits.split("").map(d=>"digit_"+d)]}
 
-    normalizeProvinceText(value){return String(value??"").trim().replace(/^จังหวัด\s*/u,"").replace(/[.\s\-_/()]+/g,"").replace(/ฯ/g,"").toLowerCase()}
+    normalizeProvinceText(value){
+      return String(value??"")
+        .trim()
+        .replace(/^(?:จังหวัด|จว\.?|จ\.)\s*/u,"")
+        .replace(/^province\s*/i,"")
+        .replace(/[.\s\-_/()]+/g,"")
+        .replace(/ฯ/g,"")
+        .toLowerCase();
+    }
     provinceAliasMap(){
       const map=new Map(),available=Object.keys(this.manifest?.files?.provinces||{});
-      for(const p of available)map.set(this.normalizeProvinceText(p),p);
-      for(const row of this.settings.provinceAliases||[]){const alias=this.normalizeProvinceText(row?.alias),province=String(row?.province||"").trim();if(alias&&available.includes(province))map.set(alias,province)}
+      const canonicalByKey=new Map();
+      for(const p of available){
+        const key=this.normalizeProvinceText(p);
+        if(key){map.set(key,p);canonicalByKey.set(key,p)}
+      }
+      // Built-in aliases are always available, even when an old Admin setting stored [].
+      for(const [alias,target] of BUILTIN_PROVINCE_ALIASES){
+        const key=this.normalizeProvinceText(alias),targetKey=this.normalizeProvinceText(target),province=canonicalByKey.get(targetKey);
+        if(key&&province)map.set(key,province);
+      }
+      // Admin aliases override built-ins.
+      for(const row of this.settings.provinceAliases||[]){
+        const alias=this.normalizeProvinceText(row?.alias),targetKey=this.normalizeProvinceText(row?.province),province=canonicalByKey.get(targetKey);
+        if(alias&&province)map.set(alias,province);
+      }
       return map;
     }
-    resolveProvince(value){const key=this.normalizeProvinceText(value);return key?this.provinceAliasMap().get(key)||null:null}
+    resolveProvince(value){
+      const key=this.normalizeProvinceText(value);if(!key)return null;
+      const map=this.provinceAliasMap(),direct=map.get(key);if(direct)return direct;
+      // Safe fallback: accept a shortened form only when it identifies exactly one province.
+      if(key.length>=3){
+        const available=Object.keys(this.manifest?.files?.provinces||{}),matches=available.filter(p=>{
+          const canonical=this.normalizeProvinceText(p);
+          return canonical.startsWith(key)||canonical.endsWith(key);
+        });
+        if(matches.length===1)return matches[0];
+      }
+      return null;
+    }
 
     plateKeys(value){
       const raw=String(value??"").trim().toUpperCase();if(!raw)return[];
@@ -113,11 +152,16 @@
 
     identitySequence(item){
       const seq=["appointment",...this.appointmentKeys(item?.appointmentNo)];
+      this.lastProvinceRaw=String(item?.province??"").trim();this.lastProvinceResolved=null;
       if(this.settings.readPlate===false)return seq;
       const f=this.manifest?.files||{},plate=this.plateKeys(item?.vehiclePlate);
       if(!f.vehicleRegistration||!plate.length)return seq;
       seq.push("vehicleRegistration",...plate);
-      if(this.settings.readProvince!==false&&f.province&&f.provinces){const province=this.resolveProvince(item?.province);if(province)seq.push("provinceLabel","province_"+province)}
+      if(this.settings.readProvince!==false&&f.provinces){
+        const province=this.resolveProvince(item?.province);this.lastProvinceResolved=province;
+        if(province)seq.push("province_"+province);
+        else if(this.lastProvinceRaw)console.warn("queue voice province not resolved",this.lastProvinceRaw);
+      }
       return seq;
     }
 
@@ -127,8 +171,13 @@
       seq.push(...this.identitySequence(item));
       const mayReadDoor=item?.useDoor!==false&&this.settings.readDoor!==false,doorKeys=mayReadDoor?this.doorKeys(item?.doorCode):[];
       if(type==="DOOR_CHANGED"&&doorKeys.length&&this.clipMap().changeDoor)seq.push("changeDoor",...doorKeys);
-      else if(doorKeys.length)seq.push("pleaseAt",...doorKeys);
-      else seq.push("pleaseNoDoor");
+      else if(doorKeys.length){
+        if(this.clipMap().please)seq.push("please");
+        seq.push("pleaseAt",...doorKeys);
+      }else{
+        if(this.clipMap().please)seq.push("please");
+        seq.push("pleaseNoDoor");
+      }
       if(this.settings.playThanks&&this.clipMap().thanks)seq.push("thanks");
       return seq;
     }
@@ -162,7 +211,7 @@
     async processQueue(){if(this.processing||!this.unlocked||!this.settings.enabled)return;this.processing=true;try{while(this.pending.length&&this.settings.enabled){const next=this.pending.shift();this.currentCallId=next.callId;try{await this.announceNow(next.item)}catch(error){console.warn("queue voice announce failed",error?.message||error)}}}finally{this.currentCallId="";this.processing=false}}
     clearPending(){this.pending.length=0}
     sleep(ms){return new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(ms)||0)))}
-    status(){return{unlocked:this.unlocked,ready:this.ready,processing:this.processing,pending:this.pending.length,manifestVersion:this.manifestVersion}}
+    status(){return{unlocked:this.unlocked,ready:this.ready,processing:this.processing,pending:this.pending.length,manifestVersion:this.manifestVersion,engineBuild:ENGINE_BUILD,lastProvinceRaw:this.lastProvinceRaw||"",lastProvinceResolved:this.lastProvinceResolved||null,readProvince:this.settings.readProvince!==false}}
   }
 
   window.SmartQueueVoice=new QueueVoiceEngine();
