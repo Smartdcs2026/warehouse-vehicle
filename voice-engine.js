@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const ENGINE_BUILD="2026.08.10-r83.4-province-resolver";
+  const ENGINE_BUILD="2026.08.10-r83.5-faster-no-door";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
     enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,
@@ -8,7 +8,7 @@
     playDing:true,playThanks:true,speechPace:"normal",provinceAliases:[],
     packId:"th-TH-standard-01",assetBasePath:"/voice/queue/th-TH/standard-01/",apiBaseUrl:""
   };
-  const PACE_SCALE={compact:0.78,normal:1,clear:1.25};
+  const PACE_SCALE={compact:0.58,normal:0.76,clear:1.0};
   const BUILTIN_PROVINCE_ALIASES=[
     ["กทม","กรุงเทพมหานคร"],["กท","กรุงเทพมหานคร"],["กรุงเทพ","กรุงเทพมหานคร"],["กรุงเทพฯ","กรุงเทพมหานคร"],
     ["อยุธยา","พระนครศรีอยุธยา"],["อย","พระนครศรีอยุธยา"]
@@ -193,7 +193,7 @@
       else if((key.startsWith("letter_")&&nextKey?.startsWith("digit_"))||(key.startsWith("digit_")&&nextKey?.startsWith("letter_")))gap=Number(d.letterGapMs)||105;
       else if(key.startsWith("province_"))gap=Number(d.provinceGapMs)||150;
       else gap=Number(d.phraseGapMs)||170;
-      return Math.max(50,Math.round(gap*scale));
+      return Math.max(35,Math.round(gap*scale));
     }
     async playSequence(keys){const usable=keys.filter(key=>Boolean(key&&this.clipMap()[key]));for(let i=0;i<usable.length;i++)await this.playClip(usable[i],i<usable.length-1?this.gapFor(usable[i],usable[i+1]):0)}
 
