@@ -1301,6 +1301,16 @@ const alertSoundState = { initialized:false, levels:new Map() };
 let audioContext = null;
 const $ = (id) => document.getElementById(id);
 
+function sanitizeSensitiveUrl(){
+  try{
+    const url=new URL(window.location.href);
+    let changed=false;
+    ["name","password","username","pass"].forEach(key=>{if(url.searchParams.has(key)){url.searchParams.delete(key);changed=true}});
+    if(changed)history.replaceState(null,"",`${url.pathname}${url.search}${url.hash}`);
+  }catch{}
+}
+sanitizeSensitiveUrl();
+
 document.addEventListener("DOMContentLoaded", init);
 window.addEventListener("online", () => { setConnection(true); checkInboundLiveUpdates(true); });
 window.addEventListener("offline", () => setConnection(false));
@@ -1317,7 +1327,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260811-r86",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260811-r90",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; openApp(); } catch { clearSession(); } }
 }
 
