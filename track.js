@@ -1366,7 +1366,7 @@ async function loadTrack(force){
   }finally{inFlight=false}
 }
 
-function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,q:data?.queueCall,h:data?.callHistory,n:data?.queueNotice,nh:data?.noticeHistory,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
+function trackFingerprint(data){return JSON.stringify({v:data?.vehicle,t:data?.timeline,q:data?.queueCall,h:data?.callHistory,n:data?.queueNotice,nh:data?.noticeHistory,r:data?.rejection,closed:data?.closed,expiresAt:data?.expiresAt,instruction:data?.instruction,lifecycle:data?.lifecycle,stateUpdatedAt:data?.stateUpdatedAt||0})}
 function recentQueueNotice(data,maxAgeSeconds=900){
   const notice=data?.queueNotice;if(!notice?.noticeId||!Number(notice.notifiedAt||0))return null;
   return Math.max(0,Math.floor(Date.now()/1000)-Number(notice.notifiedAt))<=maxAgeSeconds?notice:null;
@@ -1381,16 +1381,16 @@ function validateTrackPayload(data){
 }
 
 function render(data){
-  const v=data.vehicle||{},steps=data.timeline||[],q=data.queueCall||{called:false,callCount:0},history=Array.isArray(data.callHistory)?data.callHistory:[];
+  const v=data.vehicle||{},steps=data.timeline||[],q=data.queueCall||{called:false,callCount:0},history=Array.isArray(data.callHistory)?data.callHistory:[],rejection=data.rejection||null;
   const currentIndex=currentStepIndex(steps,v.status,q);
   const instruction=String(data.instruction||instructionFor(v.status,v.doorCode,q));
   const expiry=data.expiresAt?dateText(data.expiresAt):"-";
   const gateOut=v.gateOutAt?dateText(v.gateOutAt):"";
-  const returned=steps.some(step=>step.code==="DOCUMENT_RETURNED"&&step.done);
-  const showGateOutQr=v.status==="WAITING_GATE_OUT"&&returned&&!v.gateOutAt&&Boolean(v.autoId);
+  const returned=steps.some(step=>step.code==="DOCUMENT_RETURNED"&&step.done),rejectedExit=v.status==="REJECTED_WAITING_GATE_OUT";
+  const showGateOutQr=((v.status==="WAITING_GATE_OUT"&&returned)||rejectedExit)&&!v.gateOutAt&&Boolean(v.autoId);
   const autoId=String(v.autoId||"");
   const qrSvg=showGateOutQr&&window.WVQRCode?.toSvg?window.WVQRCode.toSvg(autoId,{margin:4}):"";
-  const calledToDoor=v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode,notice=recentQueueNotice(data);
+  const calledToDoor=!rejection&&v.status==="READY_FOR_RECEIVING"&&q.called&&q.doorCode,notice=rejection?null:recentQueueNotice(data);
   const mainInstruction=notice?.label||(calledToDoor?`กรุณานำรถเข้าประตู ${q.doorCode}`:instruction);
   const workflowAfterNotice=notice?(calledToDoor?`เข้าตรวจรับสินค้าที่ประตู ${q.doorCode}`:instruction):"";
   const instructionNote=notice?`ข้อความจากเจ้าหน้าที่ · ${timeText(notice.notifiedAt)}`:(calledToDoor?instruction:"");
@@ -1399,15 +1399,15 @@ function render(data){
   siteClockGateOut=Number(v.gateOutAt||0);
   $("trackMain").innerHTML=`<article class="track-card">
     <section class="track-identity">
-      <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${notice?"officer":data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(statusPillText)}</span></header>
+      <header><div><small>เลขนัดหมาย</small><strong>${esc(v.appointmentNo||"-")}</strong></div><span class="track-status-pill ${rejection?"rejected":notice?"officer":data.closed?"closed":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""}">${esc(statusPillText)}</span></header>
       <div class="track-identity-grid"><div><small>บริษัท</small><b>${esc(v.companyName||"ไม่ระบุบริษัท")}</b></div><div><small>ทะเบียนรถ</small><b>${esc(v.vehiclePlate||"ไม่ระบุ")}</b></div><div><small>จังหวัด</small><b>${esc(v.province||"ไม่ระบุ")}</b></div>${v.driverName?`<div><small>คนขับรถ</small><b>${esc(v.driverName)}</b></div>`:""}</div>
     </section>
-    <section class="track-instruction ${notice?"officer-notice":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${v.status==="WAITING_GATE_OUT"?"exit-ready":""}">
-      <div class="track-instruction-mark" aria-hidden="true">${notice?"!":q.called&&v.status==="READY_FOR_RECEIVING"?"→":v.status==="WAITING_GATE_OUT"?"QR":"i"}</div>
+    <section class="track-instruction ${rejection?"rejected":notice?"officer-notice":q.called&&v.status==="READY_FOR_RECEIVING"?"called":""} ${["WAITING_GATE_OUT","REJECTED_WAITING_GATE_OUT"].includes(v.status)?"exit-ready":""}">
+      <div class="track-instruction-mark" aria-hidden="true">${rejection?"!":notice?"!":q.called&&v.status==="READY_FOR_RECEIVING"?"→":["WAITING_GATE_OUT","REJECTED_WAITING_GATE_OUT"].includes(v.status)?"QR":"i"}</div>
       <div class="track-instruction-copy"><small>สิ่งที่ต้องทำตอนนี้</small><b>${esc(mainInstruction)}</b>${instructionNote?`<span class="track-instruction-source">${esc(instructionNote)}</span>`:""}${notice&&workflowAfterNotice?`<div class="track-followup"><small>งานหลักหลังจากนั้น</small><strong>${esc(workflowAfterNotice)}</strong></div>`:""}</div>
     </section>
-    ${renderQueueStatus(q,v.status)}
-    ${history.length?renderCallHistory(history):""}
+    ${rejection?renderRejectionStatus(rejection):renderQueueStatus(q,v.status)}
+    ${!rejection&&history.length?renderCallHistory(history):""}
     <section class="track-timeline"><header><h2>ขั้นตอนการดำเนินงาน</h2><span>อัปเดตอัตโนมัติ</span></header><div class="track-timeline-steps">${steps.map((step,index)=>`<div class="track-step ${step.done?"done":""} ${index===currentIndex?"current":""}" data-step-index="${index}"><i aria-hidden="true"></i><b>${esc(step.label)}</b><span>${step.at?timeText(step.at):"รอดำเนินการ"}</span></div>`).join("")}</div></section>
     <section class="track-site-time"><div><small>เข้าพื้นที่</small><b>${esc(v.gateInAt?dateText(v.gateInAt):"-")}</b></div><div><small>${data.closed?"เวลารวมทั้งหมด":"อยู่ในพื้นที่แล้ว"}</small><b id="trackSiteDuration">${formatDuration(siteElapsedSeconds())}</b></div></section>
     ${showGateOutQr?`<section class="track-exit-action"><div><small>พร้อมสำหรับขั้นตอนออกจากพื้นที่</small><b>เปิด QR เฉพาะเมื่อต้องใช้ที่จุดออกจากพื้นที่</b></div><button id="trackOpenQr" type="button">เปิด QR สำหรับออกจากพื้นที่</button></section>
@@ -1418,6 +1418,10 @@ function render(data){
   updateSiteClock();
 }
 
+function renderRejectionStatus(rejection){
+  if(!rejection)return"";const reason=String(rejection.reason||"ไม่ระบุเหตุผล"),next=rejection.requireDocumentReturn?"รอรับเอกสารคืน":"รอออกจากพื้นที่";
+  return `<section class="track-rejection-status"><div><small>ผลการรับสินค้า</small><b>ปฏิเสธรับสินค้า</b></div><div><small>เหตุผล</small><strong>${esc(reason)}</strong></div><div><small>ขั้นตอนถัดไป</small><strong>${esc(next)}</strong></div></section>`;
+}
 function renderQueueStatus(q,status){
   const called=Boolean(q?.called),latestLabel=called?(q.statusLabel||queueCallTypeLabel(q.callType)):"ยังไม่เรียก";
   const door=called&&q.doorCode?q.doorCode:called?"ยังไม่ระบุ":"–",latest=called&&q.calledAt?timeText(q.calledAt):"–",count=Math.max(0,Number(q.callCount||0));
@@ -1448,6 +1452,7 @@ function alertSeenStorageKey(){return TRACK_ALERT_SEEN_PREFIX+snapshotTokenKey()
 function readSeenAlertKey(){try{return sessionStorage.getItem(alertSeenStorageKey())||""}catch{return""}}
 function writeSeenAlertKey(value){try{sessionStorage.setItem(alertSeenStorageKey(),String(value||""))}catch{}}
 function currentTrackCallKey(data){
+  const rejection=data?.rejection;if(rejection?.rejectedAt)return`rejection:${rejection.rejectedAt}`;
   const notice=recentQueueNotice(data);if(notice)return`notice:${notice.noticeId}`;
   const q=data?.queueCall||{},latest=Array.isArray(data?.callHistory)?data.callHistory[0]:null;
   if(!q.called)return"";
@@ -1489,11 +1494,11 @@ function updateTrackAlertButton(forcedLabel=""){
   label.textContent=forcedLabel||(trackAlertEnabled?(trackAlertUnlocked?"เสียงเตือนเปิด":trackAlertPending?"แตะเปิดเสียง":"เสียงเตือน"):(trackAlertPending?"เปิดเสียงเตือน":"เสียงเตือน"));
 }
 function handleTrackCallAlert(data){
-  const q=data?.queueCall||{},v=data?.vehicle||{},notice=recentQueueNotice(data);
-  if(!notice&&(v.status!=="READY_FOR_RECEIVING"||!q.called)){trackAlertPending=null;updateTrackAlertButton();return}
+  const q=data?.queueCall||{},v=data?.vehicle||{},rejection=data?.rejection||null,notice=rejection?null:recentQueueNotice(data);
+  if(!rejection&&!notice&&(v.status!=="READY_FOR_RECEIVING"||!q.called)){trackAlertPending=null;updateTrackAlertButton();return}
   const key=currentTrackCallKey(data);if(!key||key===trackAlertLastLiveKey&&key===readSeenAlertKey())return;
   trackAlertLastLiveKey=key;if(readSeenAlertKey()===key)return;
-  trackAlertPending=notice?{key,callType:String(notice.noticeType||"NOTICE"),doorCode:String(notice.doorCode||""),callCount:1,calledAt:Number(notice.notifiedAt||0)}:{key,callType:String(q.callType||"FIRST"),doorCode:String(q.doorCode||""),callCount:Number(q.callCount||1),calledAt:Number(q.calledAt||0)};
+  trackAlertPending=rejection?{key,callType:"REJECTION",doorCode:"",callCount:1,calledAt:Number(rejection.rejectedAt||0)}:notice?{key,callType:String(notice.noticeType||"NOTICE"),doorCode:String(notice.doorCode||""),callCount:1,calledAt:Number(notice.notifiedAt||0)}:{key,callType:String(q.callType||"FIRST"),doorCode:String(q.doorCode||""),callCount:Number(q.callCount||1),calledAt:Number(q.calledAt||0)};
   const instruction=document.querySelector(".track-instruction");if(instruction){instruction.classList.remove("alerting");void instruction.offsetWidth;instruction.classList.add("alerting");setTimeout(()=>instruction.classList.remove("alerting"),9000)}
   updateTrackAlertButton();
   if(trackAlertEnabled&&trackAlertUnlocked)playTrackCallAlert(trackAlertPending);
@@ -1503,7 +1508,7 @@ function playTrackCallAlert(alert){
   if(!alert||!trackAlertEnabled||!trackAlertUnlocked||!trackAlertContext||trackAlertContext.state!=="running")return false;
   clearTrackAlertTimers();
   const type=String(alert.callType||"FIRST").toUpperCase();
-  const pattern=type.startsWith("NOTICE_")?[[0,740],[180,980],[360,1220],[650,980],[830,1220]]:type==="DOOR_CHANGED"?[[0,720],[260,1080],[650,720],[910,1080]]:type==="RECALL"?[[0,980],[210,980],[420,980],[760,1180]]:[[0,860],[300,1040],[600,1180]];
+  const pattern=type==="REJECTION"?[[0,520],[260,420],[520,520],[900,420]]:type.startsWith("NOTICE_")?[[0,740],[180,980],[360,1220],[650,980],[830,1220]]:type==="DOOR_CHANGED"?[[0,720],[260,1080],[650,720],[910,1080]]:type==="RECALL"?[[0,980],[210,980],[420,980],[760,1180]]:[[0,860],[300,1040],[600,1180]];
   for(let cycle=0;cycle<3;cycle++){
     const base=cycle*2600;
     for(const [offset,freq] of pattern)trackAlertTimers.push(setTimeout(()=>playTone(freq,.15,.18),base+offset));
@@ -1553,11 +1558,13 @@ function instructionFor(status,door,q={}){
   if(status==="RECEIVING_IN_PROGRESS")return door?`กรุณาดำเนินการตรวจรับสินค้าที่ประตู ${door}`:"กำลังตรวจรับสินค้า";
   if(status==="WAITING_DOCUMENT_RETURN")return"กรุณารอรับเอกสารคืน";
   if(status==="WAITING_GATE_OUT")return"รับเอกสารคืนแล้ว กรุณาเปิด QR เมื่อต้องการใช้สำหรับออกจากพื้นที่";
+  if(status==="REJECTED_WAITING_DOCUMENT_RETURN")return"การรับสินค้าถูกปฏิเสธ กรุณารอรับเอกสารคืน";
+  if(status==="REJECTED_WAITING_GATE_OUT")return"การรับสินค้าถูกปฏิเสธ กรุณาดำเนินการออกจากพื้นที่";
   if(status==="CLOSED")return"รายการเสร็จสิ้นแล้ว";
   return"กรุณาตรวจสอบสถานะบนหน้านี้";
 }
 function currentStepIndex(steps,status,q={}){
-  const code=status==="WAITING_DOCUMENT_SUBMISSION"?"DOCUMENT_SUBMITTED":status==="WAITING_DOCUMENT_CHECK"?"DOCUMENT_CHECKED":status==="READY_FOR_RECEIVING"?"QUEUE_CALLED":status==="RECEIVING_IN_PROGRESS"?"RECEIVING_STARTED":status==="WAITING_DOCUMENT_RETURN"?"RECEIVING_COMPLETED":status==="WAITING_GATE_OUT"?"DOCUMENT_RETURNED":status==="CLOSED"?"GATE_OUT":"GATE_IN";
+  const code=status==="WAITING_DOCUMENT_SUBMISSION"?"DOCUMENT_SUBMITTED":status==="WAITING_DOCUMENT_CHECK"?"DOCUMENT_CHECKED":status==="READY_FOR_RECEIVING"?"QUEUE_CALLED":status==="RECEIVING_IN_PROGRESS"?"RECEIVING_STARTED":status==="WAITING_DOCUMENT_RETURN"?"RECEIVING_COMPLETED":status==="WAITING_GATE_OUT"?"DOCUMENT_RETURNED":status==="REJECTED_WAITING_DOCUMENT_RETURN"||status==="REJECTED_WAITING_GATE_OUT"?"RECEIVING_REJECTED":status==="CLOSED"?"GATE_OUT":"GATE_IN";
   const idx=steps.findIndex(step=>step.code===code);return idx>=0?idx:Math.max(0,steps.length-1);
 }
 function showRetry(message){$("trackMain").innerHTML=`<div class="track-error"><b>ยังไม่สามารถอัปเดตสถานะได้</b><span>${esc(message)}</span><button id="trackRetry" type="button">ลองใหม่</button></div>`;$("trackRetry")?.addEventListener("click",()=>loadTrack(true));setFresh("off","ตรวจสอบไม่สำเร็จ")}
