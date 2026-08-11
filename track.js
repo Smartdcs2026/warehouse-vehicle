@@ -1270,7 +1270,7 @@ const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
 const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v4";
-const TRACK_API_VERSION="2026-08-track-v3";
+const TRACK_API_VERSION="2026-08-track-v4";
 const TRACK_ALERT_PREF_KEY="wv_track_alert_enabled_v1";
 const TRACK_ALERT_SEEN_PREFIX="wv_track_alert_seen_v1:";
 let trackAlertEnabled=readBoolStorage(TRACK_ALERT_PREF_KEY);
@@ -1548,7 +1548,8 @@ function updateSiteClock(){const el=$("trackSiteDuration");if(el)el.textContent=
 
 function instructionFor(status,door,q={}){
   if(status==="WAITING_DOCUMENT_SUBMISSION")return"กรุณายื่นเอกสารที่จุดบริการ";
-  if(status==="READY_FOR_RECEIVING")return q.called?(door?`กรุณานำรถเข้าประตู ${door}`:"มีการเรียกเข้าตรวจรับสินค้าแล้ว"):"กรุณารอการเรียกเข้าตรวจรับสินค้า";
+  if(status==="WAITING_DOCUMENT_CHECK")return"ยื่นเอกสารแล้ว กรุณารอเจ้าหน้าที่ตรวจเอกสาร";
+  if(status==="READY_FOR_RECEIVING")return q.called?(door?`กรุณานำรถเข้าประตู ${door}`:"มีการเรียกเข้าตรวจรับสินค้าแล้ว"):"ตรวจเอกสารเรียบร้อยแล้ว กรุณารอการเรียกเข้าตรวจรับสินค้า";
   if(status==="RECEIVING_IN_PROGRESS")return door?`กรุณาดำเนินการตรวจรับสินค้าที่ประตู ${door}`:"กำลังตรวจรับสินค้า";
   if(status==="WAITING_DOCUMENT_RETURN")return"กรุณารอรับเอกสารคืน";
   if(status==="WAITING_GATE_OUT")return"รับเอกสารคืนแล้ว กรุณาเปิด QR เมื่อต้องการใช้สำหรับออกจากพื้นที่";
@@ -1556,7 +1557,7 @@ function instructionFor(status,door,q={}){
   return"กรุณาตรวจสอบสถานะบนหน้านี้";
 }
 function currentStepIndex(steps,status,q={}){
-  const code=status==="WAITING_DOCUMENT_SUBMISSION"?"DOCUMENT_SUBMITTED":status==="READY_FOR_RECEIVING"?"QUEUE_CALLED":status==="RECEIVING_IN_PROGRESS"?"RECEIVING_STARTED":status==="WAITING_DOCUMENT_RETURN"?"RECEIVING_COMPLETED":status==="WAITING_GATE_OUT"?"DOCUMENT_RETURNED":status==="CLOSED"?"GATE_OUT":"GATE_IN";
+  const code=status==="WAITING_DOCUMENT_SUBMISSION"?"DOCUMENT_SUBMITTED":status==="WAITING_DOCUMENT_CHECK"?"DOCUMENT_CHECKED":status==="READY_FOR_RECEIVING"?"QUEUE_CALLED":status==="RECEIVING_IN_PROGRESS"?"RECEIVING_STARTED":status==="WAITING_DOCUMENT_RETURN"?"RECEIVING_COMPLETED":status==="WAITING_GATE_OUT"?"DOCUMENT_RETURNED":status==="CLOSED"?"GATE_OUT":"GATE_IN";
   const idx=steps.findIndex(step=>step.code===code);return idx>=0?idx:Math.max(0,steps.length-1);
 }
 function showRetry(message){$("trackMain").innerHTML=`<div class="track-error"><b>ยังไม่สามารถอัปเดตสถานะได้</b><span>${esc(message)}</span><button id="trackRetry" type="button">ลองใหม่</button></div>`;$("trackRetry")?.addEventListener("click",()=>loadTrack(true));setFresh("off","ตรวจสอบไม่สำเร็จ")}
