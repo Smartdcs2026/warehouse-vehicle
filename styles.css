@@ -5735,3 +5735,187 @@ button:disabled { cursor: wait; opacity: .7; }
 @media(max-width:1200px){.dt-filterbar{grid-template-columns:1.2fr repeat(3,1fr) 1fr 1fr auto auto auto}.dt-current-rule-top{grid-template-columns:1fr}.dt-current-rule-top .dt-current-rule-actions{justify-content:flex-start}}
 @media(max-width:900px){.dt-filterbar{grid-template-columns:1fr 1fr 1fr}.dt-filterbar .dt-search{grid-column:1/-1}.dt-filterbar select:nth-of-type(5){grid-column:1/3}}
 @media(max-width:700px){.dt-filterbar{grid-template-columns:1fr 1fr}.dt-filterbar .dt-search{grid-column:1/-1}.dt-filterbar select{grid-column:auto}.dt-filterbar button{width:100%}.dt-current-rule-top .dt-current-rule-levels{display:grid!important;grid-template-columns:1fr 1fr}}
+
+/* Round 109 — keep Compare action buttons visible on one-screen desktop popup */
+.dt-compare-swal{width:min(1240px,96vw)!important;max-width:none!important;max-height:calc(100vh - 64px)!important;padding:16px 20px 14px!important}
+.dt-compare-swal .swal2-title{margin:0!important;padding:0 36px 8px!important;font-size:24px!important;line-height:1.15!important}
+.dt-compare-swal .swal2-html-container{margin:6px 0 0!important;overflow:visible!important}
+.dt-compare-popup{grid-template-columns:1.04fr .96fr!important;grid-template-areas:"dimensions common" "datasets datasets" "results results" "footer footer"!important;gap:8px!important;max-height:none!important;overflow:visible!important}
+.dt-compare-dimensions,.dt-compare-common-wrap,.dt-compare-data-section,.dt-compare-results{padding:8px 10px!important}
+.dt-compare-section-title{padding-bottom:5px!important}
+.dt-compare-data-section{gap:7px!important}
+.dt-compare-sets{grid-template-columns:1fr 1fr!important;gap:9px!important}
+.dt-compare-set{padding:9px 10px!important;gap:7px!important}
+.dt-compare-set>header{min-height:30px!important}
+.dt-compare-set>header b{font-size:13px!important}
+.dt-compare-set>header small{font-size:8.2px!important}
+.dt-compare-date-grid,.dt-compare-set-secondary{gap:6px!important}
+.dt-compare-set input,.dt-compare-set select,.dt-compare-common select{height:34px!important}
+.dt-compare-common{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+.dt-compare-metrics{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:6px!important}
+.dt-compare-metric{gap:5px!important;padding:8px!important;min-height:104px!important}
+.dt-compare-metric>header{min-height:26px!important}
+.dt-compare-metric>header b{font-size:9.7px!important}
+.dt-compare-ab{gap:4px!important}
+.dt-compare-ab>div{padding:5px!important}
+.dt-compare-ab strong{font-size:15px!important}
+.dt-compare-metric>footer{padding-top:4px!important}
+.dt-compare-summary{gap:5px!important;padding:7px 9px!important}
+.dt-compare-summary>header{font-size:10.8px!important}
+.dt-compare-summary ul{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px!important}
+.dt-compare-summary li{grid-template-columns:1fr!important;gap:1px!important;padding:4px 6px!important}
+.dt-compare-summary li b{font-size:8.8px!important;white-space:normal}
+.dt-compare-summary li span{font-size:8.2px!important}
+.dt-compare-footer{display:flex!important;grid-area:footer!important;justify-content:flex-end!important;align-items:center!important;gap:8px!important;padding:8px 0 0!important;border-top:1px solid #e2e9f1!important;background:#fff!important;position:relative!important;z-index:5!important}
+.dt-compare-footer button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:112px!important;min-height:38px!important;visibility:visible!important;opacity:1!important}
+#cmpRun{background:#2563d8!important;border-color:#2563d8!important;color:#fff!important}
+@media(max-width:1180px){.dt-compare-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}.dt-compare-summary ul{grid-template-columns:1fr!important}.dt-compare-swal .swal2-html-container{overflow:auto!important;max-height:calc(100vh - 145px)!important}}
+@media(max-width:720px){.dt-compare-swal{max-height:calc(100vh - 24px)!important;padding:12px!important}.dt-compare-popup{grid-template-columns:1fr!important;grid-template-areas:"dimensions" "common" "datasets" "results" "footer"!important}.dt-compare-sets{grid-template-columns:1fr!important}.dt-compare-common{grid-template-columns:1fr!important}.dt-compare-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}.dt-compare-footer{position:sticky!important;bottom:0!important;padding:8px 0!important}.dt-compare-footer button{min-width:0!important;flex:1}}
+
+/* Round 110 — true Datatable focus fullscreen + small-screen redesign */
+.app-shell.datatable-fullscreen-shell{
+  position:fixed!important;
+  inset:0!important;
+  z-index:99990!important;
+  width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  min-height:0!important;
+  display:block!important;
+  overflow:hidden!important;
+  background:#f4f7fb!important;
+}
+.datatable-fullscreen-shell>.sidebar,
+.datatable-fullscreen-shell>.mobile-nav,
+.datatable-fullscreen-shell .content>.topbar{display:none!important}
+.datatable-fullscreen-shell>.content{
+  width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+.datatable-fullscreen-shell .page-content{
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  padding:8px 10px 10px!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+}
+.datatable-fullscreen-shell .dt-page{width:100%!important;max-width:none!important;gap:7px!important}
+.datatable-fullscreen-shell .dt-r100-top{position:sticky;top:0;z-index:25;box-shadow:0 5px 16px rgba(24,52,85,.07)!important}
+.datatable-fullscreen-shell .dt-table-card{min-height:calc(100dvh - 220px)}
+.datatable-fullscreen-shell .dt-table-wrap{min-height:calc(100dvh - 265px)}
+.datatable-fullscreen-shell #dtFullscreen{background:#173f75!important;border-color:#173f75!important;color:#fff!important}
+
+/* compact tablet / small desktop */
+@media(max-width:900px){
+  .datatable-view-shell .page-content{padding:10px 9px 66px!important}
+  .datatable-view-shell .dt-page{gap:8px!important}
+  .datatable-view-shell .dt-r100-top{padding:8px!important;border-radius:12px!important}
+  .datatable-view-shell .dt-r100-controls{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;align-items:end!important}
+  .datatable-view-shell .dt-r100-controls>label{min-width:0!important}
+  .datatable-view-shell .dt-r100-shift{grid-column:1/-1!important}
+  .datatable-view-shell .dt-r100-actions{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+  .datatable-view-shell .dt-r100-actions button{width:100%!important;min-height:36px!important;padding:6px 5px!important;font-size:9px!important}
+  .datatable-view-shell .dt-r100-live{grid-column:1/-1!important;width:100%!important;justify-content:flex-start!important;min-height:34px!important}
+  .datatable-view-shell .dt-r100-shift-hint{grid-column:1/-1!important}
+  .datatable-view-shell .dt-stage-tabs-r100{display:flex!important;overflow-x:auto!important;gap:6px!important;padding-bottom:2px!important;scroll-snap-type:x proximity;scrollbar-width:thin}
+  .datatable-view-shell .dt-stage-tabs-r100 button{flex:0 0 128px!important;min-width:128px!important;min-height:40px!important;scroll-snap-align:start}
+  .datatable-view-shell .dt-current-rule-top{grid-template-columns:1fr!important;gap:6px!important;padding:8px!important}
+  .datatable-view-shell .dt-current-rule-top>div:first-child{display:flex!important;gap:8px!important;align-items:baseline!important;min-width:0!important}
+  .datatable-view-shell .dt-current-rule-top .dt-current-rule-levels{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:5px!important;padding-bottom:2px!important;scrollbar-width:thin}
+  .datatable-view-shell .dt-current-rule-top .dt-current-rule-levels>span{flex:0 0 auto!important;white-space:nowrap!important}
+  .datatable-view-shell .dt-current-rule-top .dt-current-rule-actions{display:flex!important;justify-content:flex-start!important;gap:6px!important}
+  .datatable-view-shell .dt-filterbar{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
+  .datatable-view-shell .dt-filterbar .dt-search{grid-column:1/-1!important}
+  .datatable-view-shell .dt-filterbar select{min-width:0!important;grid-column:auto!important}
+  .datatable-view-shell .dt-filterbar button{width:100%!important;min-width:0!important}
+  .datatable-view-shell .dt-table-card{border:0!important;background:transparent!important;overflow:visible!important;box-shadow:none!important}
+  .datatable-view-shell .dt-table-wrap{overflow:visible!important;min-height:0!important;display:grid!important;gap:8px!important}
+  .datatable-view-shell .dt-head{display:none!important}
+  .datatable-view-shell .dt-row:not(.dt-head){
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    min-width:0!important;
+    gap:0!important;
+    margin:0!important;
+    padding:7px 8px 8px!important;
+    border:1px solid #dce5ef!important;
+    border-top:3px solid var(--dt-head-accent,#2563eb)!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    box-shadow:0 3px 10px rgba(29,52,82,.04)!important;
+  }
+  .datatable-view-shell .dt-row:not(.dt-head)>span,
+  .datatable-view-shell .dt-row:not(.dt-head)>b{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    gap:3px!important;
+    min-width:0!important;
+    padding:7px 6px!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    border-bottom:1px solid #eef2f6!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+  }
+  .datatable-view-shell .dt-row:not(.dt-head)>span:nth-last-child(-n+2){border-bottom:0!important}
+  .datatable-view-shell .dt-row:not(.dt-head)>span:before,
+  .datatable-view-shell .dt-row:not(.dt-head)>b:before{
+    content:attr(data-label)!important;
+    display:block!important;
+    margin:0!important;
+    color:#7b899a!important;
+    font-size:8.4px!important;
+    font-weight:800!important;
+    line-height:1.1!important;
+  }
+  .datatable-view-shell .dt-row:not(.dt-head)>b[data-label="เลขนัดหมาย"]{
+    grid-column:1/-1!important;
+    font-size:14px!important;
+    color:#0f54a4!important;
+    border-bottom:1px solid #e4ebf3!important;
+  }
+  .datatable-view-shell .dt-status{min-height:27px!important}
+  .datatable-view-shell .dt-command,.datatable-view-shell .dt-detail{width:100%!important;min-height:34px!important;font-size:10px!important}
+  .datatable-view-shell .dt-no-action{min-height:34px;display:grid!important;place-items:center!important;width:100%;color:#9ba6b3!important}
+  .datatable-view-shell .dt-pager{margin-top:2px!important;border:1px solid #dce5ef;border-radius:11px;background:#fff!important;padding:8px!important}
+}
+
+@media(max-width:560px){
+  .datatable-view-shell .topbar{height:60px!important;padding:7px 12px!important}
+  .datatable-view-shell .topbar h1{font-size:17px!important}
+  .datatable-view-shell .topbar p{font-size:9px!important}
+  .datatable-view-shell .sync-status{padding:6px 8px!important;font-size:9px!important}
+  .datatable-view-shell .page-content{padding:8px 7px 62px!important}
+  .datatable-view-shell .dt-r100-controls{grid-template-columns:1fr!important}
+  .datatable-view-shell .dt-r100-controls>label,
+  .datatable-view-shell .dt-r100-shift{grid-column:1!important}
+  .datatable-view-shell .dt-r100-controls input,
+  .datatable-view-shell .dt-r100-controls select{height:38px!important;font-size:11px!important}
+  .datatable-view-shell .dt-r100-actions{grid-column:1!important;grid-template-columns:1fr 1fr!important}
+  .datatable-view-shell .dt-r100-actions button{min-height:37px!important;font-size:9.5px!important}
+  .datatable-view-shell .dt-r100-live{grid-column:1!important}
+  .datatable-view-shell .dt-stage-tabs-r100 button{flex-basis:118px!important;min-width:118px!important;font-size:9.3px!important}
+  .datatable-view-shell .dt-current-rule-top .dt-current-rule-actions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}
+  .datatable-view-shell .dt-filterbar{grid-template-columns:1fr 1fr!important}
+  .datatable-view-shell .dt-filterbar .dt-search{grid-column:1/-1!important}
+  .datatable-view-shell .dt-filterbar select{height:38px!important;font-size:10.5px!important}
+  .datatable-view-shell .dt-filterbar #dtSort{grid-column:1/-1!important}
+  .datatable-view-shell .dt-filterbar button{min-height:36px!important;font-size:9.3px!important}
+  .datatable-view-shell .dt-row:not(.dt-head){grid-template-columns:1fr 1fr!important;padding:6px!important}
+  .datatable-view-shell .dt-row:not(.dt-head)>span,
+  .datatable-view-shell .dt-row:not(.dt-head)>b{padding:7px 5px!important;font-size:10.7px!important}
+  .datatable-view-shell .dt-row:not(.dt-head)>b[data-label="เลขนัดหมาย"]{font-size:13.5px!important}
+  .datatable-view-shell .dt-pager{flex-direction:column!important;align-items:stretch!important}
+  .datatable-view-shell .dt-pager>div{justify-content:space-between!important;width:100%!important}
+  .datatable-view-shell .dt-pager nav{justify-content:flex-end!important;width:100%!important}
+  .datatable-fullscreen-shell .page-content{padding:6px!important}
+  .datatable-fullscreen-shell .dt-r100-top{top:0!important}
+}

@@ -1278,7 +1278,7 @@ const inboundTrackPanel = { timer:0, until:0, active:false };
 const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue" };
-const datatableState={meta:null,data:null,busy:false,reloadRequested:false,requestSeq:0,detailBusy:false,refreshMetaRequested:false,activity:[],shiftAutoDate:false,stage:"overview",from:"",to:"",shiftId:"",search:"",sla:"ALL",status:"ALL",door:"",actor:"",sort:"start_desc",page:1,limit:25,problemOnly:false,rejectedOnly:false,searchTimer:0,columns:new Set(JSON.parse(localStorage.getItem("wvf_dt_columns_r100")||localStorage.getItem("wvf_dt_columns_r96")||localStorage.getItem("wvf_dt_columns_r95")||'["company","plate","shift","actor"]'))};
+const datatableState={meta:null,data:null,busy:false,reloadRequested:false,requestSeq:0,detailBusy:false,refreshMetaRequested:false,activity:[],shiftAutoDate:false,stage:"overview",from:"",to:"",shiftId:"",search:"",sla:"ALL",status:"ALL",door:"",actor:"",sort:"start_desc",page:1,limit:25,problemOnly:false,rejectedOnly:false,searchTimer:0,immersive:false,nativeFullscreen:false,columns:new Set(JSON.parse(localStorage.getItem("wvf_dt_columns_r100")||localStorage.getItem("wvf_dt_columns_r96")||localStorage.getItem("wvf_dt_columns_r95")||'["company","plate","shift","actor"]'))};
 const DASHBOARD_INFO={
   dashboard:{title:"ข้อมูลใน Dashboard",meaning:"สรุปข้อมูลรถและขั้นตอนการทำงานตามวันที่ ช่วงเวลา และกะที่เลือก",source:"ข้อมูลรถมาจากระบบ Gate In/Gate Out แบบอ่านอย่างเดียว ส่วนขั้นตอน Inbound และตรวจรับมาจากประวัติการทำงานในระบบนี้",calculation:"ตัวเลขทุกจุดคำนวณจากข้อมูลใน D1 ณ เวลาที่ระบุว่าอัปเดตล่าสุด"},
   gateIn:{title:"รถเข้า",meaning:"จำนวนรถที่มีเวลา Gate In อยู่ในช่วงที่เลือก",source:"เวลา Gate In ของรถแต่ละคัน",calculation:"นับ Auto ID ที่ไม่ซ้ำกันตามเวลา Gate In"},
@@ -1324,11 +1324,11 @@ async function init() {
   $("loginForm").addEventListener("submit", login);
   $("logoutButton").addEventListener("click", logout);
   $("togglePassword").addEventListener("click", togglePassword);
-  document.addEventListener("fullscreenchange",()=>{updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell()});
+  document.addEventListener("fullscreenchange",()=>{if(state.view==="datatable"&&!document.fullscreenElement&&datatableState.nativeFullscreen){datatableState.nativeFullscreen=false;datatableState.immersive=false}updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell()});
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260813-r104",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260813-r110",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); openApp(); } catch { clearSession(); } }
 }
 
@@ -1874,12 +1874,27 @@ async function showInboundVehicleDetails(autoId){
 }
 
 async function toggleFullscreen(){
-  try{if(!document.fullscreenElement){if(!document.documentElement.requestFullscreen)throw new Error("unsupported");await document.documentElement.requestFullscreen()}else await document.exitFullscreen()}
+  if(state.view==="datatable"){
+    const shell=$("appView"),active=Boolean(datatableState.immersive||document.fullscreenElement);
+    if(active){
+      datatableState.immersive=false;
+      if(document.fullscreenElement){try{await document.exitFullscreen()}catch{}}
+      datatableState.nativeFullscreen=false;
+    }else{
+      datatableState.immersive=true;syncDatatableFullscreenShell();
+      try{
+        if(shell?.requestFullscreen){datatableState.nativeFullscreen=true;await shell.requestFullscreen({navigationUI:"hide"})}
+        else datatableState.nativeFullscreen=false;
+      }catch{datatableState.nativeFullscreen=false}
+    }
+    updateFullscreenButton();syncDatatableFullscreenShell();return;
+  }
+  try{if(!document.fullscreenElement){if(!document.documentElement.requestFullscreen)throw new Error("unsupported");await document.documentElement.requestFullscreen({navigationUI:"hide"})}else await document.exitFullscreen()}
   catch{showNotice("info","เบราว์เซอร์นี้ไม่รองรับการเปิดเต็มหน้าจอ")}
   updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell();
 }
 function updateFullscreenButton(){
-  const label=document.fullscreenElement?"ออกจากเต็มหน้าจอ":"เต็มหน้าจอ";
+  const datatableActive=state.view==="datatable"&&Boolean(datatableState.immersive||document.fullscreenElement),label=(datatableActive||document.fullscreenElement)?"ออกจากเต็มจอ":"เต็มจอ";
   [$("fullscreenButton"),$("dashboardFullscreen"),$("dtFullscreen")].filter(Boolean).forEach(button=>button.textContent=label);
   const mobileButton=$("dashboardMobileFullscreen"),mobileLabel=mobileButton?.querySelector("span");if(mobileLabel)mobileLabel.textContent=label;
 }
@@ -2252,8 +2267,8 @@ function dashboardTodayKey(){return new Intl.DateTimeFormat("en-CA",{timeZone:"A
 function renderDashboardCalendar(){const popover=$("dashboardCalendarPopover"),data=dashboardState.calendarData;if(!popover||!data)return;const [year,month]=data.month.split("-").map(Number),firstDay=new Date(Date.UTC(year,month-1,1)).getUTCDay(),metric=dashboardState.calendarMetric,labels={gateIn:"รถเข้า",carryOut:"คงค้าง",overdue:"เร่งด่วน"},days=Array(firstDay).fill(null).concat(data.days||[]),today=dashboardTodayKey();popover.innerHTML=`<header><button type="button" data-calendar-move="-1" aria-label="เดือนก่อน">‹</button><b>${new Intl.DateTimeFormat("th-TH",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(year,month-1,1)))}</b><button type="button" data-calendar-move="1" aria-label="เดือนถัดไป">›</button></header><div class="calendar-metrics">${Object.entries(labels).map(([id,label])=>`<button type="button" data-calendar-metric="${id}" class="${metric===id?"active":""}">${label}</button>`).join("")}</div><div class="calendar-week"><span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span></div><div class="calendar-grid">${days.map(day=>{if(!day)return`<i></i>`;const value=Number(day[metric]||0),future=day.date>today,tone=future?"future":Number(day.overdue)>0?"overdue":Number(day.carryOut)>0?"carry":value>0?"active":"empty",selected=day.date===dashboardState.date?"selected":"";return`<button type="button" ${future?"disabled":""} data-calendar-date="${day.date}" class="${tone} ${selected}" aria-label="${future?"วันที่ในอนาคต":`${day.date} ${labels[metric]} ${value} คัน`}"><span>${Number(day.date.slice(-2))}</span><b>${future?"":value||"–"}</b></button>`}).join("")}</div><footer><span><i class="clear"></i>มีงาน</span><span><i class="carry"></i>คงค้าง</span><span><i class="overdue"></i>เร่งด่วน</span><button type="button" id="calendarToday">วันนี้</button></footer>`;popover.querySelectorAll("[data-calendar-move]").forEach(button=>button.addEventListener("click",()=>moveDashboardMonth(Number(button.dataset.calendarMove))));popover.querySelectorAll("[data-calendar-metric]").forEach(button=>button.addEventListener("click",()=>{dashboardState.calendarMetric=button.dataset.calendarMetric;renderDashboardCalendar()}));popover.querySelectorAll("[data-calendar-date]:not(:disabled)").forEach(button=>button.addEventListener("click",()=>selectDashboardDate(button.dataset.calendarDate)));$("calendarToday")?.addEventListener("click",()=>selectDashboardDate(today))}
 function moveDashboardMonth(offset){const [year,month]=dashboardState.calendarMonth.split("-").map(Number),next=new Date(Date.UTC(year,month-1+offset,1));dashboardState.calendarMonth=`${next.getUTCFullYear()}-${String(next.getUTCMonth()+1).padStart(2,"0")}`;loadDashboardCalendar()}
 function selectDashboardDate(date){dashboardState.shiftAutoDate=false;dashboardState.date=date;dashboardState.calendarMonth=date.slice(0,7);dashboardState.lastLoadedAt=0;const popover=$("dashboardCalendarPopover");if(popover)popover.hidden=true;loadDashboard(true,true)}
-function setDashboardShell(view){const shell=$("appView");if(!shell)return;shell.classList.toggle("dashboard-view-shell",view==="dashboard");shell.classList.toggle("datatable-view-shell",view==="datatable");shell.classList.remove("dashboard-menu-open");if(view!=="dashboard")shell.classList.remove("dashboard-fullscreen-shell");if(view!=="datatable")shell.classList.remove("datatable-fullscreen-shell");syncDashboardFullscreenShell();syncDatatableFullscreenShell()}
-function syncDatatableFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="datatable"&&Boolean(document.fullscreenElement);shell.classList.toggle("datatable-fullscreen-shell",active);} 
+function setDashboardShell(view){const shell=$("appView");if(!shell)return;shell.classList.toggle("dashboard-view-shell",view==="dashboard");shell.classList.toggle("datatable-view-shell",view==="datatable");shell.classList.remove("dashboard-menu-open");if(view!=="dashboard")shell.classList.remove("dashboard-fullscreen-shell");if(view!=="datatable"){datatableState.immersive=false;datatableState.nativeFullscreen=false;shell.classList.remove("datatable-fullscreen-shell")}syncDashboardFullscreenShell();syncDatatableFullscreenShell()}
+function syncDatatableFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="datatable"&&Boolean(datatableState.immersive||document.fullscreenElement);shell.classList.toggle("datatable-fullscreen-shell",active);} 
 function syncDashboardFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="dashboard"&&Boolean(document.fullscreenElement);shell.classList.toggle("dashboard-fullscreen-shell",active);if(!active)shell.classList.remove("dashboard-menu-open");syncDashboardMenuButton()}
 function toggleDashboardMenu(){const shell=$("appView");if(!shell?.classList.contains("dashboard-fullscreen-shell"))return;shell.classList.toggle("dashboard-menu-open");syncDashboardMenuButton()}
 function syncDashboardMenuButton(){const button=$("dashboardMenuButton"),open=$("appView")?.classList.contains("dashboard-menu-open");if(!button)return;button.setAttribute("aria-expanded",open?"true":"false");button.setAttribute("aria-label",open?"ปิดเมนู":"เปิดเมนู")}
