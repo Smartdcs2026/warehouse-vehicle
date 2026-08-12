@@ -5213,3 +5213,46 @@ button:disabled { cursor: wait; opacity: .7; }
 .dt-timeline small{font-size:8.5px;color:#8491a0}
 @media(max-width:1180px){.dt-top-panel-controls{grid-template-columns:1fr 1fr 1fr auto auto auto}.dt-main-full .dt-filters{grid-template-columns:1fr 1fr 1fr}.dt-main-full .dt-search{grid-column:1/-1}.dt-summary-formal{grid-template-columns:repeat(5,minmax(110px,1fr));overflow-x:auto}}
 @media(max-width:760px){.dt-top-panel-head{flex-direction:column}.dt-top-panel-status{width:100%;justify-content:flex-start}.dt-top-panel-controls{grid-template-columns:1fr 1fr}.dt-top-panel-controls label:nth-child(3){grid-column:1/-1}.dt-top-panel-controls button{width:100%}.dt-stage-tabs-formal{display:flex}.dt-stage-tabs-formal button{flex:0 0 auto;min-width:124px}.dt-summary-formal{grid-template-columns:repeat(2,minmax(0,1fr))}.dt-summary-formal .dt-summary-card:last-child{grid-column:1/-1}.dt-main-full .dt-filters{grid-template-columns:1fr 1fr}.dt-main-full .dt-search{grid-column:1/-1}.dt-row{min-width:0;grid-template-columns:1fr 1fr!important}.dt-row>span,.dt-row>b{padding:6px 4px;font-size:9.4px}.dt-detail-identity{grid-template-columns:1fr}.dt-detail-durations{grid-template-columns:1fr 1fr}.dt-rejection-detail{grid-template-columns:1fr}.dt-timeline>div{grid-template-columns:10px 110px minmax(0,1fr)}}
+
+/* Round 98 — Datatable compact unified top area */
+.dt-r98-page{display:grid;gap:10px}
+.dt-r98-toolbar{display:grid;grid-template-columns:minmax(120px,170px) 150px 150px minmax(180px,1fr) auto auto;gap:8px;align-items:end;padding:10px 12px;border:1px solid #d9e2ee;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(28,51,84,.04)}
+.dt-r98-headline{display:grid;gap:2px;align-self:center}
+.dt-r98-headline b{font-size:16px;line-height:1.1;color:#17355d}
+.dt-r98-headline small{font-size:9px;font-weight:800;color:#70819a}
+.dt-r98-field{display:grid;gap:3px;min-width:0}
+.dt-r98-field span{font-size:8.2px;font-weight:850;color:#76869c}
+.dt-r98-field input,.dt-r98-field select{height:36px;border:1px solid #d7e1ec;border-radius:10px;background:#fff;padding:0 10px;color:#233d5c;font:800 10.3px/1.2 inherit}
+.dt-r98-actions{display:flex;gap:6px;align-items:center}
+.dt-r98-actions button{min-height:36px;padding:6px 12px;font-size:9.4px}
+.dt-r98-status{display:inline-flex;align-items:center;gap:10px;min-height:36px;padding:6px 10px;border:1px solid #dbe5f1;border-radius:12px;background:#f9fbff;justify-self:end;white-space:nowrap}
+.dt-r98-status i{width:10px;height:10px;border-radius:50%;background:#22a957;box-shadow:0 0 0 4px rgba(34,169,87,.12)}
+.dt-r98-status b{display:block;font-size:10.6px;color:#173b6c}
+.dt-r98-status small{display:block;font-size:8.5px;color:#6f8098}
+.dt-r98-quickcounts{grid-column:1/6;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dt-r98-chip{display:inline-flex;align-items:center;gap:8px;min-height:28px;padding:4px 9px;border:1px solid #dfe6ef;border-radius:999px;background:#fff;cursor:pointer}
+.dt-r98-chip small{font-size:8px;font-weight:800;color:#6d7f94}
+.dt-r98-chip b{font-size:11px;color:#213f67}
+.dt-r98-chip.dt-blue{border-color:#cfe0fb;background:#f7fbff}.dt-r98-chip.dt-orange{border-color:#fedebd;background:#fff9f1}.dt-r98-chip.dt-red{border-color:#ffcfd7;background:#fff7f8}.dt-r98-chip.dt-rose{border-color:#f2d0e6;background:#fff8fc}.dt-r98-chip.dt-green{border-color:#d4ead3;background:#f7fff7}
+.dt-r98-shift-hint{grid-column:6/7;justify-self:end;align-self:center;font-size:8.7px;color:#667b95;font-weight:800}
+.dt-stage-tabs-r98{display:grid;grid-template-columns:repeat(8,minmax(92px,1fr));gap:8px}
+.dt-stage-tabs-r98 button{display:flex;align-items:center;justify-content:center;min-height:42px;padding:8px 10px;border:1px solid #dfe6ef;border-radius:12px;background:#fff;color:#314d72;font-size:10px;font-weight:850;line-height:1.2;position:relative;overflow:hidden}
+.dt-stage-tabs-r98 button span{position:relative;z-index:1}
+.dt-stage-tabs-r98 button:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--stage-color,#2d6cdf)}
+.dt-stage-tabs-r98 button:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(30,54,88,.08)}
+.dt-stage-tabs-r98 button.active{background:var(--stage-soft,#eef5ff);border-color:var(--stage-border,#cfe0fb);color:var(--stage-color,#145cb9);box-shadow:0 10px 18px rgba(29,73,136,.10)}
+.dt-stage-tabs-r98 .stage-overview{--stage-color:#2266d8;--stage-soft:#eef4ff;--stage-border:#cfdfff}
+.dt-stage-tabs-r98 .stage-gate_to_document{--stage-color:#0f8ec7;--stage-soft:#eef9ff;--stage-border:#cbeaf8}
+.dt-stage-tabs-r98 .stage-document_review{--stage-color:#6b55d8;--stage-soft:#f2efff;--stage-border:#ddd6ff}
+.dt-stage-tabs-r98 .stage-ready{--stage-color:#c68a11;--stage-soft:#fff8ea;--stage-border:#f4dfab}
+.dt-stage-tabs-r98 .stage-receiving{--stage-color:#d96513;--stage-soft:#fff4ea;--stage-border:#f7d8be}
+.dt-stage-tabs-r98 .stage-document_return{--stage-color:#c14fa0;--stage-soft:#fff1fb;--stage-border:#f0c9e6}
+.dt-stage-tabs-r98 .stage-gate_out{--stage-color:#2f9c5b;--stage-soft:#f1fbf3;--stage-border:#d0ebd9}
+.dt-stage-tabs-r98 .stage-total{--stage-color:#5f6f84;--stage-soft:#f4f6f8;--stage-border:#dde3ea}
+.dt-current-rule-r98{padding:8px 10px;border-radius:12px}
+.dt-current-rule-r98>div:first-child{min-width:112px}.dt-current-rule-r98 small{font-size:7.6px}.dt-current-rule-r98>div:first-child b{font-size:10.5px}
+.dt-current-rule-r98 .dt-current-rule-actions button{min-height:28px;padding:5px 9px;font-size:8.2px}
+
+@media(max-width:1280px){.dt-r98-toolbar{grid-template-columns:minmax(120px,1fr) 1fr 1fr 1.25fr auto auto}.dt-r98-quickcounts{grid-column:1/5}.dt-r98-shift-hint{grid-column:5/7}}
+@media(max-width:980px){.dt-r98-toolbar{grid-template-columns:1fr 1fr 1fr;}.dt-r98-headline{grid-column:1/4}.dt-r98-shift{grid-column:1/4}.dt-r98-actions{grid-column:1/3}.dt-r98-status{grid-column:3/4;justify-self:stretch}.dt-r98-quickcounts{grid-column:1/4}.dt-r98-shift-hint{grid-column:1/4;justify-self:start}.dt-stage-tabs-r98{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:700px){.dt-r98-toolbar{grid-template-columns:1fr 1fr}.dt-r98-headline,.dt-r98-shift,.dt-r98-actions,.dt-r98-status,.dt-r98-quickcounts,.dt-r98-shift-hint{grid-column:1/-1}.dt-r98-actions{display:grid;grid-template-columns:1fr 1fr 1fr}.dt-r98-actions button{width:100%}.dt-stage-tabs-r98{display:flex;overflow:auto}.dt-stage-tabs-r98 button{flex:0 0 122px}}
