@@ -5514,3 +5514,89 @@ button:disabled { cursor: wait; opacity: .7; }
 @media(max-width:1000px){.dt-compare-swal{width:94vw!important}.dt-compare-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:720px){.dt-compare-swal{padding:14px!important}.dt-compare-swal .swal2-title{font-size:21px!important}.dt-compare-dimensions>div{display:flex;overflow-x:auto}.dt-compare-dimensions button{flex:0 0 110px}.dt-compare-sets{grid-template-columns:1fr}.dt-compare-common{grid-template-columns:1fr}.dt-compare-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dt-compare-summary li{grid-template-columns:1fr}.dt-compare-footer{display:grid;grid-template-columns:1fr 1fr 1fr}.dt-compare-footer button{min-width:0;width:100%}}
 @media(max-width:700px){.dt-r100-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* Round 104 — clean Datatable readability, compare sections, Admin display switches */
+/* Datatable: larger, clearer working text without increasing row height excessively */
+.datatable-view-shell .dt-table-card{border-color:#d7e1ec;box-shadow:0 3px 12px rgba(30,55,86,.035)}
+.datatable-view-shell .dt-row>span,
+.datatable-view-shell .dt-row>b{font-size:11.5px!important;line-height:1.35!important;color:#334b68}
+.datatable-view-shell .dt-row>b{font-size:12px!important;color:#124f9d}
+.datatable-view-shell .dt-head>span{font-size:10.6px!important;font-weight:950!important;color:#304863!important}
+.datatable-view-shell .dt-company{font-size:11.8px!important;font-weight:900!important;color:#1f3652!important}
+.datatable-view-shell .dt-shift-date{font-size:8.8px!important}
+.datatable-view-shell .dt-status{min-height:28px!important;padding:5px 9px!important;font-size:10px!important;font-weight:900!important}
+.datatable-view-shell .dt-sla b{font-size:10.4px!important;font-weight:900!important}
+.datatable-view-shell .dt-command,
+.datatable-view-shell .dt-detail{min-height:32px!important;padding:6px 10px!important;font-size:10.2px!important;font-weight:900!important}
+.datatable-view-shell .dt-pager>div{font-size:10px!important}
+.datatable-view-shell .dt-r100-controls label>span{font-size:9px!important}
+.datatable-view-shell .dt-r100-controls input,
+.datatable-view-shell .dt-r100-controls select{font-size:10.8px!important}
+.datatable-view-shell .dt-stage-tabs-r100 button{font-size:9.8px!important}
+.datatable-view-shell .dt-current-rule-levels b{font-size:9px!important}
+.datatable-view-shell .dt-current-rule-levels em{font-size:8.7px!important}
+
+/* Compare popup: explicit visual regions */
+.dt-compare-popup{gap:13px!important}
+.dt-compare-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 2px 7px;border-bottom:1px solid #dfe6ef}
+.dt-compare-section-title b{font-size:12px;color:#1f426c;font-weight:950}
+.dt-compare-section-title span{font-size:9px;color:#73839a;font-weight:750;text-align:right}
+.dt-compare-dimensions{padding:12px!important;border-color:#d7e1ec!important;background:#fbfcfe!important}
+.dt-compare-dimensions>div{padding-top:2px}
+.dt-compare-data-section{display:grid;gap:9px;padding:12px;border:1px solid #dbe4ee;border-radius:15px;background:#fff}
+.dt-compare-sets{gap:14px!important}
+.dt-compare-set{position:relative;padding:13px!important;border-width:1.5px!important;box-shadow:0 4px 14px rgba(29,56,90,.035)}
+.dt-compare-set.tone-a{border-color:#aecaef!important;background:#f7fbff!important}
+.dt-compare-set.tone-b{border-color:#afd9ba!important;background:#f7fdf8!important}
+.dt-compare-set.tone-a:before,.dt-compare-set.tone-b:before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:4px;border-radius:0 4px 4px 0}
+.dt-compare-set.tone-a:before{background:#236cc9}.dt-compare-set.tone-b:before{background:#2e9b52}
+.dt-compare-set>header{padding-left:3px}
+.dt-compare-set>header>div{display:grid;gap:1px}
+.dt-compare-set>header b{font-size:14.5px!important}
+.dt-compare-set>header small{font-size:8.8px;font-weight:800;color:#77879a}
+.dt-compare-common-wrap{display:grid;gap:8px;padding:12px;border:1px solid #dfe5ed;border-radius:14px;background:#fbfcfe}
+.dt-compare-common{padding:0!important;border:0!important;background:transparent!important}
+.dt-compare-set label>span,.dt-compare-common label>span{font-size:9.7px!important;color:#5f7188!important}
+.dt-compare-set input,.dt-compare-set select,.dt-compare-common select{height:38px!important;font-size:10.7px!important}
+.dt-compare-results{padding:12px;border:1px solid #d9e4f1;border-radius:14px;background:#fcfdff}
+.dt-compare-results>.dt-compare-section-title{margin-bottom:1px}
+.dt-compare-metric{padding:10px!important;border-radius:12px!important}
+.dt-compare-metric>header b{font-size:10.2px!important}
+.dt-compare-metric>header small{font-size:8.4px!important}
+.dt-compare-ab span{font-size:8.8px!important}
+.dt-compare-ab strong{font-size:18px!important}
+.dt-compare-metric>footer span{font-size:8px!important}
+.dt-compare-metric>footer b{font-size:9.2px!important}
+.dt-compare-summary>header{font-size:12px!important}
+.dt-compare-summary li b{font-size:9.8px!important}
+.dt-compare-summary li span{font-size:9.2px!important}
+.dt-compare-footer{padding-top:5px;border-top:1px solid #e5ebf2}
+.dt-compare-footer button{min-height:39px!important;font-size:10.5px!important}
+
+/* Admin > การแสดงผล */
+.display-settings-form{display:grid;gap:10px;max-width:880px}
+.display-setting-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px;border:1px solid #dce5ef;border-radius:15px;background:#fff;box-shadow:0 5px 16px rgba(31,55,86,.035)}
+.display-setting-card>div{display:flex;align-items:center;gap:13px;min-width:0}
+.display-setting-card>div>div{display:grid;gap:3px}
+.display-setting-card b{font-size:15px;color:#203f66}
+.display-setting-card small{font-size:10.5px;line-height:1.45;color:#6e8096;font-weight:700}
+.display-setting-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;font-size:18px;font-weight:950;flex:0 0 42px}
+.display-setting-icon.dashboard-icon{background:#eef5ff;color:#2365c4;border:1px solid #d7e5fb}
+.display-setting-icon.datatable-icon{background:#f3f0ff;color:#6850d0;border:1px solid #e1dbfb}
+.clean-toggle{position:relative;display:inline-flex;width:52px;height:29px;flex:0 0 52px}
+.clean-toggle input{position:absolute;opacity:0;pointer-events:none}
+.clean-toggle span{width:52px;height:29px;border-radius:999px;background:#cbd5e1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);cursor:pointer;transition:.18s ease}
+.clean-toggle span:after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(30,48,70,.22);transition:.18s ease}
+.clean-toggle input:checked+span{background:#2e70d1}
+.clean-toggle input:checked+span:after{transform:translateX(23px)}
+.display-setting-note{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:10px 12px;border:1px solid #e1e7ef;border-radius:12px;background:#f8fafc;color:#5d718a}
+.display-setting-note b{font-size:10px;color:#314f72}
+.display-setting-note span{font-size:9.7px;line-height:1.5;font-weight:700}
+
+@media(max-width:760px){
+  .datatable-view-shell .dt-row>span,.datatable-view-shell .dt-row>b{font-size:10.5px!important}
+  .dt-compare-section-title{display:grid;gap:2px;align-items:start}.dt-compare-section-title span{text-align:left}
+  .dt-compare-data-section,.dt-compare-common-wrap,.dt-compare-results{padding:9px}
+  .display-setting-card{padding:13px 14px}.display-setting-card b{font-size:13px}.display-setting-card small{font-size:9.5px}
+  .display-setting-note{grid-template-columns:1fr}
+}
