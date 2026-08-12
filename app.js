@@ -1275,7 +1275,7 @@ const uiState = { detailsOpen:false };
 const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 const inboundListState = { filter:"ALL" };
 const inboundTrackPanel = { timer:0, until:0, active:false };
-const adminState = { data:null, tab:"users", busy:false };
+const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue" };
 const datatableState={meta:null,data:null,busy:false,reloadRequested:false,requestSeq:0,detailBusy:false,refreshMetaRequested:false,activity:[],shiftAutoDate:false,stage:"overview",from:"",to:"",shiftId:"",search:"",sla:"ALL",status:"ALL",door:"",actor:"",sort:"start_desc",page:1,limit:25,problemOnly:false,rejectedOnly:false,searchTimer:0,columns:new Set(JSON.parse(localStorage.getItem("wvf_dt_columns_r100")||localStorage.getItem("wvf_dt_columns_r96")||localStorage.getItem("wvf_dt_columns_r95")||'["company","plate","shift","actor"]'))};
@@ -2262,10 +2262,72 @@ async function renderAdmin() {
   try{adminState.data=await api("/api/admin/settings");renderAdminShell()}catch(error){$("pageContent").innerHTML=`<div class="empty-state"><b>โหลดการตั้งค่าไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryAdmin" class="primary">ลองใหม่</button></div>`;$("retryAdmin")?.addEventListener("click",renderAdmin)}
 }
 
+const ADMIN_SETTING_CATEGORIES=[
+  {id:"users",label:"ผู้ใช้งาน",group:"ผู้ใช้และสิทธิ์",keywords:"บัญชี สิทธิ์ รหัสผ่าน admin user"},
+  {id:"display",label:"การแสดงผล",group:"หน้าจอและเมนู",keywords:"dashboard datatable เมนู เปิด ปิด หน้าจอ"},
+  {id:"workflow",label:"ขั้นตอนงาน",group:"การปฏิบัติงาน",keywords:"workflow inbound ตรวจเอกสาร รับสินค้า คืนเอกสาร ขั้นตอน"},
+  {id:"doors",label:"ประตู",group:"การปฏิบัติงาน",keywords:"door R S SS RR SR RS เปิด ปิด ประตู"},
+  {id:"shifts",label:"กะทำงาน",group:"เวลาและกำลังคน",keywords:"shift กะ เวลา ข้ามวัน กลางคืน"},
+  {id:"alerts",label:"เวลาแจ้งเตือน",group:"เวลาและกำลังคน",keywords:"sla ปกติ เฝ้าระวัง เตือน ล่าช้า วิกฤต สี เวลา"},
+  {id:"rejections",label:"ปฏิเสธรับสินค้า",group:"การปฏิบัติงาน",keywords:"reject ปฏิเสธ เหตุผล หัวหน้างาน รับทราบ"},
+  {id:"recall",label:"เรียกรถซ้ำ",group:"การปฏิบัติงาน",keywords:"recall เรียกคิว เรียกรถ เปลี่ยนประตู"},
+  {id:"data",label:"การใช้ข้อมูล",group:"ข้อมูลและรายงาน",keywords:"d1 database rows read write storage ข้อมูล"},
+  {id:"export",label:"ส่งออกข้อมูล",group:"ข้อมูลและรายงาน",keywords:"export csv รายงาน เดือน ดาวน์โหลด"},
+  {id:"tracking",label:"ติดตามคนขับ",group:"หน้าจอและเมนู",keywords:"track qr คนขับ ลิงก์ ติดตาม"},
+  {id:"voice",label:"เสียงประกาศ",group:"เสียงและการแจ้งเตือน",keywords:"voice เสียง ประกาศ ความเร็ว ระดับเสียง"},
+  {id:"queue",label:"จอคิว",group:"หน้าจอและเมนู",keywords:"queue จอคิว หน้าจอ เรียกรถ"}
+];
+function adminSettingsIcon(id){
+  const icons={
+    search:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg>',
+    users:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M16 9h5M18.5 6.5v5"/></svg>',
+    display:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+    workflow:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M5 8v3c0 3 2 5 5 5h2M19 8v3c0 3-2 5-5 5h-2"/></svg>',
+    doors:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12v18H5zM9 6h5v15H9z"/><circle cx="12" cy="13" r=".8"/></svg>',
+    shifts:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>',
+    alerts:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7M9.5 20h5"/></svg>',
+    rejections:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m7 7 10 10"/></svg>',
+    recall:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M18.5 12A7 7 0 0 0 6.7 7M5.5 12a7 7 0 0 0 11.8 5"/></svg>',
+    data:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>',
+    export:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>',
+    tracking:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.2 7-12A7 7 0 1 0 5 9c0 6.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+    voice:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4ZM16 9c1 1 1 5 0 6M19 7c2.2 2.4 2.2 7.6 0 10"/></svg>',
+    queue:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M7 9h10M7 13h6"/></svg>'
+  };
+  return icons[id]||icons.workflow;
+}
 function renderAdminShell(){
-  const tabs=[["users","ผู้ใช้งาน"],["display","การแสดงผล"],["workflow","ขั้นตอนงาน"],["doors","ประตู"],["shifts","กะทำงาน"],["alerts","เวลาแจ้งเตือน"],["rejections","ปฏิเสธรับสินค้า"],["recall","เรียกรถซ้ำ"],["data","การใช้ข้อมูล"],["export","ส่งออกข้อมูล"],["tracking","ติดตามคนขับ"],["voice","เสียงประกาศ"],["queue","จอคิว"]];
-  $("pageContent").innerHTML=`<section class="admin-hero"><div><span class="eyebrow">ศูนย์ควบคุมระบบ</span><h2>ตั้งค่าการทำงาน</h2><p>การเปลี่ยนขั้นตอนและกะมีผลกับงานใหม่ ประวัติงานเดิมยังคงเดิม</p></div><span class="admin-build">พร้อมใช้งาน</span></section><nav class="admin-tabs">${tabs.map(([id,label])=>`<button data-admin-tab="${id}" class="${adminState.tab===id?"active":""}">${label}</button>`).join("")}</nav><section id="adminPanel" class="admin-panel"></section>`;
-  document.querySelectorAll("[data-admin-tab]").forEach(button=>button.addEventListener("click",()=>{adminState.tab=button.dataset.adminTab;renderAdminShell()}));renderAdminPanel();
+  if(!ADMIN_SETTING_CATEGORIES.some(item=>item.id===adminState.tab))adminState.tab="users";
+  const active=ADMIN_SETTING_CATEGORIES.find(item=>item.id===adminState.tab)||ADMIN_SETTING_CATEGORIES[0];
+  $("pageContent").innerHTML=`<section class="admin-v106">
+    <header class="admin-v106-hero">
+      <div><span>ศูนย์ควบคุมระบบ</span><h2>ตั้งค่าระบบ</h2><p>จัดการเมนู ขั้นตอนงาน เวลา และข้อมูลจากจุดเดียว</p></div>
+      <aside class="admin-v106-status"><i></i><div><small>สถานะระบบ</small><b>พร้อมใช้งาน</b><span>อัปเดต ${escapeHtml(formatDate(unixNow()))}</span></div></aside>
+    </header>
+    <section class="admin-v106-toolbar">
+      <label class="admin-setting-search"><span class="admin-setting-search-icon">${adminSettingsIcon("search")}</span><input id="adminSettingsSearch" type="search" autocomplete="off" placeholder="ค้นหาการตั้งค่า เช่น ประตู กะ เวลาแจ้งเตือน"></label>
+      <div class="admin-v106-toolbar-info"><b id="adminCategoryCount">${ADMIN_SETTING_CATEGORIES.length}</b><span>หมวดการตั้งค่า</span></div>
+    </section>
+    <section class="admin-category-section">
+      <header><div><b>หมวดการตั้งค่า</b><span>เลือกส่วนที่ต้องการจัดการ</span></div><small id="adminActiveGroup">${escapeHtml(active.group)}</small></header>
+      <nav id="adminCategoryGrid" class="admin-category-grid" aria-label="หมวดการตั้งค่าระบบ">${ADMIN_SETTING_CATEGORIES.map(item=>`<button type="button" data-admin-tab="${item.id}" data-admin-search="${escapeHtml(`${item.label} ${item.group} ${item.keywords}`.toLowerCase())}" class="admin-category-card ${adminState.tab===item.id?"active":""}"><span class="admin-category-icon">${adminSettingsIcon(item.id)}</span><span class="admin-category-copy"><b>${escapeHtml(item.label)}</b><small>${escapeHtml(item.group)}</small></span></button>`).join("")}</nav>
+      <div id="adminCategoryEmpty" class="admin-category-empty" hidden>ไม่พบหมวดการตั้งค่าที่ค้นหา</div>
+    </section>
+    <section class="admin-workspace-v106"><header class="admin-workspace-title"><span class="admin-category-icon active-icon">${adminSettingsIcon(active.id)}</span><div><small>${escapeHtml(active.group)}</small><b>${escapeHtml(active.label)}</b></div></header><section id="adminPanel" class="admin-panel admin-panel-v106"></section></section>
+  </section>`;
+  document.querySelectorAll("[data-admin-tab]").forEach(button=>button.addEventListener("click",()=>{adminState.tab=button.dataset.adminTab;try{localStorage.setItem("wvf_admin_tab",adminState.tab)}catch{}renderAdminShell()}));
+  bindAdminSettingsSearch();
+  renderAdminPanel();
+}
+function bindAdminSettingsSearch(){
+  const input=$("adminSettingsSearch"),grid=$("adminCategoryGrid"),empty=$("adminCategoryEmpty"),count=$("adminCategoryCount");
+  if(!input||!grid)return;
+  input.addEventListener("input",()=>{
+    const query=input.value.trim().toLowerCase();let visible=0;
+    grid.querySelectorAll("[data-admin-tab]").forEach(button=>{const show=!query||String(button.dataset.adminSearch||"").includes(query);button.hidden=!show;if(show)visible++});
+    if(count)count.textContent=String(visible);if(empty)empty.hidden=visible!==0;
+  });
+  input.addEventListener("keydown",event=>{if(event.key!=="Enter")return;const visible=[...grid.querySelectorAll("[data-admin-tab]:not([hidden])")];if(visible.length===1){event.preventDefault();visible[0].click()}});
 }
 
 function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="display")renderAdminDisplay();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="rejections")renderAdminRejections();else if(adminState.tab==="recall")renderAdminQueueRecall();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="export")renderAdminMonthlyExport();else if(adminState.tab==="tracking")renderAdminTracking();else if(adminState.tab==="voice")renderAdminVoice();else renderAdminQueue()}
