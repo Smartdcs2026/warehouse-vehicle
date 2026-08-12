@@ -5600,3 +5600,6 @@ button:disabled { cursor: wait; opacity: .7; }
   .display-setting-card{padding:13px 14px}.display-setting-card b{font-size:13px}.display-setting-card small{font-size:9.5px}
   .display-setting-note{grid-template-columns:1fr}
 }
+
+/* Round 105 — Datatable action column: only real workflow actions */
+.dt-no-action{display:inline-flex;align-items:center;justify-content:center;min-height:30px;color:#9aa8b8;font-size:14px;font-weight:800}
