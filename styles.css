@@ -5102,3 +5102,30 @@ button:disabled { cursor: wait; opacity: .7; }
   .dt-range-controls button{width:100%}
   .dt-summary-card{min-height:44px}
 }
+
+/* Round 95 — clean Datatable and clearer shift handling */
+.dt-clean-page{gap:7px}
+.dt-clean-toolbar{display:block}
+.dt-clean-toolbar .dt-range-controls{display:grid;grid-template-columns:minmax(130px,170px) minmax(130px,170px) minmax(180px,1fr) auto auto auto;align-items:end;gap:6px;padding:7px 8px;border:1px solid #dfe6ef;border-radius:11px;background:#fff}
+.dt-clean-toolbar .dt-range-controls label>span{font-size:7.8px}
+.dt-clean-toolbar .dt-range-controls input,.dt-clean-toolbar .dt-range-controls select{height:32px;font-size:9px}
+.dt-clean-toolbar .dt-range-controls button{min-height:32px;padding:5px 9px;font-size:8.8px}
+.dt-shift-hint{grid-column:1/-1;display:block;margin-top:-1px;color:#5f7085;font-size:8.4px;font-weight:750;line-height:1.3}
+.dt-shift-hint[hidden]{display:none}
+.dt-summary-compact{gap:5px}.dt-summary-compact .dt-summary-card{min-height:39px;padding:5px 9px;border-radius:9px}.dt-summary-compact .dt-summary-card:before{top:7px;bottom:7px;width:2px}.dt-summary-compact .dt-summary-card small{font-size:7.8px}.dt-summary-compact .dt-summary-card b{font-size:16px}.dt-summary-compact .dt-summary-card span{font-size:7px}
+.dt-stage-tabs-clean button{min-height:34px;padding:5px 7px;font-size:8.6px}.dt-stage-tabs-clean button.active{box-shadow:inset 0 -2px 0 #1765cc}
+.dt-current-rule{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:7px 9px;border:1px solid #dfe6ef;border-radius:10px;background:#fff}.dt-current-rule>div:first-child{display:grid;gap:1px;min-width:125px}.dt-current-rule small{font-size:7.5px;color:#7f8c9d;font-weight:800}.dt-current-rule>div:first-child b{font-size:10px;color:#244a78}.dt-current-rule-levels{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}.dt-current-rule-levels>span{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border:1px solid #e3e8ef;border-radius:999px;background:#fafbfd;white-space:nowrap}.dt-current-rule-levels i{width:7px;height:7px;border-radius:50%;background:var(--dt-rule,#59a63e)}.dt-current-rule-levels b{font-size:7.8px;color:#43566d}.dt-current-rule-levels em{font-size:7.5px;color:#6f7f92;font-style:normal}.dt-current-rule-actions{display:flex;gap:5px}.dt-current-rule-actions button{min-height:29px;padding:4px 7px;font-size:8px}
+.dt-main-full{display:grid;gap:6px;min-width:0}.dt-main-full .dt-filters{grid-template-columns:minmax(260px,1.45fr) repeat(4,minmax(115px,.72fr));gap:5px}.dt-main-full .dt-search input,.dt-main-full .dt-filters select,.dt-main-full .dt-tools select{height:33px;font-size:9px}.dt-main-full .dt-tools{gap:5px}.dt-main-full .dt-tools button{min-height:30px;font-size:8.4px}.dt-main-full .dt-tools select{min-width:155px}
+.dt-table-wrap{min-height:0}.dt-row>span,.dt-row>b{padding:7px 7px;font-size:9.4px}.dt-head>span{font-size:8.6px}.dt-table-card{border-radius:10px}
+.dt-pager{padding:7px 9px}.dt-pager nav button{height:28px;min-width:28px}
+.dt-all-rules{max-height:60vh;overflow:auto;text-align:left}.dt-all-rules .dt-rule-row{padding:8px 0}.dt-rules-swal{border-radius:17px!important}
+.dt-activity-modal{display:grid;text-align:left}.dt-activity-modal>div{display:grid;grid-template-columns:105px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #edf1f5}.dt-activity-modal>div:first-child{border-top:0}.dt-activity-modal time{font-size:9px;color:#7a899c}.dt-activity-modal span{display:grid;gap:2px}.dt-activity-modal b{font-size:10px;color:#35516f}.dt-activity-modal small{font-size:8.5px;color:#7c899a}
+.shift-day-note{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:3px 7px;border-radius:8px;background:#f5f8fc;color:#60758f;font-size:8px;font-weight:800;white-space:nowrap}
+:fullscreen .datatable-fullscreen-shell .dt-clean-toolbar .dt-range-controls{position:sticky;top:0;z-index:20}
+@media(max-width:1150px){.dt-clean-toolbar .dt-range-controls{grid-template-columns:1fr 1fr 1fr auto auto auto}.dt-current-rule{grid-template-columns:1fr}.dt-current-rule-actions{justify-content:flex-start}.dt-main-full .dt-filters{grid-template-columns:1fr 1fr 1fr}.dt-main-full .dt-search{grid-column:1/-1}}
+@media(max-width:700px){.dt-clean-toolbar .dt-range-controls{grid-template-columns:1fr 1fr}.dt-clean-toolbar .dt-range-controls label:nth-child(3){grid-column:1/-1}.dt-clean-toolbar .dt-range-controls button{width:100%}.dt-summary-compact{grid-template-columns:repeat(2,minmax(0,1fr))}.dt-summary-compact .dt-summary-card:last-child{grid-column:1/-1}.dt-current-rule-levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.dt-current-rule-levels>span{justify-content:flex-start}.dt-current-rule-actions{display:grid;grid-template-columns:1fr 1fr}.dt-main-full .dt-filters{grid-template-columns:1fr 1fr}.dt-main-full .dt-search{grid-column:1/-1}.shift-day-note{grid-column:1/-1;justify-content:flex-start}}
+
+/* Round 95 — clearer Datatable shift date */
+.dt-row [data-label="กะ"]{display:flex;align-items:center;gap:5px;min-width:0}
+.dt-shift-date{display:inline-flex;align-items:center;padding:2px 5px;border:1px solid #dbe5f0;border-radius:999px;background:#f6f9fd;color:#63758b;font-size:7.2px;font-weight:800;line-height:1;white-space:nowrap}
+@media(max-width:700px){.dt-row [data-label="กะ"]{display:grid;grid-template-columns:92px minmax(0,1fr)}.dt-row [data-label="กะ"] .dt-shift-date{grid-column:2;justify-self:start}}
