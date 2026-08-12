@@ -5670,3 +5670,46 @@ button:disabled { cursor: wait; opacity: .7; }
 @media(max-width:430px){
   .admin-category-grid{grid-template-columns:1fr 1fr}.admin-category-icon{width:30px;height:30px;flex-basis:30px}.admin-category-copy small{display:none}
 }
+
+
+/* Round 107: compact datatable header + stronger table head + no-scroll compare popup */
+.dt-r100-top{gap:7px!important;padding:8px 10px!important}
+.dt-r100-stagebar{display:grid;grid-template-columns:minmax(0,1fr) minmax(460px,.95fr);gap:8px;align-items:stretch}
+.dt-current-rule-inline{grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;min-height:42px;padding:6px 8px!important;border-radius:11px!important;margin:0!important}
+.dt-current-rule-inline>div:first-child{min-width:82px!important}
+.dt-current-rule-inline small{font-size:7.2px!important}
+.dt-current-rule-inline>div:first-child b{font-size:10.2px!important;white-space:nowrap}
+.dt-current-rule-inline .dt-current-rule-levels{gap:4px!important}
+.dt-current-rule-inline .dt-current-rule-levels>span{padding:3px 6px!important}
+.dt-current-rule-inline .dt-current-rule-levels b{font-size:7.8px!important}
+.dt-current-rule-inline .dt-current-rule-levels em{font-size:7.2px!important}
+.dt-current-rule-inline .dt-current-rule-actions{gap:4px!important}
+.dt-current-rule-inline .dt-current-rule-actions button{min-height:28px!important;padding:4px 7px!important;font-size:8px!important}
+.datatable-view-shell .dt-head{background:linear-gradient(180deg,#f8fbff 0%,#eef4fb 100%)!important;border-top:3px solid var(--dt-head-accent,#2563eb)!important;border-bottom:1px solid #d7e2ef!important;box-shadow:inset 0 -1px 0 rgba(255,255,255,.8)}
+.datatable-view-shell .dt-head>span{color:#204564!important;letter-spacing:.01em}
+.datatable-view-shell .dt-row:hover:not(.dt-head){background:#f9fbff!important}
+.dt-compare-swal{width:min(1220px,96vw)!important;max-width:none!important}
+.dt-compare-swal .swal2-html-container{margin-top:10px!important}
+.dt-compare-popup{display:grid!important;grid-template-columns:1.04fr .96fr;grid-template-areas:"dimensions common" "datasets datasets" "results results" "footer footer";gap:10px!important;max-height:calc(100vh - 180px)!important;overflow:hidden!important}
+.dt-compare-dimensions{grid-area:dimensions}
+.dt-compare-common-wrap{grid-area:common}
+.dt-compare-data-section{grid-area:datasets}
+#dtCompareResults{grid-area:results}
+.dt-compare-footer{grid-area:footer}
+.dt-compare-dimensions,.dt-compare-common-wrap,.dt-compare-data-section,.dt-compare-results{padding:10px!important}
+.dt-compare-dimensions button{min-height:36px!important;padding:6px 10px!important;font-size:10px!important}
+.dt-compare-sets{grid-template-columns:1fr 1fr!important;gap:10px!important}
+.dt-compare-set{padding:10px 11px!important}
+.dt-compare-set>header b{font-size:13.5px!important}
+.dt-compare-set label>span,.dt-compare-common label>span{font-size:9.2px!important}
+.dt-compare-set input,.dt-compare-set select,.dt-compare-common select{height:36px!important;font-size:10px!important}
+.dt-compare-common{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+.dt-compare-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+.dt-compare-metric{padding:9px!important}
+.dt-compare-ab strong{font-size:16px!important}
+.dt-compare-summary{padding:8px 10px!important}
+.dt-compare-summary li{padding:5px 7px!important}
+.dt-compare-footer{justify-content:flex-end!important}
+@media(max-width:1320px){.dt-r100-stagebar{grid-template-columns:1fr}.dt-current-rule-inline{grid-template-columns:1fr!important}.dt-current-rule-inline .dt-current-rule-actions{justify-content:flex-start}}
+@media(max-width:1040px){.dt-compare-popup{grid-template-columns:1fr!important;grid-template-areas:"dimensions" "common" "datasets" "results" "footer";max-height:none!important;overflow:visible!important}.dt-compare-sets{grid-template-columns:1fr!important}.dt-compare-common{grid-template-columns:1fr 1fr!important}.dt-compare-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:700px){.dt-current-rule-inline .dt-current-rule-levels{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))}.dt-current-rule-inline .dt-current-rule-actions{display:grid!important;grid-template-columns:1fr 1fr;width:100%}.dt-compare-common{grid-template-columns:1fr!important}.dt-compare-metrics{grid-template-columns:1fr!important}}
