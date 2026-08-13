@@ -1961,11 +1961,7 @@ function renderDatatableLayout(){
       <section id="dtCurrentRuleBanner" class="dt-current-rule dt-current-rule-r100 dt-current-rule-top dt-current-rule-banner" style="--dt-stage-accent:${datatableStageAccentColor(datatableState.stage)}"><div class="dt-current-rule-title"><span class="dt-rule-mark" aria-hidden="true"></span><div><small>เกณฑ์เวลาของช่วงนี้</small><b id="dtRuleStageName">${escapeHtml(datatableStageMeta().label)}</b></div></div><div id="dtCurrentRules" class="dt-current-rule-levels"></div><div class="dt-current-rule-actions"><button id="dtAllRules" class="quiet-button" type="button">เกณฑ์ทั้งหมด</button><button id="dtActivityButton" class="quiet-button" type="button">กิจกรรม</button></div></section>
     </section>
     <main class="dt-main dt-main-full">
-      <section class="dt-filter-shell">
-        <div class="dt-filter-shell-head">
-          <div><b>ค้นหาและตัวกรอง</b><small>กรองข้อมูลตามสถานะ ช่วงเวลา และผู้ดำเนินการ</small></div>
-          <span class="dt-filter-shell-note">ข้อมูลกะข้ามวันนับตามวันที่เริ่มกะ</span>
-        </div>
+      <section class="dt-filter-shell dt-filter-shell-compact">
         <div class="dt-filterbar"><div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div><select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select><select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select><select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select><select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select><select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select><button id="dtReset" class="quiet-button" type="button">ล้างค่า</button><button id="dtProblem" class="outline-button ${datatableState.problemOnly?"is-active":""}" type="button">เฉพาะแจ้งเตือน</button><button id="dtColumns" class="outline-button" type="button">คอลัมน์</button></div>
       </section>
       <section class="dt-table-card"><div id="dtTable" class="dt-table-wrap"><div class="loading">กำลังโหลดข้อมูล</div></div><footer id="dtPager" class="dt-pager"></footer></section></main>
@@ -2073,27 +2069,28 @@ async function showDatatableDetail(autoId,sourceButton=null){
       ["queue","เรียก → เริ่มตรวจรับ",d.calledToReceivingSeconds],
       ["receiving","ตรวจรับสินค้า",d.receivingSeconds],
       ["document_return","คืนเอกสาร",d.receivingToReturnSeconds],
-      ["gate_out","รอออกจากพื้นที่",d.returnToGateOutSeconds],
+      ["gate_out","ออกจากพื้นที่",d.returnToGateOutSeconds],
       ["total","เวลารวม",d.totalInSiteSeconds]
     ];
     const businessDate=formatDatatableBusinessDate(v.shiftBusinessDate),statusText=statusLabel(v.currentStatus),plate=joinText(v.vehiclePlate,v.province),company=v.companyName||"ไม่ระบุบริษัท",appointment=v.appointmentNo||v.autoId||autoId;
-    const operationMeta=[
-      v.shiftName?`<div><small>กะทำงาน</small><b>${escapeHtml(v.shiftName)}</b>${shiftMeta.range?`<span>${escapeHtml(shiftMeta.range)}${shiftMeta.cross?" · ข้ามวัน":""}</span>`:""}</div>`:"",
-      v.shiftBusinessDate?`<div><small>วันที่เริ่มกะ</small><b>${escapeHtml(businessDate)}</b><span>${shiftMeta.cross?"สิ้นสุดในวันถัดไป":"วันทำงานของกะ"}</span></div>`:"",
-      v.doorCode?`<div><small>ประตู</small><b>${escapeHtml(v.doorCode)}</b><span>ประตูปัจจุบัน</span></div>`:"",
-      v.driverName?`<div><small>คนขับ</small><b>${escapeHtml(v.driverName)}</b><span>ผู้ขับรถ</span></div>`:""
+    const metaItems=[
+      v.shiftName?`<div><small>กะ</small><b>${escapeHtml(v.shiftName)}</b>${shiftMeta.range?`<span>${escapeHtml(shiftMeta.range)}${shiftMeta.cross?" · ข้ามวัน":""}</span>`:""}</div>`:"",
+      v.shiftBusinessDate?`<div><small>วันที่เริ่มกะ</small><b>${escapeHtml(businessDate)}</b></div>`:"",
+      v.doorCode?`<div><small>ประตู</small><b>${escapeHtml(v.doorCode)}</b></div>`:"",
+      v.driverName?`<div><small>คนขับ</small><b>${escapeHtml(v.driverName)}</b></div>`:""
     ].filter(Boolean).join("");
-    const html=`<div class="dt-detail-modal dt-detail-modal-r115">
-      <section class="dt-detail-hero">
-        <div class="dt-detail-hero-main"><small>เลขนัดหมาย</small><b>${escapeHtml(appointment)}</b><span>${escapeHtml(company)}</span></div>
-        <div class="dt-detail-hero-plate"><small>ทะเบียนรถ</small><b>${escapeHtml(plate||"-")}</b><span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
+    const eventRows=events.map((e,index)=>`<div class="dt-detail-history-row${index===events.length-1?" is-latest":""}"><time>${formatDate(e.occurred_at)}</time><b>${datatableEventLabel(e.event_type)}</b><span>${escapeHtml(e.actor||"ระบบ")}</span></div>`).join("");
+    const html=`<div class="dt-detail-modal dt-detail-modal-r116">
+      <section class="dt-detail-summary-r116">
+        <div class="dt-detail-key"><small>เลขนัดหมาย</small><b>${escapeHtml(appointment)}</b><span>${escapeHtml(company)}</span></div>
+        <div class="dt-detail-key"><small>ทะเบียนรถ</small><b>${escapeHtml(plate||"-")}</b><span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
       </section>
-      ${operationMeta?`<section class="dt-detail-meta">${operationMeta}</section>`:""}
-      <section class="dt-detail-section"><header><div><small>สรุปเวลา</small><b>เวลาที่ใช้ในแต่ละช่วงงาน</b></div><span>${escapeHtml(statusText)}</span></header><div class="dt-detail-durations dt-detail-durations-r115">${stages.map(([key,label,value])=>`<div class="stage-${escapeHtml(key)} ${value==null?"is-pending":"is-complete"}"><small>${escapeHtml(label)}</small><b>${value==null?"—":formatDuration(value)}</b><span>${value==null?"ยังไม่มีข้อมูล":"บันทึกแล้ว"}</span></div>`).join("")}</div></section>
-      ${rej?`<section class="dt-rejection-detail dt-rejection-detail-r115"><header><b>ปฏิเสธรับสินค้า</b><span>${formatDate(rej.rejected_at||rej.rejectedAt||"")}</span></header><div><span><small>เหตุผล</small><b>${escapeHtml(rej.reason||"-")}</b></span><span><small>หัวหน้างานรับทราบ</small><b>${escapeHtml(rej.supervisor||"-")}</b></span><span><small>เอกสาร</small><b>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</b></span></div></section>`:""}
-      <section class="dt-timeline dt-timeline-r115"><header><div><small>ประวัติการทำงาน</small><b>${events.length.toLocaleString("th-TH")} เหตุการณ์</b></div>${v.shiftBusinessDate?`<span>วันที่เริ่มกะ ${escapeHtml(businessDate)}</span>`:""}</header>${events.length?`<div class="dt-timeline-list">${events.map((e,index)=>`<div class="dt-timeline-item"><span class="dt-timeline-dot" aria-hidden="true"></span><time>${formatDate(e.occurred_at)}</time><div><b>${datatableEventLabel(e.event_type)}</b><small>${escapeHtml(e.actor||"ระบบ")}</small></div>${index===events.length-1?`<em>ล่าสุด</em>`:""}</div>`).join("")}</div>`:`<div class="dt-detail-empty">ยังไม่มีประวัติการทำงาน</div>`}</section>
+      ${metaItems?`<section class="dt-detail-meta-r116">${metaItems}</section>`:""}
+      <section class="dt-detail-time-r116"><header><b>เวลาของแต่ละช่วงงาน</b></header><div>${stages.map(([key,label,value])=>`<article class="stage-${escapeHtml(key)} ${value==null?"is-empty":""}"><small>${escapeHtml(label)}</small><b>${value==null?"—":formatDuration(value)}</b></article>`).join("")}</div></section>
+      ${rej?`<section class="dt-rejection-r116"><b>ปฏิเสธรับสินค้า</b><span>เหตุผล ${escapeHtml(rej.reason||"-")}</span><span>ผู้รับทราบ ${escapeHtml(rej.supervisor||"-")}</span><span>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</span></section>`:""}
+      <section class="dt-detail-history-r116"><header><b>ประวัติการทำงาน</b><span>${events.length.toLocaleString("th-TH")} รายการ</span></header><div class="dt-detail-history-grid">${eventRows||`<div class="dt-detail-no-history">ยังไม่มีประวัติการทำงาน</div>`}</div></section>
     </div>`;
-    if(window.Swal)await Swal.fire({title:"ข้อมูลนัดหมาย",html,confirmButtonText:"ปิด",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r115",confirmButton:"wfv-swal-confirm dt-detail-close"},buttonsStyling:false,width:880,allowOutsideClick:false});
+    if(window.Swal)await Swal.fire({title:"ข้อมูลนัดหมาย",html,confirmButtonText:"ปิด",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r116",confirmButton:"wfv-swal-confirm dt-detail-close-r116"},buttonsStyling:false,width:1040,allowOutsideClick:false});
   }catch(error){if(window.Swal)Swal.close();await showNotice("error",error.message||"เปิดข้อมูลไม่สำเร็จ")}
   finally{datatableState.detailBusy=false;uiState.detailsOpen=false;if(sourceButton?.isConnected){sourceButton.disabled=false;sourceButton.textContent=original}}
 }
