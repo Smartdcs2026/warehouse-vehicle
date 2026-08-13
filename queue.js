@@ -324,7 +324,7 @@ function normalizeItem(item) {
     companyName: cleanText(item.companyName),
     vehiclePlate: cleanText(item.vehiclePlate),
     province: cleanText(item.province),
-    doorCode: cleanText(item.doorCode),
+    doorCode: normalizeQueueDoorCode(item.doorCode),
     useDoor: item.useDoor !== false,
     status: cleanText(item.status),
     elapsedSeconds: Math.max(0, Number(item.elapsedSeconds) || 0),
@@ -334,13 +334,25 @@ function normalizeItem(item) {
 }
 
 function normalizeAnnouncement(item){
-  return normalizeItem({...item,sequence:Math.max(0,Number(item.sequence)||0),announcementId:cleanText(item.announcementId)});
+  return normalizeItem({...item,sequence:Math.max(0,Number(item.sequence)||0),announcementId:cleanText(item.announcementId),doorCode:normalizeQueueDoorCode(item.doorCode),previousDoorCode:normalizeQueueDoorCode(item.previousDoorCode)});
 }
 function normalizeDoorLive(item){
-  return{doorCode:cleanText(item.doorCode),status:cleanText(item.status),activityStatus:cleanText(item.activityStatus),isActive:item.isActive!==false,occupancyCount:Math.max(0,Number(item.occupancyCount)||0),appointmentNo:cleanText(item.appointmentNo),vehiclePlate:cleanText(item.vehiclePlate),province:cleanText(item.province),companyName:cleanText(item.companyName),items:Array.isArray(item.items)?item.items:[]};
+  return{doorCode:normalizeQueueDoorCode(item.doorCode),status:cleanText(item.status),activityStatus:cleanText(item.activityStatus),isActive:item.isActive!==false,occupancyCount:Math.max(0,Number(item.occupancyCount)||0),appointmentNo:cleanText(item.appointmentNo),vehiclePlate:cleanText(item.vehiclePlate),province:cleanText(item.province),companyName:cleanText(item.companyName),items:Array.isArray(item.items)?item.items:[]};
 }
 function cleanText(value) {
   return String(value ?? "").trim();
+}
+function normalizeQueueDoorCode(value) {
+  const text = cleanText(value).toUpperCase();
+  if (!text) return "";
+  const match = text.match(/^(SS|RR|SR|RS|S|R)0*(\d{1,3})$/);
+  if (!match) return text;
+  return `${match[1]}${Number(match[2])}`;
+}
+function queueDoorNaturalParts(value) {
+  const code = normalizeQueueDoorCode(value);
+  const match = code.match(/^(SS|RR|SR|RS|S|R)(\d+)$/);
+  return match ? [match[1], Number(match[2])] : [code, Number.MAX_SAFE_INTEGER];
 }
 
 function safeCount(value, items, status) {
@@ -396,16 +408,26 @@ async function processCanonicalAnnouncementQueue(){
 }
 function sleepQueue(ms){return new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(ms)||0)))}
 
-function doorPageSize(){const h=window.innerHeight||800;if(h<700)return 4;if(h<850)return 5;if(h>=1000)return 8;return 6}
+function doorPageSize(){const h=window.innerHeight||800;if(h<650)return 8;if(h<780)return 10;if(h<900)return 12;if(h>=1050)return 17;return 14}
 function renderDoorRail(data,animate=false){
-  const rail=$("doorRail"),board=$("queueBoard");if(!rail||!board)return;const enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),doors=Array.isArray(data?.doors)?data.doors:[];rail.hidden=!enabled;board.classList.toggle("has-door-rail",enabled);if(!enabled)return;
-  const size=doorPageSize(),pages=Math.max(1,Math.ceil(doors.length/size));if(doorPage>=pages)doorPage=0;const shown=doors.slice(doorPage*size,doorPage*size+size),label=$("doorPageLabel");if(label)label.textContent=doors.length?(pages>1?`${doorPage+1}/${pages} · ${doors.length} ประตู`:`${doors.length} ประตู`):"ไม่มีประตู";
-  const list=$("doorRailList");list.innerHTML=shown.length?shown.map(doorRailItem).join(""):'<div class="door-empty">ไม่มีประตูที่เปิดใช้งาน</div>';if(animate)fadePage(list);
+  const rail=$("doorRail"),board=$("queueBoard");if(!rail||!board)return;
+  const enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),raw=Array.isArray(data?.doors)?data.doors:[];
+  rail.hidden=!enabled;board.classList.toggle("has-door-rail",enabled);if(!enabled)return;
+  const seen=new Map();
+  for(const door of raw){const code=normalizeQueueDoorCode(door.doorCode);if(!code)continue;const prev=seen.get(code);if(!prev){seen.set(code,{...door,doorCode:code});continue}const prevRank=doorStatusRank(prev.status),nextRank=doorStatusRank(door.status);const merged=nextRank<prevRank?{...prev,...door,doorCode:code}:{...door,...prev,doorCode:code};merged.isActive=prev.isActive!==false||door.isActive!==false;merged.occupancyCount=Math.max(Number(prev.occupancyCount||0),Number(door.occupancyCount||0));seen.set(code,merged)}
+  const doors=[...seen.values()].sort(compareQueueDoors),important=doors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),available=doors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE");
+  const capacity=Math.max(important.length,doorPageSize()),availableSlots=Math.max(0,capacity-important.length),pages=Math.max(1,availableSlots?Math.ceil(available.length/availableSlots):1);if(doorPage>=pages)doorPage=0;
+  const shownAvailable=availableSlots?available.slice(doorPage*availableSlots,doorPage*availableSlots+availableSlots):[],shown=[...important,...shownAvailable];
+  const counts={available:available.length,called:doors.filter(d=>d.status==="CALLED").length,inUse:doors.filter(d=>d.status==="IN_USE").length,draining:doors.filter(d=>d.status==="DRAINING").length};
+  const stats=$("doorRailStats");if(stats)stats.textContent=`ใช้ ${counts.inUse} · เรียก ${counts.called} · ว่าง ${counts.available}`;
+  const label=$("doorPageLabel");if(label)label.textContent=doors.length?(pages>1?`${doorPage+1}/${pages} · ${doors.length} ประตู`:`${doors.length} ประตู`):"ไม่มีประตู";
+  const list=$("doorRailList");list.innerHTML=shown.length?shown.map(doorRailItem).join(""):'<div class="door-empty">ไม่มีประตูที่แสดงผล</div>';if(animate)fadePage(list);
 }
+function doorStatusRank(status){return({DRAINING:0,IN_USE:1,CALLED:2,AVAILABLE:3})[String(status||"AVAILABLE")]??9}
+function compareQueueDoors(a,b){const status=doorStatusRank(a.status)-doorStatusRank(b.status);if(status)return status;const [ag,an]=queueDoorNaturalParts(a.doorCode),[bg,bn]=queueDoorNaturalParts(b.doorCode);return ag.localeCompare(bg,"en")||an-bn}
 function doorRailItem(door){
-  const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"},primary=[door.appointmentNo,door.vehiclePlate].filter(Boolean).join(" · "),count=Number(door.occupancyCount||0);
-  const sub=status==="DRAINING"?(door.activityStatus==="IN_USE"?"กำลังใช้งาน · ไม่รับรถใหม่":"มีรถที่เรียกไว้ · ไม่รับรถใหม่"):status==="AVAILABLE"?"พร้อมรับรถ":primary||`${count} คัน`;
-  return `<article class="door-live door-${esc(status.toLowerCase())}"><div class="door-code">${esc(door.doorCode||"-")}</div><div class="door-live-copy"><b>${esc(labels[status]||status)}</b><small>${esc(sub)}</small></div>${count>1?`<span class="door-count">${count}</span>`:""}</article>`;
+  const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"},count=Math.max(0,Number(door.occupancyCount)||0),code=normalizeQueueDoorCode(door.doorCode)||"-";
+  return `<article class="door-live door-${esc(status.toLowerCase())}"><div class="door-code">${esc(code)}</div><div class="door-state"><i aria-hidden="true"></i><b>${esc(labels[status]||status)}</b></div><span class="door-count">${status==="DRAINING"?"–":count}</span></article>`;
 }
 
 function renderUnavailable() {
@@ -548,8 +570,8 @@ function nextItem(item) {
   const callLabel=!called?shortDuration(item.elapsedSeconds):item.callType==="DOOR_CHANGED"?`เปลี่ยนประตู · ครั้งที่ ${count}`:item.callType==="RECALL"?`เรียกซ้ำครั้งที่ ${count}`:`เรียกแล้ว ${count} ครั้ง`;
   const doorBadge=item.doorCode
     ? `<span class="next-door-badge" title="ประตู ${esc(item.doorCode)}">${esc(item.doorCode)}</span>`
-    : `<span class="next-door-badge is-placeholder" title="ยังไม่ระบุประตู">ประตู</span>`;
-  return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-company">${esc(item.companyName || "ไม่ระบุบริษัท")}</div><div class="next-plate">${esc(item.vehiclePlate || "–")}</div><div class="next-province">${esc(item.province || "–")}</div><div class="next-status"><span>${esc(callLabel)}</span>${doorBadge}</div></article>`;
+    : `<span class="next-door-badge is-placeholder" title="ยังไม่ระบุประตู">–</span>`;
+  return `<article class="next-item ${called?"is-called":""}"><div class="next-appt">${esc(item.appointmentNo || "–")}</div><div class="next-vehicle"><b>${esc(item.companyName || "ไม่ระบุบริษัท")}</b><small>${esc(item.vehiclePlate || "–")}</small></div><div class="next-province">${esc(item.province || "–")}</div><div class="next-status">${doorBadge}<small>${esc(callLabel)}</small></div></article>`;
 }
 
 function renderWork(data, animate = false) {
@@ -587,7 +609,7 @@ function renderWork(data, animate = false) {
 function workItem(item) {
   return `<article class="work-item"><b>${esc(item.appointmentNo || "–")}</b><span class="work-company">${esc(
     item.companyName || "ไม่ระบุบริษัท"
-  )}</span><small>${esc(plateText(item))}${item.doorCode ? ` · ประตู ${esc(item.doorCode)}` : ""}</small></article>`;
+  )}</span><small>${esc(plateText(item))}</small></article>`;
 }
 
 function rotatePages() {
@@ -602,7 +624,7 @@ function rotatePages() {
     const pages = Math.ceil(all.filter(item => item.status === status).length / workPageSize());
     if (pages > 1) workPages[status] = (workPages[status] + 1) % pages;
   }
-  const doorPages=Math.ceil((latestData.doors||[]).length/doorPageSize());if(doorPages>1)doorPage=(doorPage+1)%doorPages;
+  const allDoors=Array.isArray(latestData.doors)?latestData.doors:[],importantDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),availableDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),availableSlots=Math.max(1,doorPageSize()-importantDoors.length),doorPages=Math.max(1,Math.ceil(availableDoors.length/availableSlots));if(doorPages>1)doorPage=(doorPage+1)%doorPages;
 
   renderNext(latestData, true);
   renderWork(latestData, true);

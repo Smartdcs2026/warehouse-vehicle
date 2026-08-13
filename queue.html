@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#eef5ff">
   <title>สถานะคิวรถขนส่ง</title>
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="stylesheet" href="./queue.css?v=20260813-r119">
+  <link rel="stylesheet" href="./queue.css?v=20260813-r120">
 </head>
-<body data-queue-build="20260813-r119-canonical-announcement-door-live">
+<body data-queue-build="20260813-r120-queue-display-professional-door-rail">
   <section id="queueLogin" class="queue-login">
     <div class="queue-login-card">
       <img src="./icon-192.png" alt="" aria-hidden="true">
@@ -83,7 +83,7 @@
           <span id="nextPageLabel" class="page-label">ไม่มีคิวรอ</span>
         </header>
         <div class="next-table-head">
-          <span>เลขนัดหมาย</span><span>บริษัท</span><span>ทะเบียนรถ</span><span>จังหวัด</span><span>สถานะ</span>
+          <span>เลขนัดหมาย</span><span>บริษัท / ทะเบียนรถ</span><span>จังหวัด</span><span>ประตู</span>
         </div>
         <div id="nextQueue" class="next-list"></div>
       </section>
@@ -97,8 +97,17 @@
       </section>
 
       <aside id="doorRail" class="door-rail" hidden>
-        <header class="door-rail-head"><div><small>ประตูรับสินค้า</small><h2>สถานะประตู</h2></div><span id="doorPageLabel" class="page-label">–</span></header>
+        <header class="door-rail-head">
+          <div><small>ประตูรับสินค้า</small><h2>สถานะประตู</h2></div>
+          <div class="door-rail-head-meta"><span id="doorRailStats" class="door-rail-stats">–</span><span id="doorPageLabel" class="door-page-label">–</span></div>
+        </header>
         <div id="doorRailList" class="door-rail-list"></div>
+        <footer class="door-rail-legend" aria-label="คำอธิบายสถานะประตู">
+          <span><i class="legend-dot is-available"></i>ว่าง</span>
+          <span><i class="legend-dot is-called"></i>เรียกเข้า</span>
+          <span><i class="legend-dot is-use"></i>กำลังใช้งาน</span>
+          <span><i class="legend-dot is-draining"></i>ปิดหลังจบงาน</span>
+        </footer>
       </aside>
     </section>
 
@@ -110,8 +119,8 @@
       <span id="rotationLabel" hidden></span>
     </footer>
   </main>
-  <script src="./config.js?v=20260813-r119"></script>
-  <script src="./voice-engine.js?v=20260813-r119"></script>
-  <script src="./queue.js?v=20260813-r119"></script>
+  <script src="./config.js?v=20260813-r120"></script>
+  <script src="./voice-engine.js?v=20260813-r120"></script>
+  <script src="./queue.js?v=20260813-r120"></script>
 </body>
 </html>
