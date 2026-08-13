@@ -229,8 +229,18 @@ body{background:#f3f7fc}
 
 
 /* Round 122 — restore work-door badge + anti-flicker rendering */
-.work-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.work-item-head>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.work-door{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:27px;padding:0 10px;border-radius:8px;background:#fff;color:#2f4c72;font-size:12px;font-weight:900;line-height:1;border:1px solid #d7e1ed;box-shadow:none;flex:0 0 auto}
+.work-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.work-item-head>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.work-door{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:27px;padding:0 9px;border-radius:8px;background:#1769d7;color:#fff;font-size:12px;font-weight:950;line-height:1;box-shadow:0 2px 7px rgba(23,105,215,.17);flex:0 0 auto}.tone-progress .work-door{background:#f26322}.tone-return .work-door{background:#8240d8}.tone-out .work-door{background:#db9000}
 /* Page data refresh should not visually blink when content is unchanged. */
 #summaryCards,#nextQueue,#workGroups,#doorRailList{contain:layout paint}.queue-shell *{backface-visibility:hidden}.page-fade{will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){.call-panel.flash,.page-fade{animation:none!important}}
 @media(max-height:760px){.work-door{min-width:34px;height:22px;padding:0 6px;font-size:10px}}
+
+
+/* Round 124 — compact work rows, neutral door label, no door on gate-out */
+.work-item-head{display:flex;align-items:center;justify-content:flex-start;gap:9px;min-width:0}
+.work-item-head>b{flex:0 1 auto;min-width:0;max-width:calc(100% - 58px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.work-door{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:38px;height:24px;padding:0 8px;border:1px solid #d7e1ed;border-radius:7px;background:#fff!important;color:#2f4c72!important;box-shadow:none!important;font-size:11px;font-weight:900;line-height:1}
+.tone-progress .work-door,.tone-return .work-door,.tone-out .work-door{background:#fff!important;color:#2f4c72!important;border-color:#d7e1ed!important}
+.work-body{align-content:start}
+.work-item{min-width:0}
+@media(max-height:760px){.work-item-head{gap:6px}.work-door{min-width:32px;height:20px;padding:0 6px;font-size:9px}.work-item-head>b{max-width:calc(100% - 44px)}}
