@@ -244,3 +244,31 @@ body{background:#f3f7fc}
 .work-body{align-content:start}
 .work-item{min-width:0}
 @media(max-height:760px){.work-item-head{gap:6px}.work-door{min-width:32px;height:20px;padding:0 6px;font-size:9px}.work-item-head>b{max-width:calc(100% - 44px)}}
+
+/* Round 125 — compact operation grid: use row width efficiently */
+/* Keep page capacity and visual columns aligned: normal=4, medium=3, compact=2. */
+.work-body{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-auto-flow:row;
+  align-content:start;
+  justify-content:start;
+}
+.work-item{
+  padding:6px 9px;
+  justify-content:flex-start;
+  min-height:0;
+}
+.work-item-head{gap:6px}
+.work-item-head>b{max-width:calc(100% - 50px)}
+.work-door{min-width:34px;height:22px;padding:0 6px;font-size:10px;border-radius:6px}
+.work-item .work-company{margin-top:2px}
+
+@media(max-width:1349px), (max-height:819px){
+  .work-body{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:1049px), (max-height:699px){
+  .work-body{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1600px) and (min-height:1000px){
+  .work-body{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
