@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#eef5ff">
   <title>สถานะคิวรถขนส่ง</title>
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="stylesheet" href="./queue.css?v=20260811-r86">
+  <link rel="stylesheet" href="./queue.css?v=20260813-r119">
 </head>
-<body data-queue-build="20260811-r86-extra-calls-door-admin">
+<body data-queue-build="20260813-r119-canonical-announcement-door-live">
   <section id="queueLogin" class="queue-login">
     <div class="queue-login-card">
       <img src="./icon-192.png" alt="" aria-hidden="true">
@@ -76,7 +76,7 @@
 
     <section id="summaryCards" class="queue-summary"></section>
 
-    <section class="queue-board">
+    <section id="queueBoard" class="queue-board">
       <section class="next-panel">
         <header class="panel-title">
           <div class="title-with-icon"><span class="title-mark">รอ</span><div><h2>รอเข้าตรวจรับสินค้า</h2><small>รวมรถที่พร้อมเรียกและรถที่เรียกแล้ว</small></div></div>
@@ -95,18 +95,23 @@
         </header>
         <div id="workGroups" class="work-groups"></div>
       </section>
+
+      <aside id="doorRail" class="door-rail" hidden>
+        <header class="door-rail-head"><div><small>ประตูรับสินค้า</small><h2>สถานะประตู</h2></div><span id="doorPageLabel" class="page-label">–</span></header>
+        <div id="doorRailList" class="door-rail-list"></div>
+      </aside>
     </section>
 
     <footer class="queue-footer">
-      <div><span>รีเฟรชอัตโนมัติทุก 5 วินาที</span></div>
+      <div><span>รีเฟรชอัตโนมัติทุก 3 วินาที</span></div>
       <div><b id="updatedAt">–</b></div>
       <div class="footer-spacer"></div>
       <div><span>ข้อมูลจากระบบบริหารรถขนส่งคลังสินค้า</span></div>
       <span id="rotationLabel" hidden></span>
     </footer>
   </main>
-  <script src="./config.js?v=20260811-r86"></script>
-  <script src="./voice-engine.js?v=20260811-r86"></script>
-  <script src="./queue.js?v=20260811-r86"></script>
+  <script src="./config.js?v=20260813-r119"></script>
+  <script src="./voice-engine.js?v=20260813-r119"></script>
+  <script src="./queue.js?v=20260813-r119"></script>
 </body>
 </html>

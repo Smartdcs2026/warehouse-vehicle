@@ -1,10 +1,13 @@
 "use strict";
 
 const cfg = window.APP_CONFIG || {};
-const POLL_MS = 5000;
+const POLL_MS = 3000;
 const FETCH_TIMEOUT_MS = 4500;
 const ROTATE_MS = 10000;
 const CALL_HOLD_MS = 20000;
+const ANNOUNCEMENT_NO_AUDIO_HOLD_MS = 8000;
+const ANNOUNCEMENT_POST_VOICE_HOLD_MS = 1200;
+const ANNOUNCEMENT_CURSOR_KEY = "queueAnnouncementCursorR119";
 const STALE_AFTER_MS = 20000;
 const QUEUE_TOKEN_KEY = "wvfQueueDisplayToken";
 
@@ -22,6 +25,12 @@ let lastRotateAt = Date.now();
 let holdRotationUntil = 0;
 let lastSuccessfulLoad = 0;
 let nextPage = 0;
+let doorPage = 0;
+let announcementCursor = sessionStorage.getItem(ANNOUNCEMENT_CURSOR_KEY);
+announcementCursor = announcementCursor === null ? null : Math.max(0, Number(announcementCursor) || 0);
+let announcementPending = [];
+let announcementProcessing = false;
+let currentAnnouncement = null;
 let workPages = {
   RECEIVING_IN_PROGRESS: 0,
   WAITING_DOCUMENT_RETURN: 0,
@@ -170,6 +179,7 @@ function expireQueueSession(message) {
 
 function resetPages() {
   nextPage = 0;
+  doorPage = 0;
   Object.keys(workPages).forEach(key => (workPages[key] = 0));
   lastRotateAt = Date.now();
 }
@@ -213,7 +223,10 @@ async function loadQueue(force = false) {
     const base = String(cfg.apiBaseUrl || "").replace(/\/$/, "");
     if (!base) throw new Error("ไม่พบที่อยู่ระบบ");
 
-    const response = await fetch(base + "/api/public/queue", {
+    const queueUrl = new URL(base + "/api/public/queue");
+    if (announcementCursor === null) queueUrl.searchParams.set("bootstrap", "1");
+    else queueUrl.searchParams.set("afterSequence", String(announcementCursor));
+    const response = await fetch(queueUrl.toString(), {
       cache: "no-store",
       signal: controller.signal,
       headers: { Accept: "application/json", Authorization: `Bearer ${queueToken}` }
@@ -281,6 +294,11 @@ function normalizeQueueData(raw) {
     recentNotices,
     voice: raw.voice && typeof raw.voice === "object" ? raw.voice : null,
     doorSettings: raw.doorSettings && typeof raw.doorSettings === "object" ? raw.doorSettings : null,
+    queueDisplay: raw.queueDisplay && typeof raw.queueDisplay === "object" ? raw.queueDisplay : {showDoorPanel:false,doorPanelEnabled:false},
+    announcementMode: cleanText(raw.announcementMode || "LEGACY"),
+    latestAnnouncementSequence: Math.max(0, Number(raw.latestAnnouncementSequence) || 0),
+    announcements: Array.isArray(raw.announcements) ? raw.announcements.filter(item=>item&&typeof item==="object").map(normalizeAnnouncement).sort((a,b)=>a.sequence-b.sequence) : [],
+    doors: Array.isArray(raw.doors) ? raw.doors.filter(item=>item&&typeof item==="object").map(normalizeDoorLive) : [],
     items,
     counts: {
       READY_FOR_RECEIVING: safeCount(counts.READY_FOR_RECEIVING, items, "READY_FOR_RECEIVING"),
@@ -315,6 +333,12 @@ function normalizeItem(item) {
   };
 }
 
+function normalizeAnnouncement(item){
+  return normalizeItem({...item,sequence:Math.max(0,Number(item.sequence)||0),announcementId:cleanText(item.announcementId)});
+}
+function normalizeDoorLive(item){
+  return{doorCode:cleanText(item.doorCode),status:cleanText(item.status),activityStatus:cleanText(item.activityStatus),isActive:item.isActive!==false,occupancyCount:Math.max(0,Number(item.occupancyCount)||0),appointmentNo:cleanText(item.appointmentNo),vehiclePlate:cleanText(item.vehiclePlate),province:cleanText(item.province),companyName:cleanText(item.companyName),items:Array.isArray(item.items)?item.items:[]};
+}
 function cleanText(value) {
   return String(value ?? "").trim();
 }
@@ -327,12 +351,17 @@ function safeCount(value, items, status) {
 
 function render(data) {
   syncVoiceSettings(data.voice);
-  const announcement=latestAnnouncement(data);
-  renderCall(announcement);
   renderSummary(data);
   renderNext(data);
   renderWork(data);
-  processVoiceCalls(data);
+  renderDoorRail(data);
+  if(data.announcementMode === "CANONICAL"){
+    ingestCanonicalAnnouncements(data);
+    if(!announcementProcessing&&!currentAnnouncement&&!announcementPending.length)renderCall(latestAnnouncement(data));
+  }else{
+    renderCall(latestAnnouncement(data));
+    processVoiceCalls(data);
+  }
   if ($("updatedAt")) $("updatedAt").textContent = "อัปเดตล่าสุด " + formatTime(data.generatedAt);
 }
 
@@ -342,8 +371,45 @@ function latestAnnouncement(data){
   return Number(notice.calledAt||0)>=Number(call.calledAt||0)?notice:call;
 }
 
+function saveAnnouncementCursor(){if(announcementCursor==null)return;try{sessionStorage.setItem(ANNOUNCEMENT_CURSOR_KEY,String(announcementCursor))}catch{}}
+function ingestCanonicalAnnouncements(data){
+  const latest=Math.max(0,Number(data?.latestAnnouncementSequence)||0);
+  if(announcementCursor===null){announcementCursor=latest;saveAnnouncementCursor();return}
+  if(latest<announcementCursor){announcementCursor=latest;announcementPending=[];saveAnnouncementCursor();return}
+  const currentSeq=Number(currentAnnouncement?.sequence||0),pendingSeq=new Set(announcementPending.map(item=>Number(item.sequence||0)));
+  for(const item of data.announcements||[]){const seq=Number(item.sequence||0);if(!seq||seq<=announcementCursor||seq===currentSeq||pendingSeq.has(seq))continue;announcementPending.push(item);pendingSeq.add(seq)}
+  announcementPending.sort((a,b)=>a.sequence-b.sequence);processCanonicalAnnouncementQueue();
+}
+async function processCanonicalAnnouncementQueue(){
+  if(announcementProcessing)return;announcementProcessing=true;
+  try{
+    while(announcementPending.length){
+      const item=announcementPending.shift();currentAnnouncement=item;renderCall(item);holdRotationUntil=Date.now()+CALL_HOLD_MS;
+      let voiced=false;
+      if(audioEnabled&&voiceAdminEnabled&&window.SmartQueueVoice){
+        try{window.SmartQueueVoice.clearPending?.();await window.SmartQueueVoice.announceNow(item);voiced=true}catch(error){console.warn("canonical queue voice failed",error?.message||error);setHealth("error","เสียงประกาศขัดข้อง — ภาพยังทำงาน",error?.message||"")}
+      }
+      await sleepQueue(voiced?ANNOUNCEMENT_POST_VOICE_HOLD_MS:ANNOUNCEMENT_NO_AUDIO_HOLD_MS);
+      announcementCursor=Math.max(Number(announcementCursor||0),Number(item.sequence||0));saveAnnouncementCursor();currentAnnouncement=null;
+    }
+  }finally{announcementProcessing=false;currentAnnouncement=null;if(latestData)renderCall(latestAnnouncement(latestData))}
+}
+function sleepQueue(ms){return new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(ms)||0)))}
+
+function doorPageSize(){const h=window.innerHeight||800;if(h<700)return 4;if(h<850)return 5;if(h>=1000)return 8;return 6}
+function renderDoorRail(data,animate=false){
+  const rail=$("doorRail"),board=$("queueBoard");if(!rail||!board)return;const enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),doors=Array.isArray(data?.doors)?data.doors:[];rail.hidden=!enabled;board.classList.toggle("has-door-rail",enabled);if(!enabled)return;
+  const size=doorPageSize(),pages=Math.max(1,Math.ceil(doors.length/size));if(doorPage>=pages)doorPage=0;const shown=doors.slice(doorPage*size,doorPage*size+size),label=$("doorPageLabel");if(label)label.textContent=doors.length?(pages>1?`${doorPage+1}/${pages} · ${doors.length} ประตู`:`${doors.length} ประตู`):"ไม่มีประตู";
+  const list=$("doorRailList");list.innerHTML=shown.length?shown.map(doorRailItem).join(""):'<div class="door-empty">ไม่มีประตูที่เปิดใช้งาน</div>';if(animate)fadePage(list);
+}
+function doorRailItem(door){
+  const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"},primary=[door.appointmentNo,door.vehiclePlate].filter(Boolean).join(" · "),count=Number(door.occupancyCount||0);
+  const sub=status==="DRAINING"?(door.activityStatus==="IN_USE"?"กำลังใช้งาน · ไม่รับรถใหม่":"มีรถที่เรียกไว้ · ไม่รับรถใหม่"):status==="AVAILABLE"?"พร้อมรับรถ":primary||`${count} คัน`;
+  return `<article class="door-live door-${esc(status.toLowerCase())}"><div class="door-code">${esc(door.doorCode||"-")}</div><div class="door-live-copy"><b>${esc(labels[status]||status)}</b><small>${esc(sub)}</small></div>${count>1?`<span class="door-count">${count}</span>`:""}</article>`;
+}
+
 function renderUnavailable() {
-  renderCall(null);
+  if(!currentAnnouncement)renderCall(null);
   renderSummary({ counts: {} });
   renderNext({ items: [] });
   renderWork({ items: [] });
@@ -536,9 +602,11 @@ function rotatePages() {
     const pages = Math.ceil(all.filter(item => item.status === status).length / workPageSize());
     if (pages > 1) workPages[status] = (workPages[status] + 1) % pages;
   }
+  const doorPages=Math.ceil((latestData.doors||[]).length/doorPageSize());if(doorPages>1)doorPage=(doorPage+1)%doorPages;
 
   renderNext(latestData, true);
   renderWork(latestData, true);
+  renderDoorRail(latestData, true);
 }
 
 function fadePage(el) {
@@ -668,7 +736,7 @@ async function toggleSound() {
     if(!window.SmartQueueVoice)throw new Error("ไม่พบระบบเสียง");
     window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});
     await window.SmartQueueVoice.unlockAndPrepare();
-    markCurrentCallsSeen();
+    if(latestData?.announcementMode!=="CANONICAL")markCurrentCallsSeen();
     audioEnabled=true;
     updateSoundButton();
     if(voiceSettings?.playDing!==false)await window.SmartQueueVoice.playSequence(["ding"]);

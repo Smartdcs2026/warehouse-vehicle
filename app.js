@@ -1511,7 +1511,7 @@ async function rejectReceiving(vehicle){
 
 async function showAdditionalCall(vehicle){
   if(!vehicle||!window.Swal)return;
-  const useDoor=Number(vehicle.use_door)!==0,hasDoors=useDoor&&Array.isArray(state.activeDoors)&&state.activeDoors.length>0;
+  const useDoor=Number(vehicle.use_door)!==0,currentAssignedDoor=String(vehicle.door_code||"").trim().toUpperCase(),noticeDoors=[...new Set([...(state.activeDoors||[]),...(currentAssignedDoor?[currentAssignedDoor]:[])])],hasDoors=useDoor&&noticeDoors.length>0;
   const html=`${vehicleDetailsHtml(vehicle,vehicle.auto_id)}<div class="extra-call-choice-grid">
     <button type="button" data-extra-call="NOTICE_DOCUMENT_ROOM"><span>${receivingNoticeIcon("document")}</span><div><b>ติดต่อห้องเอกสาร</b><small>ประกาศให้พนักงานขับรถมาติดต่อห้องเอกสาร</small></div></button>
     <button type="button" data-extra-call="NOTICE_DOOR" ${hasDoors?"":"disabled"}><span>${receivingNoticeIcon("door")}</span><div><b>ติดต่อที่ประตู</b><small>${hasDoors?"เลือกประตูที่เปิดใช้งานแล้วประกาศ":"ยังไม่มีประตูที่เปิดใช้งาน"}</small></div></button>
@@ -1526,11 +1526,11 @@ async function showAdditionalCall(vehicle){
   }});
 }
 async function chooseNoticeDoor(vehicle){
-  const doors=[...new Set(state.activeDoors||[])];if(!doors.length){await showNotice("warning","ยังไม่มีประตูที่เปิดใช้งาน");return null}
+  const currentAssignedDoor=String(vehicle?.door_code||"").trim().toUpperCase(),doors=[...new Set([...(state.activeDoors||[]),...(currentAssignedDoor?[currentAssignedDoor]:[])])];if(!doors.length){await showNotice("warning","ยังไม่มีประตูที่ใช้งานได้");return null}
   const defaultDoor=doors.includes(String(vehicle.door_code||""))?String(vehicle.door_code):doors[0];
   if(window.Swal){
     const options=doors.map(code=>`<option value="${escapeHtml(code)}"></option>`).join("");
-    const result=await Swal.fire({title:"เลือกประตูที่ต้องการให้ติดต่อ",html:`<div class="notice-door-picker"><label><span>ค้นหาหรือพิมพ์รหัสประตู</span><input id="noticeDoorCode" list="noticeDoorList" value="${escapeHtml(defaultDoor)}" autocomplete="off" placeholder="เช่น R12"><datalist id="noticeDoorList">${options}</datalist></label><small>เลือกได้เฉพาะประตูที่ Admin เปิดใช้งานอยู่</small></div>`,showCancelButton:true,confirmButtonText:"ใช้ประตูนี้",cancelButtonText:"ยกเลิก",customClass:swalClasses(),buttonsStyling:false,width:430,preConfirm:()=>{const code=String($("noticeDoorCode")?.value||"").trim().toUpperCase();if(!doors.includes(code)){Swal.showValidationMessage("กรุณาเลือกประตูที่เปิดใช้งาน");return false}return code}});
+    const result=await Swal.fire({title:"เลือกประตูที่ต้องการให้ติดต่อ",html:`<div class="notice-door-picker"><label><span>ค้นหาหรือพิมพ์รหัสประตู</span><input id="noticeDoorCode" list="noticeDoorList" value="${escapeHtml(defaultDoor)}" autocomplete="off" placeholder="เช่น R12"><datalist id="noticeDoorList">${options}</datalist></label><small>ประตูที่ปิดแล้วเลือกได้เฉพาะกรณีเป็นประตูเดิมของรถคันนี้</small></div>`,showCancelButton:true,confirmButtonText:"ใช้ประตูนี้",cancelButtonText:"ยกเลิก",customClass:swalClasses(),buttonsStyling:false,width:430,preConfirm:()=>{const code=String($("noticeDoorCode")?.value||"").trim().toUpperCase();if(!doors.includes(code)){Swal.showValidationMessage("กรุณาเลือกประตูในรายการ");return false}return code}});
     return result.isConfirmed?result.value:null;
   }
   const entered=window.prompt("กรอกรหัสประตู",defaultDoor);if(entered===null)return null;const code=String(entered).trim().toUpperCase();return doors.includes(code)?code:null;
@@ -1580,7 +1580,7 @@ function queueReasonOptions(selected="GENERAL",usesDoor=true){
 async function callVehicle(vehicle,isRecall=false){
   const autoId=String(vehicle.auto_id);if(receivingState.busyIds.has(autoId))return;
   if(isRecall&&state.queueRecall?.enabled===false){await showNotice("warning","ผู้ดูแลปิดการเรียกรถซ้ำไว้");return}
-  const usesDoor=Number(vehicle.use_door)!==0,requiresDoor=usesDoor&&Number(vehicle.require_door)!==0,availableDoors=[...new Set(state.activeDoors||[])];
+  const usesDoor=Number(vehicle.use_door)!==0,requiresDoor=usesDoor&&Number(vehicle.require_door)!==0,currentAssignedDoor=String(vehicle.door_code||"").trim().toUpperCase(),availableDoors=[...new Set([...(state.activeDoors||[]),...(currentAssignedDoor?[currentAssignedDoor]:[])])];
   if(usesDoor&&requiresDoor&&!availableDoors.length){await showNotice("warning","ยังไม่มีประตูที่เปิดใช้งาน กรุณาติดต่อผู้ดูแล");return}
   const parsed=parseDoorCode(vehicle.door_code),defaultPrefix=parsed.prefix||"R",defaultNumber=parsed.number||"";
   let payload={doorCode:usesDoor?(vehicle.door_code||null):null,reasonCode:isRecall?"GENERAL":"FIRST",note:""};
@@ -1628,7 +1628,7 @@ async function runQueueCall(vehicle,payload){
 async function startReceiving(vehicle){
   const autoId=String(vehicle.auto_id);if(receivingState.busyIds.has(autoId))return;
   let doorCode=null;
-  const usesDoor=Number(vehicle.use_door)!==0,requiresDoor=usesDoor&&Number(vehicle.require_door)!==0,availableDoors=[...new Set(state.activeDoors||[])];
+  const usesDoor=Number(vehicle.use_door)!==0,requiresDoor=usesDoor&&Number(vehicle.require_door)!==0,currentAssignedDoor=String(vehicle.door_code||"").trim().toUpperCase(),availableDoors=[...new Set([...(state.activeDoors||[]),...(currentAssignedDoor?[currentAssignedDoor]:[])])];
   if(usesDoor&&requiresDoor&&!availableDoors.length){
     await showNotice("warning","ยังไม่มีประตูที่เปิดใช้งาน กรุณาติดต่อผู้ดูแล");
     return;
@@ -2789,10 +2789,12 @@ async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",vehicl
 
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;
-  const queueUrl=new URL("./queue.html?v=20260811-r88",location.href).href;
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260811-r88" target="_blank" rel="noopener">เปิดจอคิว</a></div>
-  <section class="admin-queue-guide"><article><b>เรียกรถแยกจากเริ่มตรวจรับ</b><p>พนักงานกด “เรียกรถ” ก่อน เมื่อรถเข้าจุดตรวจรับจริงจึงกด “เริ่มตรวจรับ” เพื่อให้เวลาทำงานตรงกับเหตุการณ์จริง</p></article><article><b>เรียกซ้ำและเปลี่ยนประตู</b><p>รถที่ยังไม่เข้าจุดตรวจรับสามารถเรียกซ้ำได้ และเมื่อเปิดใช้ประตูสามารถเปลี่ยนประตูพร้อมเรียกใหม่โดยเก็บประวัติเดิมไว้</p></article><article><b>กรณีปิดประตู</b><p>เมื่อผู้ดูแลปิดการใช้ประตู ระบบจะไม่บังคับ ไม่แสดง และไม่อ่านหมายเลขประตูในการเรียกรถ</p></article></section>
+  const queueUrl=new URL("./queue.html?v=20260813-r119",location.href).href,q=adminState.data.queueDisplay||{},showDoorPanel=q.showDoorPanel!==false&&Number(q.showDoorPanel)!==0;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ควบคุมจอคิวส่วนกลางและข้อมูลที่ต้องการแสดง</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260813-r119" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  <form id="queueDisplaySettingsForm" class="admin-queue-display-form"><label class="setting-switch-card"><span><b>แสดงสถานะประตูรับสินค้า</b><small>แสดงประตูว่าง ประตูที่เรียกรถเข้า ประตูที่กำลังใช้งาน และประตูที่ปิดระหว่างมีงานค้าง</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label><div class="admin-form-actions"><button class="primary" type="submit">บันทึกการแสดงผลจอคิว</button></div></form>
+  <section class="admin-queue-guide"><article><b>ภาพและเสียงเป็นคิวเดียวกัน</b><p>รายการที่กำลังประกาศจะเป็นรายการเดียวกับที่แสดงบนจอ และทำงานตามลำดับเหตุการณ์</p></article><article><b>สถานะประตูจากงานจริง</b><p>ประตูจะแสดง ว่าง เรียกเข้า กำลังใช้งาน หรือปิดหลังจบงาน จากสถานะรถจริง</p></article><article><b>ปิดประตูกลางงาน</b><p>รถใหม่จะใช้ประตูที่ปิดไม่ได้ แต่รถที่ถูกเรียกเข้าประตูนั้นแล้วสามารถทำงานต่อจนพ้นขั้นตอนตรวจรับ</p></article></section>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
+  $("queueDisplaySettingsForm")?.addEventListener("submit",event=>{event.preventDefault();adminMutation("/api/admin/queue-display",{showDoorPanel:$("queueDoorPanelEnabled").checked})});
 }
 
 async function renderAdminDataUsage(){
