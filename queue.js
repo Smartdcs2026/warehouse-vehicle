@@ -408,7 +408,18 @@ async function processCanonicalAnnouncementQueue(){
 }
 function sleepQueue(ms){return new Promise(resolve=>setTimeout(resolve,Math.max(0,Number(ms)||0)))}
 
-function doorPageSize(){const h=window.innerHeight||800;if(h<650)return 8;if(h<780)return 10;if(h<900)return 12;if(h>=1050)return 17;return 14}
+function doorPageSize(){
+  const list=$("doorRailList");
+  const h=Math.max(0,Number(list?.clientHeight||0));
+  const viewport=window.innerHeight||800;
+  const rowHeight=viewport<760?33:viewport<900?40:43;
+  if(h>80)return Math.max(4,Math.floor((h+5)/rowHeight));
+  if(viewport<650)return 6;
+  if(viewport<780)return 8;
+  if(viewport<900)return 9;
+  if(viewport>=1050)return 13;
+  return 10;
+}
 function renderDoorRail(data,animate=false){
   const rail=$("doorRail"),board=$("queueBoard");if(!rail||!board)return;
   const enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),raw=Array.isArray(data?.doors)?data.doors:[];

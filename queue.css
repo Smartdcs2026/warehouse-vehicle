@@ -204,3 +204,25 @@ body{background:#f3f7fc}
 @media(max-width:1180px){.queue-board.has-door-rail{grid-template-columns:minmax(0,.8fr) minmax(0,1fr) 250px}.call-panel{grid-template-columns:220px minmax(0,1.2fr) minmax(300px,.85fr)}.door-live{grid-template-columns:48px minmax(0,1fr) 24px}.door-rail-legend{grid-template-columns:1fr 1fr}.next-table-head,.next-item{grid-template-columns:96px minmax(0,1fr) 82px 82px}}
 @media(max-width:980px){.queue-board.has-door-rail{grid-template-columns:1fr 1fr}.queue-board.has-door-rail .door-rail{display:none!important}}
 @media(max-height:760px){.queue-shell{grid-template-rows:66px 176px 66px minmax(0,1fr) 26px}.queue-board.has-door-rail{grid-template-columns:minmax(0,.82fr) minmax(0,1.12fr) 270px}.door-rail{grid-template-rows:44px minmax(0,1fr) 28px;padding:6px}.door-rail-head h2{font-size:15px}.door-live{padding:2px 5px}.door-code{font-size:12px}.door-state b{font-size:8px}.door-count{height:18px;min-width:18px;font-size:8px}.door-rail-legend span{font-size:7px}.call-tag b{font-size:17px}.call-icon{width:60px;height:60px}.call-center{padding:8px 14px}.call-instruction{padding:9px 14px}.arrow-icon{width:56px;height:56px}.queue-summary article{padding:5px 10px}.summary-icon{width:36px;height:36px}.queue-summary small{font-size:11px}.queue-summary b{font-size:25px}}
+
+
+/* Round 121 — queue icon geometry + door rail anti-overlap */
+/* keep pseudo-icons anchored to their own controls; prevents browser/font distortion */
+.call-icon{position:relative;overflow:visible}
+.call-icon::before{position:absolute;left:24px;top:28px;width:31px;height:27px;background:#1769d7;clip-path:polygon(0 31%,33% 31%,68% 0,68% 100%,33% 69%,0 69%)}
+.call-icon::after{position:absolute;left:51px;top:25px;width:15px;height:31px;border:4px solid #1769d7;border-left:0;border-top-color:transparent;border-bottom-color:transparent;border-radius:0 50% 50% 0;transform:none}
+.arrow-icon{position:relative;overflow:hidden}
+.arrow-icon::before{position:absolute;left:18px;top:50%;width:34px;height:4px;transform:translateY(-50%);border-radius:999px;background:#1769d7}
+.arrow-icon::after{position:absolute;right:18px;top:50%;width:19px;height:19px;border-top:4px solid #1769d7;border-right:4px solid #1769d7;transform:translateY(-50%) rotate(45deg)}
+.call-panel.idle .call-icon::before{background:#7c8fa8}.call-panel.idle .call-icon::after{border-right-color:#7c8fa8}.call-panel.idle .arrow-icon::before{background:#97a8bd}.call-panel.idle .arrow-icon::after{border-color:#97a8bd}
+
+/* door rail uses fixed readable row height; never compress rows into each other */
+.door-rail{grid-template-rows:58px minmax(0,1fr) 38px}
+.door-rail-list{display:grid;grid-auto-flow:row;grid-auto-rows:38px;align-content:start;gap:5px;padding:7px 0 6px;min-height:0;overflow:hidden}
+.door-live{height:38px;min-height:38px;max-height:38px;grid-template-columns:58px minmax(0,1fr) 28px;padding:4px 8px;border-left:4px solid var(--door-tone);border-radius:9px}
+.door-code{font-size:16px;line-height:1.05}.door-state b{font-size:10.5px}.door-count{height:23px;min-width:23px}
+.door-rail-head{min-height:0}.door-rail-legend{min-height:0}
+
+@media(max-width:1380px){.door-rail-list{grid-auto-rows:36px;gap:4px}.door-live{height:36px;min-height:36px;max-height:36px}.door-code{font-size:15px}}
+@media(max-width:1180px){.door-rail-list{grid-auto-rows:35px}.door-live{height:35px;min-height:35px;max-height:35px}}
+@media(max-height:760px){.door-rail{grid-template-rows:44px minmax(0,1fr) 28px}.door-rail-list{grid-auto-rows:30px;gap:3px;padding:4px 0}.door-live{height:30px;min-height:30px;max-height:30px;padding:2px 6px}.door-code{font-size:13px}.door-state b{font-size:8.5px}}
