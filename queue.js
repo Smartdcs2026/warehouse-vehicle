@@ -625,7 +625,7 @@ function renderWork(data, animate = false) {
       const shown = items.slice(page * size, page * size + size);
 
       return `<section class="work-group tone-${tone}"><header><h3>${label}</h3><b>${items.length} คัน${pages > 1 ? ` · ${page + 1}/${pages}` : ""}</b></header><div class="work-body">${
-        shown.length ? shown.map(workItem).join("") : '<p class="work-empty">ไม่มีรายการ</p>'
+        shown.length ? shown.map(item => workItem(item, status)).join("") : '<p class="work-empty">ไม่มีรายการ</p>'
       }</div></section>`;
     })
     .join("");
@@ -635,9 +635,10 @@ function renderWork(data, animate = false) {
   setStableText($("workCount"), `${total.toLocaleString("th-TH")} คัน`);
 }
 
-function workItem(item) {
+function workItem(item, status = "") {
   const door = normalizeQueueDoorCode(item.doorCode);
-  const doorHtml = door ? `<span class="work-door" title="ประตู ${esc(door)}">${esc(door)}</span>` : "";
+  const showDoor = door && status !== "WAITING_GATE_OUT";
+  const doorHtml = showDoor ? `<span class="work-door" title="ประตู ${esc(door)}">${esc(door)}</span>` : "";
   return `<article class="work-item"><div class="work-item-head"><b>${esc(item.appointmentNo || "–")}</b>${doorHtml}</div><span class="work-company">${esc(
     item.companyName || "ไม่ระบุบริษัท"
   )}</span><small>${esc(plateText(item))}</small></article>`;
