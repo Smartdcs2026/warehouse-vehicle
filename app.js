@@ -1277,7 +1277,7 @@ const inboundListState = { filter:"ALL" };
 const inboundTrackPanel = { timer:0, until:0, active:false };
 const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
-const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue" };
+const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, busy:false, reloadRequested:false, lastLoadedAt:0, error:"", calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0 };
 const datatableState={meta:null,data:null,busy:false,reloadRequested:false,requestSeq:0,detailBusy:false,refreshMetaRequested:false,activity:[],shiftAutoDate:false,stage:"overview",from:"",to:"",shiftId:"",search:"",sla:"ALL",status:"ALL",door:"",actor:"",sort:"start_desc",page:1,limit:25,problemOnly:false,rejectedOnly:false,searchTimer:0,immersive:false,nativeFullscreen:false,mobileFiltersOpen:false,columns:new Set(JSON.parse(localStorage.getItem("wvf_dt_columns_r100")||localStorage.getItem("wvf_dt_columns_r96")||localStorage.getItem("wvf_dt_columns_r95")||'["company","plate","shift","actor"]'))};
 const DASHBOARD_INFO={
   dashboard:{title:"ข้อมูลใน Dashboard",meaning:"สรุปข้อมูลรถและขั้นตอนการทำงานตามวันที่ ช่วงเวลา และกะที่เลือก",source:"ข้อมูลรถมาจากระบบ Gate In/Gate Out แบบอ่านอย่างเดียว ส่วนขั้นตอน Inbound และตรวจรับมาจากประวัติการทำงานในระบบนี้",calculation:"ตัวเลขทุกจุดคำนวณจากข้อมูลใน D1 ณ เวลาที่ระบุว่าอัปเดตล่าสุด"},
@@ -1367,6 +1367,7 @@ function renderNavigation() {
 
 async function navigate(view) {
   if(scannerState.active&&state.view==="inbound"){if(view!=="inbound")showNotice("info","กรุณาปิดกล้องก่อนเปลี่ยนหน้า");return}
+  if(state.view==="dashboard"&&view!=="dashboard")cancelDashboardRequest();
   if(!viewEnabled(view)){await showNotice("info",view==="dashboard"?"Dashboard ถูกปิดการแสดงผลโดยผู้ดูแลระบบ":"Datatable ถูกปิดการแสดงผลโดยผู้ดูแลระบบ");view="operations"}
   stopCamera();
   state.view = view;setDashboardShell(view);if(view==="inbound")inboundLiveState.version=""; const titles = { operations:"งานรับสินค้า", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", datatable:"Datatable", admin:"ตั้งค่าระบบ" };
@@ -2240,22 +2241,54 @@ function syncDashboardRangeButtons(){
   document.querySelectorAll("[data-dashboard-range]").forEach(button=>{const active=button.dataset.dashboardRange===dashboardState.range;button.classList.toggle("active",active);button.setAttribute("aria-pressed",active?"true":"false")});
 }
 
+function cancelDashboardRequest(){
+  if(dashboardState.slowTimer){clearTimeout(dashboardState.slowTimer);dashboardState.slowTimer=0}
+  if(dashboardState.requestController){try{dashboardState.requestController.abort()}catch{}dashboardState.requestController=null}
+  dashboardState.busy=false;
+}
+function dashboardLoadingView(mode="loading"){
+  const body=$("dashboardBody");if(!body)return;
+  if(mode==="slow"){
+    body.innerHTML=`<div class="dashboard-load-state is-slow"><span class="dashboard-load-spinner" aria-hidden="true"></span><b>กำลังสรุปข้อมูล</b><small>ใช้เวลานานกว่าปกติ ระบบกำลังเชื่อมต่ออีกครั้ง</small><button id="dashboardCancelRetry" class="outline-button" type="button">โหลดใหม่</button></div>`;
+    $("dashboardCancelRetry")?.addEventListener("click",()=>{cancelDashboardRequest();loadDashboard(true,true)});
+    return;
+  }
+  body.innerHTML=`<div class="dashboard-load-state"><span class="dashboard-load-spinner" aria-hidden="true"></span><b>กำลังสรุปข้อมูล</b><small>กำลังอ่านข้อมูลล่าสุด</small></div>`;
+}
 async function loadDashboard(showLoading=true,force=false){
   if(state.view!=="dashboard")return;
   if(dashboardState.busy){if(force)dashboardState.reloadRequested=true;return}
   if(!force&&dashboardState.data&&Date.now()-dashboardState.lastLoadedAt<25000)return;
   dashboardState.busy=true;
-  const requestRange=dashboardState.range,requestDate=dashboardState.date,requestShiftId=dashboardState.shiftId;
-  if(showLoading&&!dashboardState.data&&$("dashboardBody"))$("dashboardBody").innerHTML=`<div class="loading">กำลังสรุปข้อมูล</div>`;
+  const seq=++dashboardState.requestSeq,requestRange=dashboardState.range,requestDate=dashboardState.date,requestShiftId=dashboardState.shiftId;
+  if(showLoading&&!dashboardState.data)dashboardLoadingView("loading");
+  if(dashboardState.slowTimer)clearTimeout(dashboardState.slowTimer);
+  dashboardState.slowTimer=setTimeout(()=>{if(state.view==="dashboard"&&dashboardState.busy&&seq===dashboardState.requestSeq&&!dashboardState.data)dashboardLoadingView("slow")},7000);
+  const controller=new AbortController();dashboardState.requestController=controller;
+  let retry=0;
   try{
-    const query=`?range=${encodeURIComponent(requestRange)}${requestDate?`&date=${encodeURIComponent(requestDate)}`:""}${requestShiftId?`&shiftId=${encodeURIComponent(requestShiftId)}`:""}`,data=await api(`/api/dashboard/summary${query}`);
+    const query=`?range=${encodeURIComponent(requestRange)}${requestDate?`&date=${encodeURIComponent(requestDate)}`:""}${requestShiftId?`&shiftId=${encodeURIComponent(requestShiftId)}`:""}`;
+    let data;
+    while(true){
+      try{data=await api(`/api/dashboard/summary${query}`,{signal:controller.signal,timeoutMs:18000});break}
+      catch(error){if(controller.signal.aborted)throw error;if(retry>=1)throw error;retry+=1;await new Promise(resolve=>setTimeout(resolve,650))}
+    }
+    if(seq!==dashboardState.requestSeq||state.view!=="dashboard")return;
     if(requestRange!==dashboardState.range||requestDate!==dashboardState.date||requestShiftId!==dashboardState.shiftId){dashboardState.reloadRequested=true;return}
     dashboardState.data=data;dashboardState.date=data.selectedDate||dashboardState.date;dashboardState.error="";dashboardState.lastLoadedAt=Date.now();renderDashboardData(data)
   }catch(error){
+    if(seq!==dashboardState.requestSeq||state.view!=="dashboard")return;
     if(requestRange!==dashboardState.range||requestDate!==dashboardState.date||requestShiftId!==dashboardState.shiftId){dashboardState.reloadRequested=true;return}
-    dashboardState.error=error.message;if(dashboardState.data){renderDashboardData(dashboardState.data)}else if($("dashboardBody")){ $("dashboardBody").innerHTML=`<div class="empty-state"><b>โหลด Dashboard ไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryDashboard" class="primary">ลองใหม่</button></div>`;$("retryDashboard")?.addEventListener("click",()=>loadDashboard(true,true))}
+    dashboardState.error=error.message||"โหลดข้อมูลไม่สำเร็จ";
+    if(dashboardState.data){renderDashboardData(dashboardState.data)}
+    else if($("dashboardBody")){
+      $("dashboardBody").innerHTML=`<div class="dashboard-load-error"><b>โหลด Dashboard ไม่สำเร็จ</b><span>${escapeHtml(dashboardState.error)}</span><div><button id="retryDashboard" class="primary" type="button">ลองใหม่</button><button id="dashboardBackOperations" class="outline-button" type="button">ไปหน้างานรับสินค้า</button></div></div>`;
+      $("retryDashboard")?.addEventListener("click",()=>loadDashboard(true,true));$("dashboardBackOperations")?.addEventListener("click",()=>navigate("operations"));
+    }
   }finally{
-    dashboardState.busy=false;
+    if(dashboardState.slowTimer){clearTimeout(dashboardState.slowTimer);dashboardState.slowTimer=0}
+    if(dashboardState.requestController===controller)dashboardState.requestController=null;
+    if(seq===dashboardState.requestSeq)dashboardState.busy=false;
     if(dashboardState.reloadRequested&&state.view==="dashboard"){dashboardState.reloadRequested=false;void loadDashboard(true,true)}
   }
 }
@@ -2814,7 +2847,16 @@ function togglePassword() { const input=$("loginPassword"); input.type=input.typ
 async function api(path, options={}) {
   if (!cfg.apiBaseUrl || cfg.apiBaseUrl.includes("PUT-YOUR-WORKER")) throw new Error("ระบบยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแล");
   const headers={"content-type":"application/json",...(options.headers||{})}; if (options.auth !== false && state.token) headers.authorization=`Bearer ${state.token}`;
-  let response; try { response=await fetch(cfg.apiBaseUrl.replace(/\/$/,"")+path,{method:options.method||"GET",headers,body:options.body?JSON.stringify(options.body):undefined}); setConnection(true); } catch { setConnection(false); throw new Error("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง"); }
+  const timeoutMs=Math.max(0,Number(options.timeoutMs)||0),controller=timeoutMs?new AbortController():null;let signal=options.signal||controller?.signal,timer=0;
+  if(controller){
+    signal=controller.signal;
+    if(options.signal){if(options.signal.aborted)controller.abort();else options.signal.addEventListener("abort",()=>controller.abort(),{once:true})}
+    if(timeoutMs)timer=setTimeout(()=>controller.abort(),timeoutMs);
+  }
+  let response;
+  try { response=await fetch(cfg.apiBaseUrl.replace(/\/$/,"")+path,{method:options.method||"GET",headers,body:options.body?JSON.stringify(options.body):undefined,signal}); setConnection(true); }
+  catch(error) { if(timer)clearTimeout(timer);if(error?.name==="AbortError")throw new Error("ระบบใช้เวลาตอบกลับนานเกินไป กรุณาลองใหม่");setConnection(false); throw new Error("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง"); }
+  if(timer)clearTimeout(timer);
   const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"})); if (!response.ok || data.success===false) { if(response.status===401&&path!=="/api/auth/login") clearSession(); const error=new Error(data.message||"ดำเนินการไม่สำเร็จ");error.status=response.status;error.data=data;throw error; } return data;
 }
 
