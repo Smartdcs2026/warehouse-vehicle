@@ -6075,3 +6075,49 @@ button:disabled { cursor: wait; opacity: .7; }
 .dt-compare-popup-v112 #cmpReset,.dt-compare-popup-v112 #cmpClose{background:#fff!important;border:1px solid #d3dde8!important;color:#536980!important}
 @media(max-width:1180px){.dt-compare-popup-v112 .dt-compare-toolbar{grid-template-columns:1fr!important}.dt-compare-popup-v112 .dt-compare-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}.dt-compare-popup-v112 .dt-compare-summary ul{grid-template-columns:1fr!important}}
 @media(max-width:720px){.dt-compare-swal{width:calc(100vw - 10px)!important;max-height:calc(100vh - 10px)!important;padding:10px!important;border-radius:16px!important}.dt-compare-swal .swal2-title{font-size:18px!important;padding-bottom:8px!important}.dt-compare-swal .swal2-html-container{max-height:calc(100vh - 106px)!important}.dt-compare-popup-v112 .dt-compare-dimensions,.dt-compare-popup-v112 .dt-compare-common-wrap,.dt-compare-popup-v112 .dt-compare-data-section,.dt-compare-popup-v112 .dt-compare-output{padding:10px!important}.dt-compare-popup-v112 .dt-compare-dimensions>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}.dt-compare-popup-v112 .dt-compare-common,.dt-compare-popup-v112 .dt-compare-sets,.dt-compare-popup-v112 .dt-compare-date-grid,.dt-compare-popup-v112 .dt-compare-set-secondary,.dt-compare-popup-v112 .dt-compare-metrics{grid-template-columns:1fr!important}.dt-compare-popup-v112 .dt-compare-summary ul{grid-template-columns:1fr!important}.dt-compare-popup-v112 .dt-compare-footer{position:sticky!important;bottom:0!important;padding-top:8px!important;background:linear-gradient(180deg,rgba(255,255,255,0),#fff 18%)!important}.dt-compare-popup-v112 .dt-compare-footer button{min-width:0!important;flex:1!important}}
+
+
+/* Round 113 — stronger SLA banner + fullscreen modal interaction fix */
+.app-shell.datatable-fullscreen-shell{z-index:10!important}
+body.datatable-fullscreen-active .swal2-container{z-index:100500!important;pointer-events:auto!important}
+body.datatable-fullscreen-active .swal2-container *{pointer-events:auto}
+body.datatable-fullscreen-active>.swal2-container{position:fixed!important;inset:0!important}
+
+.dt-current-rule-banner{
+  grid-template-columns:minmax(190px,.78fr) minmax(560px,2.2fr) auto!important;
+  min-height:68px!important;
+  padding:10px 12px!important;
+  margin-top:7px!important;
+  border:1px solid color-mix(in srgb,var(--dt-stage-accent,#2563eb) 34%,#dbe5f0)!important;
+  border-left:5px solid var(--dt-stage-accent,#2563eb)!important;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--dt-stage-accent,#2563eb) 8%,#fff) 0%,#fff 36%,#fbfdff 100%)!important;
+  box-shadow:0 6px 18px rgba(25,52,85,.055)!important;
+}
+.dt-current-rule-title{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+.dt-current-rule-title>div{display:grid!important;gap:1px!important;min-width:0!important}
+.dt-rule-mark{position:relative;display:block;flex:0 0 34px;width:34px;height:34px;border-radius:11px;background:color-mix(in srgb,var(--dt-stage-accent,#2563eb) 13%,#fff);border:1px solid color-mix(in srgb,var(--dt-stage-accent,#2563eb) 32%,#fff)}
+.dt-rule-mark:before{content:"";position:absolute;left:10px;top:7px;width:12px;height:16px;border:2px solid var(--dt-stage-accent,#2563eb);border-radius:3px;background:#fff}
+.dt-rule-mark:after{content:"";position:absolute;right:5px;bottom:5px;width:10px;height:10px;border-radius:50%;background:var(--dt-stage-accent,#2563eb);box-shadow:0 0 0 3px #fff}
+.dt-current-rule-banner .dt-current-rule-title small{font-size:9px!important;font-weight:900!important;color:#667c95!important;letter-spacing:.01em}
+.dt-current-rule-banner .dt-current-rule-title b{font-size:17px!important;line-height:1.15!important;font-weight:950!important;color:color-mix(in srgb,var(--dt-stage-accent,#2563eb) 82%,#17385e)!important;white-space:nowrap!important}
+.dt-current-rule-banner .dt-current-rule-levels{display:grid!important;grid-template-columns:repeat(5,minmax(92px,1fr))!important;gap:7px!important;overflow:visible!important;padding:0!important}
+.dt-current-rule-banner .dt-current-rule-levels>span{display:grid!important;grid-template-columns:auto 1fr!important;grid-template-rows:auto auto!important;column-gap:7px!important;align-items:center!important;min-height:44px!important;padding:6px 9px!important;border:1px solid color-mix(in srgb,var(--dt-rule,#64748b) 28%,#dce4ee)!important;border-radius:11px!important;background:color-mix(in srgb,var(--dt-rule,#64748b) 7%,#fff)!important}
+.dt-current-rule-banner .dt-current-rule-levels>span i{grid-row:1/3;width:10px!important;height:10px!important;border-radius:50%!important;background:var(--dt-rule,#64748b)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--dt-rule,#64748b) 12%,#fff)!important}
+.dt-current-rule-banner .dt-current-rule-levels>span b{font-size:10.5px!important;line-height:1.1!important;font-weight:950!important;color:#304a68!important}
+.dt-current-rule-banner .dt-current-rule-levels>span em{font-size:10px!important;line-height:1.1!important;font-style:normal!important;font-weight:900!important;color:#60758d!important}
+.dt-current-rule-banner .dt-current-rule-actions{display:flex!important;align-items:center!important;gap:7px!important;justify-content:flex-end!important}
+.dt-current-rule-banner .dt-current-rule-actions button{min-height:36px!important;padding:6px 10px!important;font-size:9px!important;border-radius:10px!important}
+
+@media(max-width:1250px){
+  .dt-current-rule-banner{grid-template-columns:190px minmax(0,1fr)!important}
+  .dt-current-rule-banner .dt-current-rule-actions{grid-column:1/-1!important;justify-content:flex-end!important}
+}
+@media(max-width:900px){
+  .datatable-view-shell .dt-current-rule-banner{grid-template-columns:1fr!important;min-height:0!important;padding:9px!important}
+  .datatable-view-shell .dt-current-rule-title{gap:8px!important}
+  .datatable-view-shell .dt-rule-mark{width:30px;height:30px;flex-basis:30px}
+  .datatable-view-shell .dt-current-rule-banner .dt-current-rule-title b{font-size:15px!important}
+  .datatable-view-shell .dt-current-rule-banner .dt-current-rule-levels{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;overflow-x:auto!important;padding-bottom:2px!important}
+  .datatable-view-shell .dt-current-rule-banner .dt-current-rule-levels>span{flex:0 0 108px!important;min-height:42px!important}
+  .datatable-view-shell .dt-current-rule-banner .dt-current-rule-actions{grid-column:auto!important;justify-content:flex-start!important}
+}

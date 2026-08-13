@@ -1875,7 +1875,7 @@ async function showInboundVehicleDetails(autoId){
 
 async function toggleFullscreen(){
   if(state.view==="datatable"){
-    const shell=$("appView"),active=Boolean(datatableState.immersive||document.fullscreenElement);
+    const active=Boolean(datatableState.immersive||document.fullscreenElement);
     if(active){
       datatableState.immersive=false;
       if(document.fullscreenElement){try{await document.exitFullscreen()}catch{}}
@@ -1883,7 +1883,8 @@ async function toggleFullscreen(){
     }else{
       datatableState.immersive=true;syncDatatableFullscreenShell();
       try{
-        if(shell?.requestFullscreen){datatableState.nativeFullscreen=true;await shell.requestFullscreen({navigationUI:"hide"})}
+        const target=document.documentElement;
+        if(target?.requestFullscreen){await target.requestFullscreen({navigationUI:"hide"});datatableState.nativeFullscreen=true}
         else datatableState.nativeFullscreen=false;
       }catch{datatableState.nativeFullscreen=false}
     }
@@ -1955,7 +1956,7 @@ function renderDatatableLayout(){
       <div class="dt-r100-stagebar">
         <nav id="dtStageTabs" class="dt-stage-tabs dt-stage-tabs-r100">${stages.map(s=>`<button type="button" data-dt-stage="${s.key}" class="${datatableState.stage===s.key?"active":""} ${datatableStageToneClass(s.key)}"><span>${escapeHtml(s.label)}</span></button>`).join("")}</nav>
       </div>
-      <section class="dt-current-rule dt-current-rule-r100 dt-current-rule-top"><div><small>เกณฑ์เวลาของช่วงนี้</small><b id="dtRuleStageName">${escapeHtml(datatableStageMeta().label)}</b></div><div id="dtCurrentRules" class="dt-current-rule-levels"></div><div class="dt-current-rule-actions"><button id="dtAllRules" class="quiet-button" type="button">เกณฑ์ทั้งหมด</button><button id="dtActivityButton" class="quiet-button" type="button">กิจกรรม</button></div></section>
+      <section id="dtCurrentRuleBanner" class="dt-current-rule dt-current-rule-r100 dt-current-rule-top dt-current-rule-banner" style="--dt-stage-accent:${datatableStageAccentColor(datatableState.stage)}"><div class="dt-current-rule-title"><span class="dt-rule-mark" aria-hidden="true"></span><div><small>เกณฑ์เวลาของช่วงนี้</small><b id="dtRuleStageName">${escapeHtml(datatableStageMeta().label)}</b></div></div><div id="dtCurrentRules" class="dt-current-rule-levels"></div><div class="dt-current-rule-actions"><button id="dtAllRules" class="quiet-button" type="button">เกณฑ์ทั้งหมด</button><button id="dtActivityButton" class="quiet-button" type="button">กิจกรรม</button></div></section>
     </section>
     <main class="dt-main dt-main-full"><div class="dt-filterbar"><div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div><select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select><select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select><select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select><select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select><select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select><button id="dtReset" class="quiet-button" type="button">ล้างค่า</button><button id="dtProblem" class="outline-button ${datatableState.problemOnly?"is-active":""}" type="button">เฉพาะแจ้งเตือน</button><button id="dtColumns" class="outline-button" type="button">คอลัมน์</button></div>
       <section class="dt-table-card"><div id="dtTable" class="dt-table-wrap"><div class="loading">กำลังโหลดข้อมูล</div></div><footer id="dtPager" class="dt-pager"></footer></section></main>
@@ -2056,7 +2057,7 @@ function syncDatatableShiftHint(context=null){const el=$("dtShiftHint"),shift=co
 
 function datatableCurrentRuleCode(){const meta=datatableStageMeta(),codes=meta.ruleCodes||[];if(datatableState.stage==="ready"&&codes.length>1)return datatableState.meta?.documentCheckEnabled?"DOCUMENT_CHECKED_TO_RECEIVING_START":"DOCUMENT_TO_RECEIVING_START";return codes[0]||"TOTAL_IN_SITE"}
 
-function renderDatatableSide(){const name=$("dtRuleStageName"),levels=$("dtCurrentRules"),meta=datatableStageMeta(),code=datatableCurrentRuleCode(),rules=(datatableState.meta?.rules||[]).filter(rule=>rule.stage_code===code),order=["NORMAL","WATCH","WARNING","URGENT","CRITICAL"];if(name)name.textContent=meta.label||"ภาพรวม";if(levels)levels.innerHTML=order.map(level=>{const rule=rules.find(item=>item.level_code===level);return rule?`<span style="--dt-rule:${safeColor(rule.color)}"><i></i><b>${alertLevelLabel(level)}</b><em>${Math.round(Number(rule.start_seconds||0)/60)} นาที</em></span>`:""}).join("")||`<small>ยังไม่ได้ตั้งเกณฑ์เวลา</small>`}
+function renderDatatableSide(){const name=$("dtRuleStageName"),levels=$("dtCurrentRules"),banner=$("dtCurrentRuleBanner"),meta=datatableStageMeta(),code=datatableCurrentRuleCode(),rules=(datatableState.meta?.rules||[]).filter(rule=>rule.stage_code===code),order=["NORMAL","WATCH","WARNING","URGENT","CRITICAL"];if(name)name.textContent=meta.label||"ภาพรวม";if(banner)banner.style.setProperty("--dt-stage-accent",datatableStageAccentColor(datatableState.stage));if(levels)levels.innerHTML=order.map(level=>{const rule=rules.find(item=>item.level_code===level);return rule?`<span style="--dt-rule:${safeColor(rule.color)}"><i></i><b>${alertLevelLabel(level)}</b><em>${Math.round(Number(rule.start_seconds||0)/60)} นาที</em></span>`:""}).join("")||`<small>ยังไม่ได้ตั้งเกณฑ์เวลา</small>`}
 
 function datatableRuleLabel(code){return({GATE_TO_DOCUMENT:"รถเข้า → ยื่นเอกสาร",DOCUMENT_REVIEW:"ตรวจเอกสาร",DOCUMENT_TO_RECEIVING_START:"รอตรวจรับ",DOCUMENT_CHECKED_TO_RECEIVING_START:"รอตรวจรับ",RECEIVING_DURATION:"ตรวจรับสินค้า",RECEIVING_TO_RETURN:"คืนเอกสาร",RETURN_TO_GATE_OUT:"ออกจากพื้นที่",TOTAL_IN_SITE:"เวลารวม"})[code]||code}
 
@@ -2269,7 +2270,7 @@ function renderDashboardCalendar(){const popover=$("dashboardCalendarPopover"),d
 function moveDashboardMonth(offset){const [year,month]=dashboardState.calendarMonth.split("-").map(Number),next=new Date(Date.UTC(year,month-1+offset,1));dashboardState.calendarMonth=`${next.getUTCFullYear()}-${String(next.getUTCMonth()+1).padStart(2,"0")}`;loadDashboardCalendar()}
 function selectDashboardDate(date){dashboardState.shiftAutoDate=false;dashboardState.date=date;dashboardState.calendarMonth=date.slice(0,7);dashboardState.lastLoadedAt=0;const popover=$("dashboardCalendarPopover");if(popover)popover.hidden=true;loadDashboard(true,true)}
 function setDashboardShell(view){const shell=$("appView");if(!shell)return;shell.classList.toggle("dashboard-view-shell",view==="dashboard");shell.classList.toggle("datatable-view-shell",view==="datatable");shell.classList.remove("dashboard-menu-open");if(view!=="dashboard")shell.classList.remove("dashboard-fullscreen-shell");if(view!=="datatable"){datatableState.immersive=false;datatableState.nativeFullscreen=false;shell.classList.remove("datatable-fullscreen-shell")}syncDashboardFullscreenShell();syncDatatableFullscreenShell()}
-function syncDatatableFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="datatable"&&Boolean(datatableState.immersive||document.fullscreenElement);shell.classList.toggle("datatable-fullscreen-shell",active);} 
+function syncDatatableFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="datatable"&&Boolean(datatableState.immersive||document.fullscreenElement);shell.classList.toggle("datatable-fullscreen-shell",active);document.body.classList.toggle("datatable-fullscreen-active",active);} 
 function syncDashboardFullscreenShell(){const shell=$("appView");if(!shell)return;const active=state.view==="dashboard"&&Boolean(document.fullscreenElement);shell.classList.toggle("dashboard-fullscreen-shell",active);if(!active)shell.classList.remove("dashboard-menu-open");syncDashboardMenuButton()}
 function toggleDashboardMenu(){const shell=$("appView");if(!shell?.classList.contains("dashboard-fullscreen-shell"))return;shell.classList.toggle("dashboard-menu-open");syncDashboardMenuButton()}
 function syncDashboardMenuButton(){const button=$("dashboardMenuButton"),open=$("appView")?.classList.contains("dashboard-menu-open");if(!button)return;button.setAttribute("aria-expanded",open?"true":"false");button.setAttribute("aria-label",open?"ปิดเมนู":"เปิดเมนู")}
