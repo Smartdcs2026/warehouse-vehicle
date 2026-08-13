@@ -39,6 +39,23 @@ let workPages = {
 
 const $ = id => document.getElementById(id);
 
+function setStableHTML(el, html) {
+  if (!el) return false;
+  const next = String(html ?? "");
+  if (el.dataset.renderHtml === next) return false;
+  el.innerHTML = next;
+  el.dataset.renderHtml = next;
+  return true;
+}
+
+function setStableText(el, text) {
+  if (!el) return false;
+  const next = String(text ?? "");
+  if (el.textContent === next) return false;
+  el.textContent = next;
+  return true;
+}
+
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
@@ -374,7 +391,7 @@ function render(data) {
     renderCall(latestAnnouncement(data));
     processVoiceCalls(data);
   }
-  if ($("updatedAt")) $("updatedAt").textContent = "อัปเดตล่าสุด " + formatTime(data.generatedAt);
+  setStableText($("updatedAt"), "อัปเดตล่าสุด " + formatTime(data.generatedAt));
 }
 
 function latestAnnouncement(data){
@@ -430,9 +447,9 @@ function renderDoorRail(data,animate=false){
   const capacity=Math.max(important.length,doorPageSize()),availableSlots=Math.max(0,capacity-important.length),pages=Math.max(1,availableSlots?Math.ceil(available.length/availableSlots):1);if(doorPage>=pages)doorPage=0;
   const shownAvailable=availableSlots?available.slice(doorPage*availableSlots,doorPage*availableSlots+availableSlots):[],shown=[...important,...shownAvailable];
   const counts={available:available.length,called:doors.filter(d=>d.status==="CALLED").length,inUse:doors.filter(d=>d.status==="IN_USE").length,draining:doors.filter(d=>d.status==="DRAINING").length};
-  const stats=$("doorRailStats");if(stats)stats.textContent=`ใช้ ${counts.inUse} · เรียก ${counts.called} · ว่าง ${counts.available}`;
-  const label=$("doorPageLabel");if(label)label.textContent=doors.length?(pages>1?`${doorPage+1}/${pages} · ${doors.length} ประตู`:`${doors.length} ประตู`):"ไม่มีประตู";
-  const list=$("doorRailList");list.innerHTML=shown.length?shown.map(doorRailItem).join(""):'<div class="door-empty">ไม่มีประตูที่แสดงผล</div>';if(animate)fadePage(list);
+  const stats=$("doorRailStats");setStableText(stats,`ใช้ ${counts.inUse} · เรียก ${counts.called} · ว่าง ${counts.available}`);
+  const label=$("doorPageLabel");setStableText(label,doors.length?(pages>1?`${doorPage+1}/${pages} · ${doors.length} ประตู`:`${doors.length} ประตู`):"ไม่มีประตู");
+  const list=$("doorRailList");const changed=setStableHTML(list,shown.length?shown.map(doorRailItem).join(""):'<div class="door-empty">ไม่มีประตูที่แสดงผล</div>');if(animate&&changed)fadePage(list);
 }
 function doorStatusRank(status){return({DRAINING:0,IN_USE:1,CALLED:2,AVAILABLE:3})[String(status||"AVAILABLE")]??9}
 function compareQueueDoors(a,b){const status=doorStatusRank(a.status)-doorStatusRank(b.status);if(status)return status;const [ag,an]=queueDoorNaturalParts(a.doorCode),[bg,bn]=queueDoorNaturalParts(b.doorCode);return ag.localeCompare(bg,"en")||an-bn}
@@ -458,12 +475,12 @@ function renderSummary(data) {
     ["ออก", "รอออกจากพื้นที่", c.WAITING_GATE_OUT || 0, "out"]
   ];
 
-  $("summaryCards").innerHTML = defs
+  setStableHTML($("summaryCards"), defs
     .map(
       ([icon, label, n, tone]) =>
         `<article class="summary-${tone}"><span class="summary-icon">${icon}</span><small>${label}</small><b>${Number(n).toLocaleString("th-TH")}</b><em>คัน</em></article>`
     )
-    .join("");
+    .join(""));
 }
 
 function renderCall(item) {
@@ -561,19 +578,19 @@ function renderNext(data, animate = false) {
 
   const start = nextPage * size;
   const shown = items.slice(start, start + size);
-  $("nextPageLabel").textContent = items.length
+  setStableText($("nextPageLabel"), items.length
     ? pages > 1
       ? `หน้า ${nextPage + 1}/${pages} · ${items.length} คัน`
       : `${items.length} คัน`
-    : "ไม่มีรายการรอ";
+    : "ไม่มีรายการรอ");
 
   const list = $("nextQueue");
-  list.innerHTML = shown.length
+  const changed = setStableHTML(list, shown.length
     ? shown.map(nextItem).join("")
-    : '<div class="queue-empty">ไม่มีรถรอเข้าตรวจรับสินค้า</div>';
+    : '<div class="queue-empty">ไม่มีรถรอเข้าตรวจรับสินค้า</div>');
 
-  if (animate) fadePage(list);
-  $("rotationLabel").textContent = pages > 1 ? `รอเข้าตรวจรับสินค้า ${nextPage + 1}/${pages}` : "";
+  if (animate && changed) fadePage(list);
+  setStableText($("rotationLabel"), pages > 1 ? `รอเข้าตรวจรับสินค้า ${nextPage + 1}/${pages}` : "");
 }
 
 function nextItem(item) {
@@ -594,7 +611,7 @@ function renderWork(data, animate = false) {
   ];
 
   let total = 0;
-  $("workGroups").innerHTML = defs
+  const workHtml = defs
     .map(([label, status, tone]) => {
       const items = all
         .filter(item => item.status === status)
@@ -613,12 +630,15 @@ function renderWork(data, animate = false) {
     })
     .join("");
 
-  if (animate) fadePage($("workGroups"));
-  $("workCount").textContent = `${total.toLocaleString("th-TH")} คัน`;
+  const workChanged = setStableHTML($("workGroups"), workHtml);
+  if (animate && workChanged) fadePage($("workGroups"));
+  setStableText($("workCount"), `${total.toLocaleString("th-TH")} คัน`);
 }
 
 function workItem(item) {
-  return `<article class="work-item"><b>${esc(item.appointmentNo || "–")}</b><span class="work-company">${esc(
+  const door = normalizeQueueDoorCode(item.doorCode);
+  const doorHtml = door ? `<span class="work-door" title="ประตู ${esc(door)}">${esc(door)}</span>` : "";
+  return `<article class="work-item"><div class="work-item-head"><b>${esc(item.appointmentNo || "–")}</b>${doorHtml}</div><span class="work-company">${esc(
     item.companyName || "ไม่ระบุบริษัท"
   )}</span><small>${esc(plateText(item))}</small></article>`;
 }

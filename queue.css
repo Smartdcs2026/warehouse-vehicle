@@ -226,3 +226,11 @@ body{background:#f3f7fc}
 @media(max-width:1380px){.door-rail-list{grid-auto-rows:36px;gap:4px}.door-live{height:36px;min-height:36px;max-height:36px}.door-code{font-size:15px}}
 @media(max-width:1180px){.door-rail-list{grid-auto-rows:35px}.door-live{height:35px;min-height:35px;max-height:35px}}
 @media(max-height:760px){.door-rail{grid-template-rows:44px minmax(0,1fr) 28px}.door-rail-list{grid-auto-rows:30px;gap:3px;padding:4px 0}.door-live{height:30px;min-height:30px;max-height:30px;padding:2px 6px}.door-code{font-size:13px}.door-state b{font-size:8.5px}}
+
+
+/* Round 122 — restore work-door badge + anti-flicker rendering */
+.work-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.work-item-head>b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.work-door{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:27px;padding:0 9px;border-radius:8px;background:#1769d7;color:#fff;font-size:12px;font-weight:950;line-height:1;box-shadow:0 2px 7px rgba(23,105,215,.17);flex:0 0 auto}.tone-progress .work-door{background:#f26322}.tone-return .work-door{background:#8240d8}.tone-out .work-door{background:#db9000}
+/* Page data refresh should not visually blink when content is unchanged. */
+#summaryCards,#nextQueue,#workGroups,#doorRailList{contain:layout paint}.queue-shell *{backface-visibility:hidden}.page-fade{will-change:opacity,transform}
+@media (prefers-reduced-motion:reduce){.call-panel.flash,.page-fade{animation:none!important}}
+@media(max-height:760px){.work-door{min-width:34px;height:22px;padding:0 6px;font-size:10px}}
