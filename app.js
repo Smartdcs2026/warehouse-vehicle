@@ -1469,7 +1469,40 @@ function renderOperationsCards(items){
 }
 
 function renderJobCards(items, filter="all") {
-  $("jobGrid").innerHTML = items.length ? items.map(v => {
+  const isMobile=window.matchMedia("(max-width: 760px)").matches;
+  const emptyHtml=`<div class="empty-state receiving-empty"><b>${filter==="called"?"ยังไม่มีงานที่เรียกแล้ว":filter==="ready"?"ยังไม่มีงานพร้อมเรียก":filter==="inProgress"?"ยังไม่มีงานที่กำลังตรวจรับ":"ไม่มีงานรอตรวจรับ"}</b><span>${filter==="all"?"รายการใหม่จะแสดงเมื่อมีงานเข้ามา":"เลือกกลุ่มอื่น หรือค้นหาใหม่"}</span></div>`;
+  if(!items.length){$("jobGrid").innerHTML=emptyHtml;return}
+
+  if(isMobile){
+    $("jobGrid").innerHTML=items.map(v=>{
+      const inProgress=v.current_status==="RECEIVING_IN_PROGRESS";
+      const busy=receivingState.busyIds.has(String(v.auto_id));
+      const hasCalls=Number(v.queue_call_count||0)>0;
+      const called=!inProgress&&Number(v.queue_called_at||0)>0;
+      const doorLabel=Number(v.use_door)===0?"ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุ";
+      const statusText=inProgress?"กำลังตรวจรับ":called?"เรียกแล้ว":"พร้อมเรียก";
+      const plate=joinText(v.vehicle_plate,v.province)||"ไม่ระบุทะเบียน";
+      const stageTime=inProgress
+        ? `<span><small>เริ่มตรวจ</small><b>${formatDate(v.receiving_started_at)}</b></span><span><small>ใช้เวลา</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></span>`
+        : called
+          ? `<span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>เรียกแล้ว</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>`
+          : `<span><small>รอเรียก</small><b>${formatDuration(v.stage_elapsed_seconds)}</b></span><span><small>ประตู</small><b>${escapeHtml(doorLabel)}</b></span>`;
+      const actions=inProgress
+        ? `<button class="complete-button receiving-mobile-main" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button><button class="outline-button receiving-mobile-side" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}">เพิ่มเติม</button>`
+        : called
+          ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button receiving-mobile-main" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ / เปลี่ยนประตู</button>`:`<button class="outline-button receiving-mobile-main" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
+          : `<button class="primary call-vehicle-button receiving-mobile-main" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
+      return `<article class="receiving-mobile-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}">
+        <header class="receiving-mobile-head"><div><b>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</b><small>${escapeHtml(v.company_name||"ไม่ระบุบริษัท")}</small></div><div><span class="receiving-mobile-status">${escapeHtml(statusText)}</span><button class="receiving-mobile-more" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" aria-label="เพิ่มเติม">${receivingNoticeIcon("more")}</button></div></header>
+        <div class="receiving-mobile-info"><span><small>คนขับ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></span><span><small>ทะเบียน</small><b>${escapeHtml(plate)}</b></span><span><small>ประตู</small><b>${escapeHtml(doorLabel)}</b></span></div>
+        <div class="receiving-mobile-time">${stageTime}${hasCalls&&called?`<button type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ประวัติเรียก</button>`:""}</div>
+        <div class="receiving-mobile-actions">${actions}</div>
+      </article>`;
+    }).join("");
+    return;
+  }
+
+  $("jobGrid").innerHTML = items.map(v => {
     const inProgress=v.current_status==="RECEIVING_IN_PROGRESS",busy=receivingState.busyIds.has(String(v.auto_id)),hasCalls=Number(v.queue_call_count||0)>0,called=!inProgress&&Number(v.queue_called_at||0)>0;
     const doorLabel=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุประตู";
     const statusText=inProgress?statusLabel(v.current_status):called?"เรียกแล้ว รอรถเข้า":"พร้อมเรียก";
@@ -1481,7 +1514,7 @@ function renderJobCards(items, filter="all") {
         ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ${Number(v.use_door)!==0&&state.queueRecall?.allowDoorChange!==false?" / เปลี่ยนประตู":""}</button>`:`<button class="outline-button recall-button" type="button" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
         : `<button class="primary call-vehicle-button" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
     return `<article class="job-card receiving-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><div class="receiving-head-tools"><span class="badge receiving-badge">${escapeHtml(statusText)}</span><button class="receiving-more-button" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" title="ตัวเลือกเพิ่มเติม" aria-label="ตัวเลือกเพิ่มเติม">${receivingNoticeIcon("more")}<span>เพิ่มเติม</span></button></div><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}${noticeInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${actions}</div></article>`;
-  }).join("") : `<div class="empty-state receiving-empty"><b>${filter==="called"?"ยังไม่มีงานที่เรียกแล้ว":filter==="ready"?"ยังไม่มีงานพร้อมเรียก":filter==="inProgress"?"ยังไม่มีงานที่กำลังตรวจรับ":"ไม่มีงานรอตรวจรับ"}</b><span>${filter==="all"?"พื้นที่ทำงานว่าง รายการใหม่จะแสดงทันทีเมื่อยื่นเอกสารแล้ว":"ลองเลือกกลุ่มงานอื่น หรือค้นหาใหม่อีกครั้ง"}</span></div>`;
+  }).join("");
 }
 
 function ensureReceivingMobileStyles(){
@@ -1489,50 +1522,55 @@ function ensureReceivingMobileStyles(){
   const style=document.createElement("style");
   style.id="receivingMobileStyles";
   style.textContent=`
-    .receiving-group-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 12px}
-    .receiving-group-card{border:1px solid var(--line,#d8e0ef);background:#fff;border-radius:18px;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:4px;box-shadow:0 6px 20px rgba(25,47,89,.05);transition:.18s ease;color:var(--text,#1d3152)}
-    .receiving-group-card small{font-size:.82rem;color:var(--muted,#6f7d96)}
-    .receiving-group-card b{font-size:1rem;line-height:1.25}
-    .receiving-group-card strong{font-size:1.6rem;line-height:1;font-weight:800;color:#2e63d3}
-    .receiving-group-card.is-active{border-color:#2e63d3;background:linear-gradient(180deg,#eef4ff 0%,#ffffff 100%);box-shadow:0 10px 24px rgba(46,99,211,.14)}
-    .receiving-view-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;margin:0 0 10px;border:1px solid var(--line,#d8e0ef);border-radius:16px;background:#fff}
-    .receiving-view-head small{display:block;font-size:.8rem;color:var(--muted,#6f7d96);margin-bottom:2px}
-    .receiving-view-head b{font-size:1rem;color:var(--text,#1d3152)}
-    .compact-receiving-toolbar{margin-bottom:10px}
-    .compact-receiving-toolbar input{min-width:0}
-    .receiving-card .job-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-    .receiving-card .receiving-head-tools{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-    .receiving-card .alert-stack{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-    .receiving-card .receiving-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .receiving-card .receiving-details .wide{grid-column:1/-1}
-    .queue-call-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
-    .queue-call-strip .queue-history-button{grid-column:1/-1}
-    .receiving-actionbar.multiple-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .receiving-actionbar:not(.multiple-actions){display:grid;grid-template-columns:1fr;gap:10px}
-    @media (max-width:980px){
-      .receiving-group-board{grid-template-columns:repeat(2,minmax(0,1fr))}
-    }
+    .receiving-group-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+    .receiving-group-card{border:1px solid var(--line,#d8e0ef)!important;background:#fff!important;border-radius:14px!important;padding:10px 12px!important;min-height:62px!important;height:auto!important;text-align:left!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;gap:2px 8px!important;box-shadow:none!important;color:var(--text,#1d3152)!important}
+    .receiving-group-card small{grid-column:1;font-size:.72rem!important;line-height:1.1!important;color:var(--muted,#6f7d96)!important}
+    .receiving-group-card b{grid-column:1;font-size:.92rem!important;line-height:1.15!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .receiving-group-card strong{grid-column:2;grid-row:1/3;align-self:center;font-size:1.5rem!important;line-height:1!important;font-weight:800;color:#2e63d3}
+    .receiving-group-card.is-active{border-color:#2e63d3!important;background:#eef4ff!important}
+    .receiving-view-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin:0 0 8px;border:1px solid var(--line,#d8e0ef);border-radius:12px;background:#fff}
+    .receiving-view-head small{display:block;font-size:.7rem;color:var(--muted,#6f7d96)}
+    .receiving-view-head b{font-size:.88rem;color:var(--text,#1d3152)}
+    @media (max-width:980px){.receiving-group-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (max-width:760px){
-      .receiving-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-      .receiving-summary .summary-card{min-height:auto;padding:12px 14px}
-      .receiving-group-board{position:sticky;top:8px;z-index:2;background:linear-gradient(180deg,rgba(246,248,252,.98) 0%,rgba(246,248,252,.94) 100%);padding:2px 0 8px;margin-top:10px}
-      .compact-receiving-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
-      .compact-receiving-toolbar button{white-space:nowrap;padding-inline:14px}
-      .receiving-view-head{padding:10px 12px;margin-bottom:10px}
-      .receiving-card{padding:12px}
-      .receiving-card .job-head{flex-direction:column;align-items:stretch;gap:8px}
-      .receiving-card .job-head h2{font-size:1.9rem;line-height:1.05}
-      .receiving-card .alert-stack,.receiving-card .receiving-head-tools{align-items:stretch;justify-content:space-between}
-      .receiving-card .receiving-head-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-      .receiving-card .badge.receiving-badge{justify-self:start}
-      .receiving-card .receiving-more-button{justify-self:end}
-      .receiving-card .receiving-details{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-      .receiving-card .receiving-details b{font-size:.96rem;line-height:1.35}
-      .queue-call-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .queue-call-strip span:last-of-type{grid-column:1/-1}
-      .queue-call-strip .queue-history-button{width:100%}
-      .receiving-actionbar.multiple-actions{grid-template-columns:1fr}
-      .receiving-actionbar button{width:100%}
+      .receiving-summary{display:none!important}
+      .receiving-group-board{position:static!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:6px 0 8px!important;padding:0!important;background:transparent!important}
+      .receiving-group-card{min-height:48px!important;height:48px!important;border-radius:11px!important;padding:6px 8px!important;grid-template-columns:minmax(0,1fr) auto!important;gap:1px 6px!important}
+      .receiving-group-card small{font-size:.62rem!important}
+      .receiving-group-card b{font-size:.78rem!important}
+      .receiving-group-card strong{font-size:1.18rem!important}
+      .compact-receiving-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) 72px!important;gap:6px!important;margin:0 0 6px!important}
+      .compact-receiving-toolbar input{height:38px!important;min-height:38px!important;padding:0 10px!important;font-size:.82rem!important;border-radius:10px!important}
+      .compact-receiving-toolbar button{height:38px!important;min-height:38px!important;padding:0 8px!important;font-size:.78rem!important;border-radius:10px!important;white-space:nowrap!important}
+      .receiving-view-head{display:none!important}
+      .receiving-grid{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;margin:0!important;padding:0!important}
+      .receiving-mobile-card{position:relative;border:1px solid #d9e1ef;border-left:4px solid var(--job-color,#2f6fd4);border-radius:12px;background:#fff;padding:8px 9px 9px;box-shadow:none;min-width:0;overflow:hidden}
+      .receiving-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid #edf1f7;padding-bottom:6px;margin-bottom:6px}
+      .receiving-mobile-head>div:first-child{min-width:0;flex:1}
+      .receiving-mobile-head>div:first-child>b{display:block;color:#154a98;font-size:1.1rem;line-height:1.08;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .receiving-mobile-head>div:first-child>small{display:block;margin-top:2px;font-size:.72rem;line-height:1.1;color:#34445d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .receiving-mobile-head>div:last-child{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+      .receiving-mobile-status{display:inline-flex;align-items:center;min-height:24px;padding:0 7px;border-radius:7px;background:#eef4ff;color:#2f6fd4;font-size:.68rem;font-weight:800;white-space:nowrap}
+      .receiving-mobile-card.is-progress .receiving-mobile-status{background:#fff0f6;color:#d31575}
+      .receiving-mobile-card.is-called .receiving-mobile-status{background:#fff5e7;color:#c66b00}
+      .receiving-mobile-more{width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;padding:0!important;border:1px solid #d8e1ef!important;border-radius:8px!important;background:#fff!important;color:#36597f!important;display:grid!important;place-items:center!important}
+      .receiving-mobile-more svg{width:16px;height:16px}
+      .receiving-mobile-info{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) 62px;gap:7px;margin-bottom:6px}
+      .receiving-mobile-info span,.receiving-mobile-time span{min-width:0}
+      .receiving-mobile-info small,.receiving-mobile-time small{display:block;font-size:.61rem;line-height:1.05;color:#7a879a;margin-bottom:2px}
+      .receiving-mobile-info b{display:block;font-size:.74rem;line-height:1.15;color:#202d42;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .receiving-mobile-time{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr) auto;align-items:end;gap:7px;background:#f8fafc;border-radius:8px;padding:5px 7px;margin-bottom:7px}
+      .receiving-mobile-time b{display:block;font-size:.71rem;line-height:1.1;color:#253854;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .receiving-mobile-time button{height:26px!important;min-height:26px!important;padding:0 7px!important;border:1px solid #d7e0ed!important;background:#fff!important;border-radius:7px!important;color:#2e63b8!important;font-size:.64rem!important;white-space:nowrap!important}
+      .receiving-mobile-actions{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.75fr);gap:6px}
+      .receiving-mobile-actions button{height:36px!important;min-height:36px!important;padding:0 8px!important;border-radius:9px!important;font-size:.76rem!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .receiving-empty{padding:24px 12px!important;min-height:120px!important}
+    }
+    @media (max-width:380px){
+      .receiving-group-card{height:44px!important;min-height:44px!important;padding:5px 7px!important}
+      .receiving-mobile-info{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 54px;gap:5px}
+      .receiving-mobile-time{gap:5px;padding:5px 6px}
+      .receiving-mobile-actions{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
     }
   `;
   document.head.appendChild(style);
