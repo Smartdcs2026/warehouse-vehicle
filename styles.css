@@ -6325,3 +6325,80 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 @media (max-width:760px){
   .datatable-view-shell #dtMobileCompare{order:1}.datatable-view-shell #dtMobileRefresh{order:2}.datatable-view-shell #dtMobileFilterToggle{order:3}.datatable-view-shell #dtMobileExport{order:4}
 }
+
+/* ============================================================
+ * Round 127 — Datatable mobile compact date/shift row
+ * Mobile only: วันที่เริ่ม + วันที่สิ้นสุด + กะ อยู่แถวเดียวกัน
+ * ============================================================ */
+@media (max-width:760px){
+  .datatable-view-shell .dt-r100-controls{
+    grid-template-columns:minmax(0,1.05fr) minmax(0,1.05fr) minmax(0,.9fr)!important;
+    column-gap:6px!important;
+    row-gap:7px!important;
+  }
+  .datatable-view-shell .dt-r100-controls>label{
+    grid-column:auto!important;
+    min-width:0!important;
+  }
+  .datatable-view-shell .dt-r100-shift{
+    grid-column:auto!important;
+  }
+  .datatable-view-shell .dt-r100-controls>label>span{
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+  .datatable-view-shell .dt-r100-controls input,
+  .datatable-view-shell .dt-r100-controls select{
+    min-width:0!important;
+    padding-left:7px!important;
+    padding-right:7px!important;
+  }
+  .datatable-view-shell .dt-r100-shift-hint{
+    grid-column:1/-1!important;
+  }
+}
+
+@media (max-width:430px){
+  .datatable-view-shell .dt-r100-controls{
+    grid-template-columns:minmax(0,1.08fr) minmax(0,1.08fr) minmax(0,.84fr)!important;
+    padding:8px!important;
+    column-gap:5px!important;
+    row-gap:6px!important;
+  }
+  .datatable-view-shell .dt-r100-controls>label>span{
+    font-size:8.4px!important;
+  }
+  .datatable-view-shell .dt-r100-controls input,
+  .datatable-view-shell .dt-r100-controls select{
+    height:40px!important;
+    padding-left:5px!important;
+    padding-right:5px!important;
+    font-size:9.7px!important;
+    border-radius:9px!important;
+  }
+  .datatable-view-shell .dt-r100-controls input[type="date"]::-webkit-calendar-picker-indicator{
+    width:15px!important;
+    height:15px!important;
+    margin:0!important;
+    padding:1px!important;
+  }
+}
+
+@media (max-width:360px){
+  .datatable-view-shell .dt-r100-controls{
+    grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,.8fr)!important;
+    column-gap:4px!important;
+    padding:7px!important;
+  }
+  .datatable-view-shell .dt-r100-controls>label>span{
+    font-size:7.8px!important;
+  }
+  .datatable-view-shell .dt-r100-controls input,
+  .datatable-view-shell .dt-r100-controls select{
+    height:38px!important;
+    font-size:8.8px!important;
+    padding-left:4px!important;
+    padding-right:4px!important;
+  }
+}
