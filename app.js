@@ -1275,7 +1275,7 @@ const uiState = { detailsOpen:false };
 const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 const inboundListState = { filter:"ALL" };
 const inboundTrackPanel = { timer:0, until:0, active:false };
-const operationsUiState = { filter:"", search:"", viewportMode:"", viewportBound:false };
+const operationsUiState = { filter:"", search:"" };
 const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
 const adminDataTools={tab:"overview",inspector:null,busy:false,openTable:"",openCommand:"",openSchema:"",archiveMonth:"",archivePreview:null,archiveBusy:false,archiveHistory:null,archiveHistoryBusy:false,archiveStoreBusy:false,archiveVerify:null,archiveVerifyBusy:false,cleanupMonth:"",cleanupPreview:null,cleanupBusy:false,cleanupScript:null,cleanupVerify:null,cleanupExecuteBusy:false,cleanupHistory:null};
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
@@ -1405,27 +1405,7 @@ async function checkInboundLiveUpdates(force=false){
   finally{inboundLiveState.checking=false}
 }
 
-function operationsIsMobile(){return window.matchMedia("(max-width: 760px)").matches}
-
-function bindOperationsViewport(){
-  const query=window.matchMedia("(max-width: 760px)");
-  operationsUiState.viewportMode=query.matches?"mobile":"desktop";
-  if(operationsUiState.viewportBound)return;
-  operationsUiState.viewportBound=true;
-  const handleChange=event=>{
-    const next=(typeof event?.matches==="boolean"?event.matches:operationsIsMobile())?"mobile":"desktop";
-    if(next===operationsUiState.viewportMode)return;
-    operationsUiState.viewportMode=next;
-    if(state.view!=="operations")return;
-    window.requestAnimationFrame(()=>{if(state.view==="operations")renderOperations()});
-  };
-  if(typeof query.addEventListener==="function")query.addEventListener("change",handleChange);
-  else if(typeof query.addListener==="function")query.addListener(handleChange);
-}
-
 function renderOperations() {
-  ensureReceivingMobileStyles();
-  bindOperationsViewport();
   const items = state.vehicles.filter(v => ["READY_FOR_RECEIVING","RECEIVING_IN_PROGRESS"].includes(v.current_status));
   const ready = items.filter(v=>v.current_status==="READY_FOR_RECEIVING");
   const called = ready.filter(v=>Number(v.queue_called_at||0)>0);
@@ -1475,123 +1455,56 @@ function receivingGroupKey(vehicle){
 
 function renderOperationsCards(items){
   const search=(operationsUiState.search||"").trim().toLowerCase();
-  const isMobile=operationsIsMobile();
-  const filter=isMobile?(operationsUiState.filter||"all"):"all";
-  const filtered=items.filter(v=>{
-    const okFilter=filter==="all" ? true : receivingGroupKey(v)===filter;
-    const okSearch=!search || searchable(v).includes(search);
-    return okFilter && okSearch;
-  });
-  document.querySelectorAll("[data-receiving-filter]").forEach(button=>button.classList.toggle("is-active",isMobile&&(button.dataset.receivingFilter||"all")===filter));
-  renderJobCards(filtered, filter);
+  const filter=operationsUiState.filter||"all";
+  const searched=items.filter(v=>!search||searchable(v).includes(search));
+  const selected=filter==="all"?searched:searched.filter(v=>receivingGroupKey(v)===filter);
+  document.querySelectorAll("[data-receiving-filter]").forEach(button=>button.classList.toggle("is-active",(button.dataset.receivingFilter||"all")===filter));
+  renderJobCards(searched,filter,selected.length);
 }
 
-function renderJobCards(items, filter="all") {
-  const isMobile=operationsIsMobile();
-  const emptyHtml=`<div class="empty-state receiving-empty"><b>${filter==="called"?"ยังไม่มีงานที่เรียกแล้ว":filter==="ready"?"ยังไม่มีงานพร้อมเรียก":filter==="inProgress"?"ยังไม่มีงานที่กำลังตรวจรับ":"ไม่มีงานรอตรวจรับ"}</b><span>${filter==="all"?"รายการใหม่จะแสดงเมื่อมีงานเข้ามา":"เลือกกลุ่มอื่น หรือค้นหาใหม่"}</span></div>`;
-  if(!items.length){$("jobGrid").innerHTML=emptyHtml;return}
-
-  if(isMobile){
-    $("jobGrid").innerHTML=items.map(v=>{
-      const inProgress=v.current_status==="RECEIVING_IN_PROGRESS";
-      const busy=receivingState.busyIds.has(String(v.auto_id));
-      const hasCalls=Number(v.queue_call_count||0)>0;
-      const called=!inProgress&&Number(v.queue_called_at||0)>0;
-      const doorLabel=Number(v.use_door)===0?"ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุ";
-      const statusText=inProgress?"กำลังตรวจรับ":called?"เรียกแล้ว":"พร้อมเรียก";
-      const plate=joinText(v.vehicle_plate,v.province)||"ไม่ระบุทะเบียน";
-      const stageTime=inProgress
-        ? `<span><small>เริ่มตรวจ</small><b>${formatDate(v.receiving_started_at)}</b></span><span><small>ใช้เวลา</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></span>`
-        : called
-          ? `<span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>เรียกแล้ว</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>`
-          : `<span><small>รอเรียก</small><b>${formatDuration(v.stage_elapsed_seconds)}</b></span><span><small>ประตู</small><b>${escapeHtml(doorLabel)}</b></span>`;
-      const actions=inProgress
-        ? `<button class="complete-button receiving-mobile-main" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button><button class="outline-button receiving-mobile-side" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}">เพิ่มเติม</button>`
-        : called
-          ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button receiving-mobile-main" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ / เปลี่ยนประตู</button>`:`<button class="outline-button receiving-mobile-main" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
-          : `<button class="primary call-vehicle-button receiving-mobile-main" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
-      return `<article class="receiving-mobile-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}">
-        <header class="receiving-mobile-head"><div><b>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</b><small>${escapeHtml(v.company_name||"ไม่ระบุบริษัท")}</small></div><div><span class="receiving-mobile-status">${escapeHtml(statusText)}</span><button class="receiving-mobile-more" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" aria-label="เพิ่มเติม">${receivingNoticeIcon("more")}</button></div></header>
-        <div class="receiving-mobile-info"><span><small>คนขับ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></span><span><small>ทะเบียน</small><b>${escapeHtml(plate)}</b></span><span><small>ประตู</small><b>${escapeHtml(doorLabel)}</b></span></div>
-        <div class="receiving-mobile-time">${stageTime}${hasCalls&&called?`<button type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ประวัติเรียก</button>`:""}</div>
-        <div class="receiving-mobile-actions">${actions}</div>
-      </article>`;
-    }).join("");
+function renderJobCards(items, filter="all", selectedCount=0) {
+  const grid=$("jobGrid");
+  if(!grid)return;
+  grid.dataset.filter=filter||"all";
+  grid.dataset.selectedEmpty=selectedCount>0?"0":"1";
+  const emptyText=filter==="called"?"ยังไม่มีงานที่เรียกแล้ว":filter==="ready"?"ยังไม่มีงานพร้อมเรียก":filter==="inProgress"?"ยังไม่มีงานที่กำลังตรวจรับ":"ไม่มีงานรอตรวจรับ";
+  if(!items.length){
+    grid.innerHTML=`<div class="empty-state receiving-empty"><b>ไม่มีรายการที่ตรงกับการค้นหา</b><span>ลองค้นหาใหม่ หรือกดโหลดใหม่</span></div>`;
     return;
   }
-
-  $("jobGrid").innerHTML = items.map(v => {
-    const inProgress=v.current_status==="RECEIVING_IN_PROGRESS",busy=receivingState.busyIds.has(String(v.auto_id)),hasCalls=Number(v.queue_call_count||0)>0,called=!inProgress&&Number(v.queue_called_at||0)>0;
-    const doorLabel=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุประตู";
-    const statusText=inProgress?statusLabel(v.current_status):called?"เรียกแล้ว รอรถเข้า":"พร้อมเรียก";
+  const cards=items.map(v=>{
+    const inProgress=v.current_status==="RECEIVING_IN_PROGRESS";
+    const busy=receivingState.busyIds.has(String(v.auto_id));
+    const hasCalls=Number(v.queue_call_count||0)>0;
+    const called=!inProgress&&Number(v.queue_called_at||0)>0;
+    const group=receivingGroupKey(v);
+    const mobileDoor=Number(v.use_door)===0?"ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุ";
+    const desktopDoor=Number(v.use_door)===0?"งานนี้ไม่ใช้ประตู":v.door_code||"ยังไม่ระบุประตู";
+    const mobileStatus=inProgress?"กำลังตรวจรับ":called?"เรียกแล้ว":"พร้อมเรียก";
+    const desktopStatus=inProgress?statusLabel(v.current_status):called?"เรียกแล้ว รอรถเข้า":"พร้อมเรียก";
+    const plate=joinText(v.vehicle_plate,v.province)||"ไม่ระบุทะเบียน";
+    const mobileStageTime=inProgress
+      ? `<span><small>เริ่มตรวจ</small><b>${formatDate(v.receiving_started_at)}</b></span><span><small>ใช้เวลา</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></span>`
+      : called
+        ? `<span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>เรียกแล้ว</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>`
+        : `<span><small>รอเรียก</small><b>${formatDuration(v.stage_elapsed_seconds)}</b></span><span><small>ประตู</small><b>${escapeHtml(mobileDoor)}</b></span>`;
+    const mobileActions=inProgress
+      ? `<button class="complete-button receiving-mobile-main" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button><button class="outline-button receiving-mobile-side" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}">เพิ่มเติม</button>`
+      : called
+        ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button receiving-mobile-main" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ / เปลี่ยนประตู</button>`:`<button class="outline-button receiving-mobile-main" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
+        : `<button class="primary call-vehicle-button receiving-mobile-main" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button receiving-mobile-side" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
     const callInfo=hasCalls?`<div class="queue-call-strip"><span><small>เรียกล่าสุด</small><b>${formatDate(v.queue_called_at)}</b></span><span><small>จำนวนครั้ง</small><b>${Number(v.queue_call_count||1)} ครั้ง</b></span>${Number(v.use_door)!==0&&v.door_code?`<span><small>ประตูล่าสุด</small><b>${escapeHtml(v.door_code)}</b></span>`:""}<button class="queue-history-button" type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ดูประวัติการเรียก</button></div>`:"";
     const noticeInfo=v.queue_notice_at?`<div class="queue-notice-latest"><span class="queue-notice-icon">${receivingNoticeIcon("sound")}</span><div><small>เรียกเพิ่มเติมล่าสุด</small><b>${escapeHtml(queueNoticeTypeLabel(v.queue_notice_type,v.queue_notice_door_code))}</b></div><time>${formatDate(v.queue_notice_at)}</time></div>`:"";
-    const actions=inProgress
+    const desktopActions=inProgress
       ? `<button class="complete-button" data-receiving-action="complete" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"รับสินค้าเสร็จ"}</button>`
       : called
         ? `${state.queueRecall?.enabled!==false?`<button class="outline-button recall-button" data-receiving-action="recall" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เรียกซ้ำ${Number(v.use_door)!==0&&state.queueRecall?.allowDoorChange!==false?" / เปลี่ยนประตู":""}</button>`:`<button class="outline-button recall-button" type="button" disabled>ปิดการเรียกซ้ำ</button>`}<button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เริ่มตรวจรับ"}</button>`
         : `<button class="primary call-vehicle-button" data-receiving-action="call" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>${busy?"กำลังบันทึก":"เรียกรถ"}</button><button class="start-receiving-button" data-receiving-action="start" data-auto-id="${escapeHtml(v.auto_id)}" ${busy?"disabled":""}>เริ่มตรวจรับ</button>`;
-    return `<article class="job-card receiving-card ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><div class="receiving-head-tools"><span class="badge receiving-badge">${escapeHtml(statusText)}</span><button class="receiving-more-button" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" title="ตัวเลือกเพิ่มเติม" aria-label="ตัวเลือกเพิ่มเติม">${receivingNoticeIcon("more")}<span>เพิ่มเติม</span></button></div><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(doorLabel)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}${noticeInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${actions}</div></article>`;
+    const desktop=`<section class="job-card receiving-card receiving-desktop-view ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><div class="job-head"><div><small>เลขนัดหมาย</small><h2>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</h2></div><div class="alert-stack"><div class="receiving-head-tools"><span class="badge receiving-badge">${escapeHtml(desktopStatus)}</span><button class="receiving-more-button" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" title="ตัวเลือกเพิ่มเติม" aria-label="ตัวเลือกเพิ่มเติม">${receivingNoticeIcon("more")}<span>เพิ่มเติม</span></button></div><span class="alert-chip">${alertLevelLabel(v.alert_level)} · <b data-duration-start="${Number(v.alert_started_at||v.gate_in_at||0)}">${formatDuration(v.stage_elapsed_seconds)}</b></span></div></div><div class="dense-grid receiving-details"><div class="wide"><small>บริษัท</small><b>${escapeHtml(v.company_name||"ไม่ระบุ")}</b></div><div><small>คนขับรถ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></div><div><small>ทะเบียนรถ</small><b>${escapeHtml(joinText(v.vehicle_plate,v.province))}</b></div><div><small>ประตูรับสินค้า</small><b>${escapeHtml(desktopDoor)}</b></div><div><small>Gate In</small><b>${formatDate(v.gate_in_at)}</b></div>${inProgress?`<div><small>เริ่มตรวจรับ</small><b>${formatDate(v.receiving_started_at)}</b></div><div><small>ใช้เวลาแล้ว</small><b data-duration-start="${Number(v.receiving_started_at||unixNow())}">${formatDuration(unixNow()-Number(v.receiving_started_at||unixNow()))}</b></div>`:`<div><small>ยื่นเอกสาร</small><b>${formatDate(v.document_submitted_at)}</b></div>`}</div>${callInfo}${noticeInfo}<div class="receiving-actionbar ${inProgress?"":"multiple-actions"}">${desktopActions}</div></section>`;
+    const mobile=`<section class="receiving-mobile-card receiving-mobile-view ${inProgress?"is-progress":called?"is-called":"is-ready"}" style="--job-color:${safeColor(v.alert_color)}"><header class="receiving-mobile-head"><div><b>${escapeHtml(v.appointment_no||"ไม่ระบุ")}</b><small>${escapeHtml(v.company_name||"ไม่ระบุบริษัท")}</small></div><div><span class="receiving-mobile-status">${escapeHtml(mobileStatus)}</span><button class="receiving-mobile-more" type="button" data-receiving-action="more" data-auto-id="${escapeHtml(v.auto_id)}" aria-label="เพิ่มเติม">${receivingNoticeIcon("more")}</button></div></header><div class="receiving-mobile-info"><span><small>คนขับ</small><b>${escapeHtml(v.driver_name||"ไม่ระบุ")}</b></span><span><small>ทะเบียน</small><b>${escapeHtml(plate)}</b></span><span><small>ประตู</small><b>${escapeHtml(mobileDoor)}</b></span></div><div class="receiving-mobile-time">${mobileStageTime}${hasCalls&&called?`<button type="button" data-receiving-action="history" data-auto-id="${escapeHtml(v.auto_id)}">ประวัติเรียก</button>`:""}</div><div class="receiving-mobile-actions">${mobileActions}</div></section>`;
+    return `<article class="receiving-card-pair" data-receiving-group="${group}">${desktop}${mobile}</article>`;
   }).join("");
-}
-
-function ensureReceivingMobileStyles(){
-  if($("receivingMobileStyles"))return;
-  const style=document.createElement("style");
-  style.id="receivingMobileStyles";
-  style.textContent=`
-    .receiving-group-board{display:none}
-    .receiving-group-card{border:1px solid var(--line,#d8e0ef)!important;background:#fff!important;border-radius:14px!important;padding:10px 12px!important;min-height:62px!important;height:auto!important;text-align:left!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;gap:2px 8px!important;box-shadow:none!important;color:var(--text,#1d3152)!important}
-    .receiving-group-card small{grid-column:1;font-size:.72rem!important;line-height:1.1!important;color:var(--muted,#6f7d96)!important}
-    .receiving-group-card b{grid-column:1;font-size:.92rem!important;line-height:1.15!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .receiving-group-card strong{grid-column:2;grid-row:1/3;align-self:center;font-size:1.5rem!important;line-height:1!important;font-weight:800;color:#2e63d3}
-    .receiving-group-card.is-active{border-color:#2e63d3!important;background:#eef4ff!important}
-    .receiving-view-head{display:none!important}
-    .receiving-view-head small{display:block;font-size:.7rem;color:var(--muted,#6f7d96)}
-    .receiving-view-head b{font-size:.88rem;color:var(--text,#1d3152)}
-    @media (max-width:980px){.receiving-group-board{display:none}}
-    @media (max-width:760px){
-      .receiving-summary{display:none!important}
-      .receiving-group-board{display:grid!important;position:static!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:6px 0 8px!important;padding:0!important;background:transparent!important}
-      .receiving-group-card{min-height:48px!important;height:48px!important;border-radius:11px!important;padding:6px 8px!important;grid-template-columns:minmax(0,1fr) auto!important;gap:1px 6px!important}
-      .receiving-group-card small{font-size:.62rem!important}
-      .receiving-group-card b{font-size:.78rem!important}
-      .receiving-group-card strong{font-size:1.18rem!important}
-      .compact-receiving-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) 72px!important;gap:6px!important;margin:0 0 6px!important}
-      .compact-receiving-toolbar input{height:38px!important;min-height:38px!important;padding:0 10px!important;font-size:.82rem!important;border-radius:10px!important}
-      .compact-receiving-toolbar button{height:38px!important;min-height:38px!important;padding:0 8px!important;font-size:.78rem!important;border-radius:10px!important;white-space:nowrap!important}
-      .receiving-view-head{display:none!important}
-      .receiving-grid{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;margin:0!important;padding:0!important}
-      .receiving-mobile-card{position:relative;border:1px solid #d9e1ef;border-left:4px solid var(--job-color,#2f6fd4);border-radius:12px;background:#fff;padding:8px 9px 9px;box-shadow:none;min-width:0;overflow:hidden}
-      .receiving-mobile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid #edf1f7;padding-bottom:6px;margin-bottom:6px}
-      .receiving-mobile-head>div:first-child{min-width:0;flex:1}
-      .receiving-mobile-head>div:first-child>b{display:block;color:#154a98;font-size:1.1rem;line-height:1.08;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .receiving-mobile-head>div:first-child>small{display:block;margin-top:2px;font-size:.72rem;line-height:1.1;color:#34445d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .receiving-mobile-head>div:last-child{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-      .receiving-mobile-status{display:inline-flex;align-items:center;min-height:24px;padding:0 7px;border-radius:7px;background:#eef4ff;color:#2f6fd4;font-size:.68rem;font-weight:800;white-space:nowrap}
-      .receiving-mobile-card.is-progress .receiving-mobile-status{background:#fff0f6;color:#d31575}
-      .receiving-mobile-card.is-called .receiving-mobile-status{background:#fff5e7;color:#c66b00}
-      .receiving-mobile-more{width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;padding:0!important;border:1px solid #d8e1ef!important;border-radius:8px!important;background:#fff!important;color:#36597f!important;display:grid!important;place-items:center!important}
-      .receiving-mobile-more svg{width:16px;height:16px}
-      .receiving-mobile-info{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) 62px;gap:7px;margin-bottom:6px}
-      .receiving-mobile-info span,.receiving-mobile-time span{min-width:0}
-      .receiving-mobile-info small,.receiving-mobile-time small{display:block;font-size:.61rem;line-height:1.05;color:#7a879a;margin-bottom:2px}
-      .receiving-mobile-info b{display:block;font-size:.74rem;line-height:1.15;color:#202d42;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .receiving-mobile-time{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr) auto;align-items:end;gap:7px;background:#f8fafc;border-radius:8px;padding:5px 7px;margin-bottom:7px}
-      .receiving-mobile-time b{display:block;font-size:.71rem;line-height:1.1;color:#253854;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .receiving-mobile-time button{height:26px!important;min-height:26px!important;padding:0 7px!important;border:1px solid #d7e0ed!important;background:#fff!important;border-radius:7px!important;color:#2e63b8!important;font-size:.64rem!important;white-space:nowrap!important}
-      .receiving-mobile-actions{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.75fr);gap:6px}
-      .receiving-mobile-actions button{height:36px!important;min-height:36px!important;padding:0 8px!important;border-radius:9px!important;font-size:.76rem!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-      .receiving-empty{padding:24px 12px!important;min-height:120px!important}
-    }
-    @media (max-width:380px){
-      .receiving-group-card{height:44px!important;min-height:44px!important;padding:5px 7px!important}
-      .receiving-mobile-info{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 54px;gap:5px}
-      .receiving-mobile-time{gap:5px;padding:5px 6px}
-      .receiving-mobile-actions{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}
-    }
-  `;
-  document.head.appendChild(style);
+  grid.innerHTML=cards+`<div class="empty-state receiving-mobile-filter-empty"><b>${emptyText}</b><span>เลือกกลุ่มงานอื่น หรือค้นหาใหม่</span></div>`;
 }
 
 function receivingNoticeIcon(type){
