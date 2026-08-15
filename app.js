@@ -1413,7 +1413,7 @@ function renderOperations() {
   const readyOnly = ready.filter(v=>Number(v.queue_called_at||0)<=0);
   const inProgress = items.filter(v=>v.current_status==="RECEIVING_IN_PROGRESS");
   syncOperationsDefaultFilter({all:items,ready:readyOnly,called,inProgress});
-  $("pageContent").innerHTML = `<section class="summary-strip receiving-summary">${summary("พร้อมเรียก",readyOnly.length)}${summary("เรียกแล้ว",called.length)}${summary("กำลังตรวจรับ",inProgress.length)}${summary("รถในพื้นที่",state.vehicles.length)}</section><section class="receiving-group-board" aria-label="กลุ่มงานรับสินค้า"><button class="receiving-group-card" type="button" data-receiving-filter="called"><small>ต้องทำก่อน</small><b>เรียกแล้ว</b><strong>${called.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="ready"><small>รอเรียก</small><b>พร้อมเรียก</b><strong>${readyOnly.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="inProgress"><small>กำลังทำอยู่</small><b>กำลังตรวจรับ</b><strong>${inProgress.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="all"><small>ดูทั้งหมด</small><b>ทุกงาน</b><strong>${items.length}</strong></button></section><div class="toolbar receiving-toolbar compact-receiving-toolbar"><input id="jobSearch" placeholder="ค้นหาเลขนัดหมาย บริษัท คนขับ ทะเบียนรถ หรือประตู" value="${escapeHtml(operationsUiState.search||"")}"><button id="refreshButton">โหลดใหม่</button></div><section class="receiving-view-head"><div><small>กำลังแสดง</small><b id="receivingCurrentFilterLabel">-</b></div><div><small>จำนวนงาน</small><b id="receivingFilteredCount">0 งาน</b></div></section><section id="jobGrid" class="job-grid receiving-grid"></section>`;
+  $("pageContent").innerHTML = `<section class="summary-strip receiving-summary">${summary("พร้อมเรียก",readyOnly.length)}${summary("เรียกแล้ว",called.length)}${summary("กำลังตรวจรับ",inProgress.length)}${summary("รถในพื้นที่",state.vehicles.length)}</section><section class="receiving-group-board" aria-label="กลุ่มงานรับสินค้า"><button class="receiving-group-card" type="button" data-receiving-filter="called"><small>ต้องทำก่อน</small><b>เรียกแล้ว</b><strong>${called.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="ready"><small>รอเรียก</small><b>พร้อมเรียก</b><strong>${readyOnly.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="inProgress"><small>กำลังทำอยู่</small><b>กำลังตรวจรับ</b><strong>${inProgress.length}</strong></button><button class="receiving-group-card" type="button" data-receiving-filter="all"><small>ดูทั้งหมด</small><b>ทุกงาน</b><strong>${items.length}</strong></button></section><div class="toolbar receiving-toolbar compact-receiving-toolbar"><input id="jobSearch" placeholder="ค้นหาเลขนัดหมาย บริษัท คนขับ ทะเบียนรถ หรือประตู" value="${escapeHtml(operationsUiState.search||"")}"><button id="refreshButton">โหลดใหม่</button></div><section id="jobGrid" class="job-grid receiving-grid"></section>`;
   renderOperationsCards(items);
   $("jobSearch").addEventListener("input",e=>{operationsUiState.search=String(e.target.value||"");renderOperationsCards(items)});
   $("refreshButton").addEventListener("click",()=>navigate("operations"));
@@ -1456,15 +1456,14 @@ function receivingGroupKey(vehicle){
 
 function renderOperationsCards(items){
   const search=(operationsUiState.search||"").trim().toLowerCase();
-  const filter=operationsUiState.filter||"all";
+  const isMobile=window.matchMedia("(max-width: 760px)").matches;
+  const filter=isMobile?(operationsUiState.filter||"all"):"all";
   const filtered=items.filter(v=>{
     const okFilter=filter==="all" ? true : receivingGroupKey(v)===filter;
     const okSearch=!search || searchable(v).includes(search);
     return okFilter && okSearch;
   });
-  document.querySelectorAll("[data-receiving-filter]").forEach(button=>button.classList.toggle("is-active",(button.dataset.receivingFilter||"all")===filter));
-  const labelNode=$("receivingCurrentFilterLabel"); if(labelNode) labelNode.textContent=operationsFilterLabel(filter);
-  const countNode=$("receivingFilteredCount"); if(countNode) countNode.textContent=`${filtered.length} งาน`;
+  document.querySelectorAll("[data-receiving-filter]").forEach(button=>button.classList.toggle("is-active",isMobile&&(button.dataset.receivingFilter||"all")===filter));
   renderJobCards(filtered, filter);
 }
 
@@ -1522,19 +1521,19 @@ function ensureReceivingMobileStyles(){
   const style=document.createElement("style");
   style.id="receivingMobileStyles";
   style.textContent=`
-    .receiving-group-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+    .receiving-group-board{display:none}
     .receiving-group-card{border:1px solid var(--line,#d8e0ef)!important;background:#fff!important;border-radius:14px!important;padding:10px 12px!important;min-height:62px!important;height:auto!important;text-align:left!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;gap:2px 8px!important;box-shadow:none!important;color:var(--text,#1d3152)!important}
     .receiving-group-card small{grid-column:1;font-size:.72rem!important;line-height:1.1!important;color:var(--muted,#6f7d96)!important}
     .receiving-group-card b{grid-column:1;font-size:.92rem!important;line-height:1.15!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .receiving-group-card strong{grid-column:2;grid-row:1/3;align-self:center;font-size:1.5rem!important;line-height:1!important;font-weight:800;color:#2e63d3}
     .receiving-group-card.is-active{border-color:#2e63d3!important;background:#eef4ff!important}
-    .receiving-view-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin:0 0 8px;border:1px solid var(--line,#d8e0ef);border-radius:12px;background:#fff}
+    .receiving-view-head{display:none!important}
     .receiving-view-head small{display:block;font-size:.7rem;color:var(--muted,#6f7d96)}
     .receiving-view-head b{font-size:.88rem;color:var(--text,#1d3152)}
-    @media (max-width:980px){.receiving-group-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:980px){.receiving-group-board{display:none}}
     @media (max-width:760px){
       .receiving-summary{display:none!important}
-      .receiving-group-board{position:static!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:6px 0 8px!important;padding:0!important;background:transparent!important}
+      .receiving-group-board{display:grid!important;position:static!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;margin:6px 0 8px!important;padding:0!important;background:transparent!important}
       .receiving-group-card{min-height:48px!important;height:48px!important;border-radius:11px!important;padding:6px 8px!important;grid-template-columns:minmax(0,1fr) auto!important;gap:1px 6px!important}
       .receiving-group-card small{font-size:.62rem!important}
       .receiving-group-card b{font-size:.78rem!important}
@@ -2952,9 +2951,25 @@ async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",vehicl
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;
   const queueUrl=new URL("./queue.html?v=20260811-r88",location.href).href;
+  const queueDisplay=adminState.data?.queueDisplay||{showDoorPanel:true};
+  const showDoorPanel=queueDisplay.showDoorPanel!==false;
   panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260811-r88" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  <section class="admin-form-card admin-queue-display-card"><header><div><b>การแสดงสถานะประตู</b><small>เลือกว่าจะให้จอคิวแสดงรายการประตูด้านขวาหรือไม่</small></div></header><label class="admin-toggle-row"><span><b>แสดงสถานะประตูในจอคิว</b><small>ปิดได้เมื่อต้องการพื้นที่แสดงคิวมากขึ้น โดยไม่กระทบการใช้ประตูของงาน</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label><div class="admin-form-actions"><button id="queueDisplaySaveButton" class="primary" type="button">บันทึก</button></div></section>
   <section class="admin-queue-guide"><article><b>เรียกรถแยกจากเริ่มตรวจรับ</b><p>พนักงานกด “เรียกรถ” ก่อน เมื่อรถเข้าจุดตรวจรับจริงจึงกด “เริ่มตรวจรับ” เพื่อให้เวลาทำงานตรงกับเหตุการณ์จริง</p></article><article><b>เรียกซ้ำและเปลี่ยนประตู</b><p>รถที่ยังไม่เข้าจุดตรวจรับสามารถเรียกซ้ำได้ และเมื่อเปิดใช้ประตูสามารถเปลี่ยนประตูพร้อมเรียกใหม่โดยเก็บประวัติเดิมไว้</p></article><article><b>กรณีปิดประตู</b><p>เมื่อผู้ดูแลปิดการใช้ประตู ระบบจะไม่บังคับ ไม่แสดง และไม่อ่านหมายเลขประตูในการเรียกรถ</p></article></section>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
+  $("queueDisplaySaveButton")?.addEventListener("click",async()=>{
+    if(adminState.busy)return;
+    const button=$("queueDisplaySaveButton"),showDoorPanel=$("queueDoorPanelEnabled")?.checked!==false;
+    adminState.busy=true;if(button){button.disabled=true;button.textContent="กำลังบันทึก"}
+    try{
+      const result=await api("/api/admin/queue-display",{method:"POST",body:{showDoorPanel}});
+      adminState.data=await api("/api/admin/settings");
+      renderAdminShell();
+      await showNotice("success",result.message||"บันทึกการแสดงสถานะประตูแล้ว");
+    }catch(error){
+      await showNotice("error",error.message||"บันทึกไม่สำเร็จ กรุณาลองใหม่");
+    }finally{adminState.busy=false}
+  });
 }
 
 async function renderAdminDataUsage(){
