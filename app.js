@@ -1275,7 +1275,7 @@ const uiState = { detailsOpen:false };
 const inboundLiveState = { version:"", checking:false, failures:0, nextAllowedAt:0 };
 const inboundListState = { filter:"ALL" };
 const inboundTrackPanel = { timer:0, until:0, active:false };
-const operationsUiState = { filter:"", search:"" };
+const operationsUiState = { filter:"", search:"", viewportMode:"", viewportBound:false };
 const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
 const adminDataTools={tab:"overview",inspector:null,busy:false,openTable:"",openCommand:"",openSchema:"",archiveMonth:"",archivePreview:null,archiveBusy:false,archiveHistory:null,archiveHistoryBusy:false,archiveStoreBusy:false,archiveVerify:null,archiveVerifyBusy:false,cleanupMonth:"",cleanupPreview:null,cleanupBusy:false,cleanupScript:null,cleanupVerify:null,cleanupExecuteBusy:false,cleanupHistory:null};
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
@@ -1330,7 +1330,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260814-r126",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260815-r143",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); openApp(); } catch { clearSession(); } }
 }
 
@@ -1405,8 +1405,27 @@ async function checkInboundLiveUpdates(force=false){
   finally{inboundLiveState.checking=false}
 }
 
+function operationsIsMobile(){return window.matchMedia("(max-width: 760px)").matches}
+
+function bindOperationsViewport(){
+  const query=window.matchMedia("(max-width: 760px)");
+  operationsUiState.viewportMode=query.matches?"mobile":"desktop";
+  if(operationsUiState.viewportBound)return;
+  operationsUiState.viewportBound=true;
+  const handleChange=event=>{
+    const next=(typeof event?.matches==="boolean"?event.matches:operationsIsMobile())?"mobile":"desktop";
+    if(next===operationsUiState.viewportMode)return;
+    operationsUiState.viewportMode=next;
+    if(state.view!=="operations")return;
+    window.requestAnimationFrame(()=>{if(state.view==="operations")renderOperations()});
+  };
+  if(typeof query.addEventListener==="function")query.addEventListener("change",handleChange);
+  else if(typeof query.addListener==="function")query.addListener(handleChange);
+}
+
 function renderOperations() {
   ensureReceivingMobileStyles();
+  bindOperationsViewport();
   const items = state.vehicles.filter(v => ["READY_FOR_RECEIVING","RECEIVING_IN_PROGRESS"].includes(v.current_status));
   const ready = items.filter(v=>v.current_status==="READY_FOR_RECEIVING");
   const called = ready.filter(v=>Number(v.queue_called_at||0)>0);
@@ -1456,7 +1475,7 @@ function receivingGroupKey(vehicle){
 
 function renderOperationsCards(items){
   const search=(operationsUiState.search||"").trim().toLowerCase();
-  const isMobile=window.matchMedia("(max-width: 760px)").matches;
+  const isMobile=operationsIsMobile();
   const filter=isMobile?(operationsUiState.filter||"all"):"all";
   const filtered=items.filter(v=>{
     const okFilter=filter==="all" ? true : receivingGroupKey(v)===filter;
@@ -1468,7 +1487,7 @@ function renderOperationsCards(items){
 }
 
 function renderJobCards(items, filter="all") {
-  const isMobile=window.matchMedia("(max-width: 760px)").matches;
+  const isMobile=operationsIsMobile();
   const emptyHtml=`<div class="empty-state receiving-empty"><b>${filter==="called"?"ยังไม่มีงานที่เรียกแล้ว":filter==="ready"?"ยังไม่มีงานพร้อมเรียก":filter==="inProgress"?"ยังไม่มีงานที่กำลังตรวจรับ":"ไม่มีงานรอตรวจรับ"}</b><span>${filter==="all"?"รายการใหม่จะแสดงเมื่อมีงานเข้ามา":"เลือกกลุ่มอื่น หรือค้นหาใหม่"}</span></div>`;
   if(!items.length){$("jobGrid").innerHTML=emptyHtml;return}
 
