@@ -7403,3 +7403,89 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .dashboard-view-shell .r146-priority-table .action-table-row>span:nth-child(7){grid-row:6!important;}
   .dashboard-view-shell .r146-bottom-tabs button{font-size:7.4px!important;}
 }
+
+
+/* Round 149: fix mobile dashboard panels that were squeezed too narrow */
+@media (max-width:760px){
+  .dashboard-view-shell .r145-grid,
+  .dashboard-view-shell .r146-content,
+  .dashboard-view-shell .r145-grid .opsdash-panel-body{height:auto!important;min-height:0!important;}
+
+  .dashboard-view-shell .r145-handover,
+  .dashboard-view-shell .r146-handover{grid-template-columns:1fr!important;grid-template-rows:auto!important;grid-template-areas:
+    "flow"
+    "stage"
+    "summary"
+    "list" !important;}
+
+  .dashboard-view-shell .r145-comparison,
+  .dashboard-view-shell .r146-comparison{grid-template-columns:1fr!important;grid-template-rows:auto!important;grid-template-areas:
+    "trend"
+    "summary"
+    "shifts" !important;}
+
+  .dashboard-view-shell .r145-performance,
+  .dashboard-view-shell .r146-performance{grid-template-columns:1fr!important;grid-template-rows:auto!important;grid-template-areas:
+    "stage"
+    "trend"
+    "bands"
+    "shifts" !important;}
+
+  .dashboard-view-shell .r145-capacity,
+  .dashboard-view-shell .r146-capacity{grid-template-columns:1fr!important;grid-template-rows:auto!important;grid-template-areas:
+    "doors"
+    "hours"
+    "quality"
+    "heat" !important;}
+
+  .dashboard-view-shell .r145-exceptions,
+  .dashboard-view-shell .r146-exceptions{grid-template-columns:1fr!important;grid-template-rows:auto!important;grid-template-areas:
+    "alerts"
+    "bottleneck"
+    "quality"
+    "list" !important;}
+
+  .dashboard-view-shell .r145-grid .opsdash-panel{min-height:unset!important;}
+  .dashboard-view-shell .r145-grid .opsdash-panel>header{height:auto!important;min-height:32px!important;gap:6px!important;align-items:flex-start!important;}
+  .dashboard-view-shell .r145-grid .opsdash-panel h3{font-size:15px!important;line-height:1.18!important;word-break:break-word!important;}
+  .dashboard-view-shell .r145-grid .opsdash-panel-meta{max-width:none!important;}
+  .dashboard-view-shell .r145-grid .opsdash-panel-meta span{font-size:8px!important;line-height:1.18!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+
+  .dashboard-view-shell .r145-comparison-summary{height:auto!important;display:grid!important;grid-template-columns:1fr!important;gap:8px!important;}
+  .dashboard-view-shell .r145-comparison-summary>div{min-height:76px!important;padding:10px 12px!important;}
+  .dashboard-view-shell .r145-comparison-summary b{font-size:18px!important;}
+  .dashboard-view-shell .r145-comparison-summary small,.dashboard-view-shell .r145-comparison-summary span{font-size:8px!important;line-height:1.18!important;}
+
+  .dashboard-view-shell .r145-grid .shift-compare>div{grid-template-columns:1fr!important;gap:5px!important;padding:8px 10px!important;}
+  .dashboard-view-shell .r145-grid .shift-compare header b{font-size:10px!important;}
+  .dashboard-view-shell .r145-grid .shift-compare header small,.dashboard-view-shell .r145-grid .shift-compare span{font-size:8px!important;line-height:1.18!important;}
+
+  .dashboard-view-shell .r145-grid .door-capacity-rows>div{grid-template-columns:56px minmax(0,1fr) 42px!important;gap:6px!important;align-items:center!important;}
+  .dashboard-view-shell .r145-grid .door-capacity-rows>div>small{display:none!important;}
+  .dashboard-view-shell .r145-grid .door-capacity-rows b,.dashboard-view-shell .r145-grid .door-capacity-rows span{font-size:8.3px!important;}
+
+  .dashboard-view-shell .r145-grid .dashboard-bars>div{grid-template-columns:86px minmax(0,1fr) 24px!important;gap:7px!important;}
+  .dashboard-view-shell .r145-grid .dashboard-bars span,.dashboard-view-shell .r145-grid .dashboard-bars b{font-size:8.2px!important;}
+  .dashboard-view-shell .r145-grid .backlog-aging-chart>div{grid-template-columns:82px minmax(0,1fr) 24px!important;gap:7px!important;}
+  .dashboard-view-shell .r145-grid .backlog-aging-chart span,.dashboard-view-shell .r145-grid .backlog-aging-chart b{font-size:8px!important;}
+  .dashboard-view-shell .r145-grid .stage-time-chart>div{grid-template-columns:112px minmax(0,1fr) 64px!important;gap:7px!important;}
+  .dashboard-view-shell .r145-grid .stage-time-chart span,.dashboard-view-shell .r145-grid .stage-time-chart b{font-size:8.2px!important;line-height:1.15!important;}
+
+  .dashboard-view-shell .r145-list .action-table-head{display:none!important;}
+  .dashboard-view-shell .r145-list .action-table-row{display:grid!important;grid-template-columns:1fr!important;gap:6px!important;min-height:0!important;height:auto!important;padding:10px 10px 10px 12px!important;margin-bottom:8px!important;border:1px solid #dce5f1!important;border-left:4px solid var(--alert-color)!important;border-radius:12px!important;background:#fff!important;}
+  .dashboard-view-shell .r145-list .action-table-row>*{display:grid!important;grid-template-columns:92px minmax(0,1fr)!important;gap:6px 10px!important;align-items:start!important;min-width:0!important;}
+  .dashboard-view-shell .r145-list .action-table-row>*::before{content:attr(data-label);display:block!important;color:#7a8798!important;font-size:8px!important;font-weight:800!important;line-height:1.15!important;}
+  .dashboard-view-shell .r145-list .action-table-row strong,.dashboard-view-shell .r145-list .action-table-row span,.dashboard-view-shell .r145-list .action-table-row b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:break-word!important;}
+  .dashboard-view-shell .r145-list .dashboard-company-cell>span{font-size:10.5px!important;line-height:1.16!important;}
+  .dashboard-view-shell .r145-list .dashboard-company-cell>small{font-size:7.6px!important;line-height:1.18!important;}
+
+  .dashboard-view-shell .r145-list .empty-state{padding:18px 12px!important;font-size:10px!important;}
+}
+
+@media (max-width:420px){
+  .dashboard-view-shell .r145-grid .opsdash-panel h3{font-size:14px!important;}
+  .dashboard-view-shell .r145-grid .opsdash-panel-meta span{font-size:7.5px!important;}
+  .dashboard-view-shell .r145-grid .door-capacity-rows>div{grid-template-columns:52px minmax(0,1fr) 38px!important;}
+  .dashboard-view-shell .r145-grid .stage-time-chart>div{grid-template-columns:98px minmax(0,1fr) 58px!important;}
+  .dashboard-view-shell .r145-list .action-table-row>*{grid-template-columns:84px minmax(0,1fr)!important;}
+}
