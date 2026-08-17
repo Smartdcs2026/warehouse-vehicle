@@ -1,22 +1,132 @@
 <!doctype html>
-<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#315fa8"><title>Appointment DEV · Excel Preview</title><link rel="stylesheet" href="./styles.css?v=20260817-r168"></head>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#315fa8">
+  <title>ข้อมูลนัดหมาย</title>
+  <link rel="stylesheet" href="./styles.css?v=20260817-r169">
+</head>
 <body>
-<header class="top"><div><span class="badge">DEVELOPMENT · แยกจาก Production</span><h1>ข้อมูลนัดหมาย · Excel Safe Preview</h1><p id="profileSummary"></p></div><div class="build">Round 168<br><small id="build"></small></div></header>
+<header class="top">
+  <div>
+    <h1>ข้อมูลนัดหมาย</h1>
+    <p id="profileSummary"></p>
+  </div>
+  <div class="build">Round 169</div>
+</header>
+
 <main>
-<section class="notice"><b>ปลอดภัยต่อ Round 166</b><span>หน้านี้อ่านไฟล์ใน Browser เท่านั้น ยังไม่ส่งข้อมูลเข้า Worker/D1 และไม่แก้ไฟล์ Production</span><span id="selfTest" class="self-test">กำลังตรวจ Parser วันที่/เวลา</span></section>
-<section class="panel upload"><div><h2>1. เลือกไฟล์จากส่วนกลาง</h2><p>รองรับ XLSB / XLSX · ระบบตรวจ Sheet, Header, คลัง, วันที่ และเวลา ก่อนแสดง Preview</p></div><label class="file-btn">เลือก Excel<input id="fileInput" type="file" accept=".xlsb,.xlsx,application/vnd.ms-excel.sheet.binary.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label></section>
-<div id="progress" class="progress" hidden></div><div id="errorBox" class="error" hidden></div>
-<section class="panel"><details><summary><b>2. ค่าจำลอง Admin สำหรับ Import</b><span>ใช้ LocalStorage เฉพาะ Browser นี้</span></summary><div class="settings">
-<div class="grid"><label>Sheet หลัก<input id="sheetName"></label><label>ชื่อ Sheet สำรอง<input id="sheetAliases" placeholder="RAW_DATA, Raw Data"></label><label>วิธีกรองคลัง<select id="warehouseMode"><option value="STARTS_WITH">ขึ้นต้นด้วย</option><option value="EXACT">ตรงกับ</option></select></label><label>รหัสคลัง<input id="warehouseValues" placeholder="906"></label><label>เวลาอ้างอิง<select id="timeReference"><option>PERIOD</option><option>FROM</option></select><small id="refHint"></small></label></div>
-<h3>Mapping หัวคอลัมน์</h3><div class="mapping"><div class="mh">ข้อมูล</div><div class="mh">Header หลัก</div><div class="mh">ชื่อสำรอง</div>
-<script>document.write([["dc","รหัสคลัง"],["date","วันที่นัด"],["period","รอบนัดหมาย"],["from","เวลาเริ่ม"],["to","เวลาสิ้นสุด"],["po","เลข PO"],["appointment","Appointment"],["vendor","บริษัท / Vendor"],["carrier","Carrier / ผู้ขนส่ง"]].map(([k,l])=>`<div>${l}</div><input id="h_${k}"><input id="a_${k}" placeholder="คั่นด้วย ,"></input>`).join(""))</script></div>
-<div class="safe-date"><b>กฎวันที่/เวลารอบนี้</b><span>DATE: DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD หรือ Excel Serial 1900/1904 · PERIOD/FROM/TO: Excel time fraction หรือ HH:mm · ไม่ใช้ Locale ของ Windows/Browser เดาวันที่</span></div>
-<div class="actions"><button id="saveSettings" class="primary">บันทึกค่าทดสอบ</button><button id="resetSettings">คืนค่าเริ่มต้น</button></div></div></details></section>
-<section id="result" hidden>
-<div class="cards"><article><small>แถวทั้งหมด</small><b id="sourceRows">0</b></article><article><small>ตรงคลัง</small><b id="warehouseRows">0</b></article><article><small>Appointment</small><b id="appointmentCount">0</b></article><article><small>แถวผิด</small><b id="invalidRows">0</b></article><article><small>Appointment มีคำเตือน</small><b id="warningCount">0</b></article></div>
-<section class="panel meta"><h2>ผลตรวจไฟล์</h2><div><b>ไฟล์</b><span id="fileMeta"></span></div><div><b>Sheet</b><span id="sheetMeta"></span></div><div><b>ระบบวันที่</b><span id="dateSystem"></span></div><div><b>ช่วงวันที่</b><span id="dateRange"></span></div><div><b>DATE parser</b><span id="dateModes"></span></div><div><b>PERIOD parser</b><span id="periodModes"></span></div><div><b>FROM parser</b><span id="fromModes"></span></div><div><b>TO parser</b><span id="toModes"></span></div></section>
-<section class="panel"><div class="table-head"><div><h2>Preview หลังรวมเป็น Appointment</h2><small id="shownCount"></small></div><input id="search" placeholder="ค้นหา Appointment / Vendor / Carrier / PO"></div><div class="table-wrap"><table><thead><tr><th>DC</th><th>Appointment</th><th>วันที่</th><th>PERIOD</th><th>FROM</th><th>TO</th><th>อ้างอิง</th><th>Vendor</th><th>Carrier</th><th>PO</th><th>แถว</th><th>คำเตือน</th></tr></thead><tbody id="previewBody"></tbody></table></div></section>
-<section class="panel"><h2>แถวที่ไม่ผ่าน Validation</h2><div class="table-wrap"><table><thead><tr><th>แถว</th><th>DC</th><th>Appointment</th><th>DATE ต้นฉบับ</th><th>สาเหตุ</th></tr></thead><tbody id="errorBody"></tbody></table></div></section>
-</section>
-</main><div id="toast" class="toast" hidden></div>
-<script src="./config.js?v=20260817-r168"></script><script src="./excel-core.js?v=20260817-r168"></script><script src="./app.js?v=20260817-r168"></script></body></html>
+  <section id="moduleOff" class="state-box" hidden>
+    <b>ปิดการใช้งานข้อมูลนัดหมาย</b>
+    <span>เปิดใช้งานได้จากการตั้งค่าด้านล่าง</span>
+  </section>
+
+  <section id="uploadPanel" class="panel upload">
+    <div>
+      <h2>อัปโหลดข้อมูลนัดหมาย</h2>
+      <p>เลือกไฟล์ที่ได้รับจากส่วนกลาง ระบบจะตรวจและแสดงข้อมูลก่อนบันทึก</p>
+    </div>
+    <label id="fileButton" class="file-btn">เลือกไฟล์<input id="fileInput" type="file" accept=".xlsb,.xlsx,application/vnd.ms-excel.sheet.binary.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+  </section>
+
+  <div id="progress" class="progress" hidden></div>
+  <div id="errorBox" class="error" hidden></div>
+
+  <section class="panel settings-panel">
+    <details>
+      <summary><b>ตั้งค่า</b><span>สำหรับผู้ดูแลระบบ</span></summary>
+      <div class="settings">
+        <div class="switch-grid">
+          <label class="switch-card"><span>ใช้งานข้อมูลนัดหมาย</span><input id="moduleEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>อนุญาตให้อัปโหลด</span><input id="uploadEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ใช้ข้อมูลที่นำเข้า</span><input id="useImportedData" type="checkbox"></label>
+        </div>
+
+        <h3>การอ่านไฟล์</h3>
+        <div class="grid">
+          <label>ชื่อชีท<input id="sheetName"></label>
+          <label>ชื่อชีทสำรอง<input id="sheetAliases" placeholder="RAW_DATA, Raw Data"></label>
+          <label>วิธีเลือกรหัสคลัง<select id="warehouseMode"><option value="STARTS_WITH">ขึ้นต้นด้วย</option><option value="EXACT">ตรงกับ</option></select></label>
+          <label>รหัสคลัง<input id="warehouseValues" placeholder="906"></label>
+          <label>เวลาใช้เทียบรถเข้า<select id="timeReference"><option value="PERIOD">PERIOD</option><option value="FROM">FROM</option></select></label>
+        </div>
+
+        <h3>ชื่อคอลัมน์</h3>
+        <div class="mapping">
+          <div class="mh">ข้อมูล</div><div class="mh">ชื่อปัจจุบัน</div><div class="mh alias-col">ชื่อสำรอง</div>
+          <script>
+            document.write([
+              ["dc","รหัสคลัง"],["date","วันที่นัด"],["period","รอบนัดหมาย"],["from","เวลาเริ่ม"],["to","เวลาสิ้นสุด"],
+              ["po","เลข PO"],["appointment","Appointment"],["vendor","บริษัท / Vendor"],["carrier","Carrier / ผู้ขนส่ง"]
+            ].map(([k,l])=>`<div>${l}</div><input id="h_${k}"><input class="alias-input" id="a_${k}" placeholder="คั่นด้วย ,">`).join(""));
+          </script>
+        </div>
+
+        <h3>ข้อมูลที่แสดง</h3>
+        <div class="check-grid">
+          <label><input id="showPeriod" type="checkbox"> PERIOD</label>
+          <label><input id="showFrom" type="checkbox"> FROM</label>
+          <label><input id="showTo" type="checkbox"> TO</label>
+          <label><input id="showVendor" type="checkbox"> บริษัท</label>
+          <label><input id="showCarrier" type="checkbox"> Carrier</label>
+          <label><input id="showPo" type="checkbox"> PO</label>
+        </div>
+
+        <div class="actions">
+          <button id="saveSettings" class="primary">บันทึก</button>
+          <button id="resetSettings">คืนค่าเริ่มต้น</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section id="result" hidden>
+    <div class="cards">
+      <article><small>ข้อมูลทั้งหมด</small><b id="sourceRows">0</b></article>
+      <article><small>ของคลังนี้</small><b id="warehouseRows">0</b></article>
+      <article><small>นัดหมาย</small><b id="appointmentCount">0</b></article>
+      <article><small>ต้องตรวจ</small><b id="issueCount">0</b></article>
+    </div>
+
+    <section class="panel file-summary">
+      <div><b id="fileName">-</b><span id="fileRange">-</span></div>
+      <span id="fileStatus" class="status-pill">ตรวจข้อมูลแล้ว</span>
+    </section>
+
+    <section class="panel">
+      <div class="table-head">
+        <div><h2>รายการนัดหมาย</h2><small id="shownCount"></small></div>
+        <input id="search" placeholder="ค้นหา Appointment / บริษัท / Carrier / PO">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="previewHead"></tr></thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="issuePanel" class="panel" hidden>
+      <details>
+        <summary><b>รายการที่ต้องตรวจ</b><span id="issueSummary"></span></summary>
+        <div class="table-wrap compact">
+          <table><thead><tr><th>แถว</th><th>คลัง</th><th>Appointment</th><th>วันที่</th><th>สาเหตุ</th></tr></thead><tbody id="errorBody"></tbody></table>
+        </div>
+      </details>
+    </section>
+
+    <section id="importPanel" class="panel import-panel" hidden>
+      <div><h2>พร้อมนำเข้า</h2><p>ข้อมูลผ่านการตรวจแล้ว และจะบันทึกเฉพาะข้อมูลของคลังที่ตั้งไว้</p></div>
+      <button id="importButton" class="primary">นำเข้าข้อมูล</button>
+    </section>
+    <section id="importResult" class="panel import-result" hidden></section>
+  </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<script src="./config.js?v=20260817-r169"></script>
+<script src="./excel-core.js?v=20260817-r169"></script>
+<script src="./app.js?v=20260817-r169"></script>
+</body>
+</html>

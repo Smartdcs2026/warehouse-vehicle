@@ -164,14 +164,16 @@
       stats.validRows++;inc(stats.dateModes,date.mode);if(period.ok)inc(stats.periodModes,period.mode);if(from.ok)inc(stats.fromModes,from.mode);if(to.ok)inc(stats.toModes,to.mode);
       const key=`${dc}\u001f${date.value}\u001f${appointment}`;
       let g=groups.get(key);
-      if(!g){g={key,dc,appointment,date:date.value,period:period.ok?period.value:null,from:from.ok?from.value:null,to:to.ok?to.value:null,referenceType:cfg.timeReference,referenceMinute:ref.value,pos:new Set(),vendors:new Set(),carriers:new Set(),sourceRows:0,warnings:[],raw:{date:date.raw,period:period.raw,from:from.raw,to:to.raw}};groups.set(key,g)}
+      if(!g){g={key,dc,appointment,date:date.value,period:period.ok?period.value:null,from:from.ok?from.value:null,to:to.ok?to.value:null,referenceType:cfg.timeReference,referenceMinute:ref.value,pos:new Set(),vendors:new Set(),carriers:new Set(),lines:new Map(),sourceRows:0,warnings:[],raw:{date:date.raw,period:period.raw,from:from.raw,to:to.raw}};groups.set(key,g)}
       else{
         checkConflict(g,"period",period.ok?period.value:null,rowNo);checkConflict(g,"from",from.ok?from.value:null,rowNo);checkConflict(g,"to",to.ok?to.value:null,rowNo);
         if(g.referenceMinute!==ref.value&&!g.warnings.some(w=>w.includes("เวลาอ้างอิง")))g.warnings.push(`เวลาอ้างอิงไม่ตรงกันใน Appointment เดียวกัน (พบที่แถว ${rowNo})`);
       }
       g.sourceRows++;if(po)g.pos.add(po);if(vendor)g.vendors.add(vendor);if(carrier)g.carriers.add(carrier);
+      const lineKey=[po,vendor,carrier].join("\u001f");
+      if(po||vendor||carrier)g.lines.set(lineKey,{po,vendor,carrier});
     }
-    const appointments=[...groups.values()].map(g=>({...g,pos:[...g.pos],vendors:[...g.vendors],carriers:[...g.carriers]})).sort((a,b)=>a.date.localeCompare(b.date)||a.referenceMinute-b.referenceMinute||a.appointment.localeCompare(b.appointment,undefined,{numeric:true}));
+    const appointments=[...groups.values()].map(g=>({...g,pos:[...g.pos],vendors:[...g.vendors],carriers:[...g.carriers],lines:[...g.lines.values()]})).sort((a,b)=>a.date.localeCompare(b.date)||a.referenceMinute-b.referenceMinute||a.appointment.localeCompare(b.appointment,undefined,{numeric:true}));
     return {appointments,errors,stats};
   }
   function checkConflict(g,key,value,rowNo){if(value===null||value===undefined)return;if(g[key]===null||g[key]===undefined){g[key]=value;return}if(g[key]!==value&&!g.warnings.some(w=>w.startsWith(key)))g.warnings.push(`${key.toUpperCase()} ไม่ตรงกันใน Appointment เดียวกัน (พบที่แถว ${rowNo})`)}

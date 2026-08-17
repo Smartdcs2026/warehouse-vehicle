@@ -1,6 +1,13 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.17-round168-appointment-dev-excel-safe-preview",
+  build: "2026.08.17-round169-appointment-dev-clean-import",
   profileName: "ส่วนกลาง",
+
+  controls: {
+    moduleEnabled: true,
+    uploadEnabled: true,
+    useImportedData: false
+  },
+
   sheetName: "raw_data",
   sheetAliases: ["RAW_DATA", "Raw Data"],
   warehouse: {
@@ -8,6 +15,7 @@ window.APPOINTMENT_DEV_CONFIG = {
     matchMode: "STARTS_WITH",
     values: ["906"]
   },
+
   timeReference: "PERIOD",
   date: {
     timezone: "Asia/Bangkok",
@@ -15,6 +23,7 @@ window.APPOINTMENT_DEV_CONFIG = {
     rejectAmbiguous: true,
     acceptedTextFormats: ["DD.MM.YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]
   },
+
   fields: {
     dc:          { label: "รหัสคลัง",          header: "DC CODE",   aliases: [] },
     date:        { label: "วันที่นัด",          header: "DATE",      aliases: [] },
@@ -25,5 +34,20 @@ window.APPOINTMENT_DEV_CONFIG = {
     appointment: { label: "เลข Appointment",    header: "APPTNBR",   aliases: [] },
     vendor:      { label: "บริษัท / Vendor",    header: "VEND NAME", aliases: ["VENDOR NAME"] },
     carrier:     { label: "Carrier / ผู้ขนส่ง", header: "CARR",      aliases: ["CARRIER"] }
+  },
+
+  display: {
+    showPeriod: true,
+    showFrom: true,
+    showTo: true,
+    showVendor: true,
+    showCarrier: true,
+    showPo: true
+  },
+
+  importApi: {
+    enabled: false,
+    baseUrl: "",
+    batchSize: 50
   }
 };

@@ -1,4 +1,4 @@
-/* Round 168 dev-only spreadsheet parser. Production root is not touched. */
+/* Round 169 appointment development parser. */
 importScripts("https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js","./excel-core.js");
 const Core=self.AppointmentExcelCore;
 
@@ -6,22 +6,22 @@ self.onmessage=async(event)=>{
   const {type,buffer,fileName,config}=event.data||{};
   if(type!=="PARSE"||!buffer)return;
   try{
-    postMessage({type:"PROGRESS",step:"hash",message:"กำลังตรวจลายนิ้วมือไฟล์"});
+    postMessage({type:"PROGRESS",step:"hash",message:"กำลังเตรียมไฟล์"});
     const hash=await sha256(buffer);
-    postMessage({type:"PROGRESS",step:"read",message:"กำลังอ่านไฟล์ Excel"});
+    postMessage({type:"PROGRESS",step:"read",message:"กำลังอ่านข้อมูล"});
     const wb=XLSX.read(buffer,{type:"array",cellDates:false,cellNF:true,cellText:true,dense:false});
     const cfg=Core.normalizeConfig(config||{});
     cfg.workbookDate1904=!!wb?.Workbook?.WBProps?.date1904;
     const resolved=resolveSheet(wb,cfg);
-    if(!resolved)throw new Error("ไม่พบ Sheet ที่ตรงกับการตั้งค่าหรือโครงสร้างหัวคอลัมน์");
-    postMessage({type:"PROGRESS",step:"sheet",message:`กำลังอ่าน ${resolved.name}`});
+    if(!resolved)throw new Error("ไม่พบชีทที่ตรงกับการตั้งค่า");
+    postMessage({type:"PROGRESS",step:"sheet",message:`กำลังอ่านข้อมูลจาก ${resolved.name}`});
     const ws=wb.Sheets[resolved.name], headerRow=resolved.headerRow;
     const range=XLSX.utils.decode_range(ws["!ref"]||"A1:A1");
     const headerCells=[];for(let c=range.s.c;c<=range.e.c;c++)headerCells.push(ws[XLSX.utils.encode_cell({r:headerRow,c})]||{});
     const header=Core.buildHeaderMap(headerCells,cfg);
     const critical=["dc","date","appointment",cfg.timeReference==="FROM"?"from":"period"];
     const missingCritical=critical.filter(k=>!(k in header.map));
-    if(missingCritical.length)throw new Error("ไม่พบหัวคอลัมน์สำคัญ: "+missingCritical.map(k=>cfg.fields[k]?.header||k).join(", "));
+    if(missingCritical.length)throw new Error("ไม่พบคอลัมน์ที่จำเป็น: "+missingCritical.map(k=>cfg.fields[k]?.header||k).join(", "));
     const rows=[];
     const total=Math.max(0,range.e.r-headerRow);
     for(let r=headerRow+1;r<=range.e.r;r++){
