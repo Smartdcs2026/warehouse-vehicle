@@ -1267,6 +1267,13 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
+const FRONTEND_BUILD="2026.08.17-round162-production-hardening";
+const CLIENT_HEALTH_KEY="wvf_client_health_v1";
+function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
+function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
+function clientHealthSnapshot(){const issues=readClientIssues().filter(item=>Date.now()-Number(item.at||0)<86400000);return{frontendBuild:FRONTEND_BUILD,online:navigator.onLine,serviceWorkerSupported:"serviceWorker" in navigator,serviceWorkerControlled:Boolean(navigator.serviceWorker?.controller),issues24h:issues.length,latestIssue:issues[0]||null}}
+window.addEventListener("error",event=>recordClientIssue("JS_ERROR",event.message||event.error?.message,event.filename||"browser"));
+window.addEventListener("unhandledrejection",event=>recordClientIssue("PROMISE",event.reason?.message||event.reason||"Unhandled promise","browser"));
 const state = { token: sessionStorage.getItem("wvf_token") || "", user: null, view: "operations", vehicles: [], activeDoors: [], trackingEnabled: true, documentCheckEnabled: false, display:{dashboardEnabled:true,datatableEnabled:true}, queueRecall: {enabled:true,cooldownSeconds:10,maxCalls:0,requireReason:true,allowDoorChange:true,requireNewDoorOnChange:true,enabledReasons:["NO_SHOW","DRIVER_NOT_FOUND","WRONG_DOOR","DOOR_CHANGE","GENERAL","OTHER"]}, online: navigator.onLine };
 const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false, canvas:null, context:null, lastValue:"", lastSeenAt:0, repeatCount:0 };
 const submitState = { busy:false };
@@ -1277,6 +1284,7 @@ const inboundListState = { filter:"ALL" };
 const inboundTrackPanel = { timer:0, until:0, active:false };
 const operationsUiState = { filter:"", search:"" };
 const adminState = { data:null, tab:(()=>{try{return localStorage.getItem("wvf_admin_tab")||"users"}catch{return"users"}})(), busy:false };
+const adminHealthState={data:null,busy:false,error:""};
 const adminDataTools={tab:"overview",inspector:null,busy:false,openTable:"",openCommand:"",openSchema:"",archiveMonth:"",archivePreview:null,archiveBusy:false,archiveHistory:null,archiveHistoryBusy:false,archiveStoreBusy:false,archiveVerify:null,archiveVerifyBusy:false,cleanupMonth:"",cleanupPreview:null,cleanupBusy:false,cleanupScript:null,cleanupVerify:null,cleanupExecuteBusy:false,cleanupHistory:null};
 const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, dataIdentity:"", busy:false, reloadRequested:false, lastLoadedAt:0, error:"", cacheState:"", analyticsBusy:false, analyticsSeq:0, analyticsController:null, analyticsError:"", analyticsLastLoadedAt:0, calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0, retryTimer:0, failures:0, snapshotLoaded:false };
@@ -1341,7 +1349,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260816-r146-visual-v2",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260817-r162",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); openApp(); } catch { clearSession(); } }
 }
 
@@ -2596,12 +2604,16 @@ function syncDashboardMenuButton(){const button=$("dashboardMenuButton"),open=$(
 async function renderAdmin() {
   if(state.user?.accessRights!=="ADMIN"){return navigate(state.user?.accessRights==="INBOUND"?"inbound":"operations")}
   $("pageContent").innerHTML=`<div class="loading">กำลังโหลดการตั้งค่าระบบ</div>`;
-  try{adminState.data=await api("/api/admin/settings");renderAdminShell()}catch(error){$("pageContent").innerHTML=`<div class="empty-state"><b>โหลดการตั้งค่าไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryAdmin" class="primary">ลองใหม่</button></div>`;$("retryAdmin")?.addEventListener("click",renderAdmin)}
+  try{adminState.data=await api("/api/admin/settings");renderAdminShell()}catch(error){
+    try{adminHealthState.data=await api("/api/admin/diagnostics");adminHealthState.error="";adminState.data={};adminState.tab="health";renderAdminShell()}
+    catch{ $("pageContent").innerHTML=`<div class="empty-state"><b>โหลดการตั้งค่าไม่สำเร็จ</b><span>${escapeHtml(error.message)}</span><button id="retryAdmin" class="primary">ลองใหม่</button></div>`;$("retryAdmin")?.addEventListener("click",renderAdmin) }
+  }
 }
 
 const ADMIN_SETTING_CATEGORIES=[
   {id:"users",label:"ผู้ใช้งาน",group:"ผู้ใช้และสิทธิ์",keywords:"บัญชี สิทธิ์ รหัสผ่าน admin user"},
   {id:"display",label:"การแสดงผล",group:"หน้าจอและเมนู",keywords:"dashboard datatable เมนู เปิด ปิด หน้าจอ"},
+  {id:"health",label:"ตรวจระบบ",group:"ดูแลระบบ",keywords:"ตรวจระบบ สุขภาพ diagnostics health sync database เสถียร ซ่อม"},
   {id:"appointment",label:"เลขนัดหมาย",group:"ข้อมูลและรายงาน",keywords:"เลขนัดหมาย appointment จำนวนหลัก รูปแบบ เลขต้องห้าม ตรวจสอบ"},
   {id:"workflow",label:"ขั้นตอนงาน",group:"การปฏิบัติงาน",keywords:"workflow inbound ตรวจเอกสาร รับสินค้า คืนเอกสาร ขั้นตอน"},
   {id:"doors",label:"ประตู",group:"การปฏิบัติงาน",keywords:"door R S SS RR SR RS เปิด ปิด ประตู"},
@@ -2620,6 +2632,7 @@ function adminSettingsIcon(id){
     search:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg>',
     users:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M16 9h5M18.5 6.5v5"/></svg>',
     display:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+    health:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-5 4 10 2-5h4"/><circle cx="12" cy="12" r="9"/></svg>',
     appointment:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M7 9h3M13 9h4M7 13h2M12 13h5M7 17h5"/></svg>',
     workflow:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M5 8v3c0 3 2 5 5 5h2M19 8v3c0 3-2 5-5 5h-2"/></svg>',
     doors:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12v18H5zM9 6h5v15H9z"/><circle cx="12" cy="13" r=".8"/></svg>',
@@ -2638,10 +2651,11 @@ function adminSettingsIcon(id){
 function renderAdminShell(){
   if(!ADMIN_SETTING_CATEGORIES.some(item=>item.id===adminState.tab))adminState.tab="users";
   const active=ADMIN_SETTING_CATEGORIES.find(item=>item.id===adminState.tab)||ADMIN_SETTING_CATEGORIES[0];
+  const healthStatus=adminHealthState.data?.status||"UNKNOWN",healthLabel=healthStatus==="PASS"?"พร้อมใช้งาน":healthStatus==="WARN"?"ควรตรวจสอบ":healthStatus==="FAIL"?"มีปัญหา":"กำลังตรวจ";
   $("pageContent").innerHTML=`<section class="admin-v106">
     <header class="admin-v106-hero">
       <div><span>ศูนย์ควบคุมระบบ</span><h2>ตั้งค่าระบบ</h2><p>จัดการเมนู ขั้นตอนงาน เวลา และข้อมูลจากจุดเดียว</p></div>
-      <aside class="admin-v106-status"><i></i><div><small>สถานะระบบ</small><b>พร้อมใช้งาน</b><span>อัปเดต ${escapeHtml(formatDate(unixNow()))}</span></div></aside>
+      <aside id="adminHealthBadge" class="admin-v106-status health-${healthStatus.toLowerCase()}"><i></i><div><small>สถานะระบบ</small><b id="adminHealthBadgeLabel">${healthLabel}</b><span id="adminHealthBadgeTime">${adminHealthState.data?`ตรวจ ${escapeHtml(formatDate(adminHealthState.data.generatedAt))}`:"กำลังตรวจสอบ"}</span></div></aside>
     </header>
     <section class="admin-v106-toolbar">
       <label class="admin-setting-search"><span class="admin-setting-search-icon">${adminSettingsIcon("search")}</span><input id="adminSettingsSearch" type="search" autocomplete="off" placeholder="ค้นหาการตั้งค่า เช่น ประตู กะ เวลาแจ้งเตือน"></label>
@@ -2657,6 +2671,7 @@ function renderAdminShell(){
   document.querySelectorAll("[data-admin-tab]").forEach(button=>button.addEventListener("click",()=>{adminState.tab=button.dataset.adminTab;try{localStorage.setItem("wvf_admin_tab",adminState.tab)}catch{}renderAdminShell()}));
   bindAdminSettingsSearch();
   renderAdminPanel();
+  void ensureAdminHealth();
 }
 function bindAdminSettingsSearch(){
   const input=$("adminSettingsSearch"),grid=$("adminCategoryGrid"),empty=$("adminCategoryEmpty"),count=$("adminCategoryCount");
@@ -2669,7 +2684,7 @@ function bindAdminSettingsSearch(){
   input.addEventListener("keydown",event=>{if(event.key!=="Enter")return;const visible=[...grid.querySelectorAll("[data-admin-tab]:not([hidden])")];if(visible.length===1){event.preventDefault();visible[0].click()}});
 }
 
-function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="display")renderAdminDisplay();else if(adminState.tab==="appointment")renderAdminAppointmentValidation();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="rejections")renderAdminRejections();else if(adminState.tab==="recall")renderAdminQueueRecall();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="export")renderAdminMonthlyExport();else if(adminState.tab==="tracking")renderAdminTracking();else if(adminState.tab==="voice")renderAdminVoice();else renderAdminQueue()}
+function renderAdminPanel(){if(adminState.tab==="users")renderAdminUsers();else if(adminState.tab==="display")renderAdminDisplay();else if(adminState.tab==="health")renderAdminDiagnostics();else if(adminState.tab==="appointment")renderAdminAppointmentValidation();else if(adminState.tab==="workflow")renderAdminWorkflow();else if(adminState.tab==="doors")renderAdminDoors();else if(adminState.tab==="shifts")renderAdminShifts();else if(adminState.tab==="alerts")renderAdminAlerts();else if(adminState.tab==="rejections")renderAdminRejections();else if(adminState.tab==="recall")renderAdminQueueRecall();else if(adminState.tab==="data")renderAdminDataUsage();else if(adminState.tab==="export")renderAdminMonthlyExport();else if(adminState.tab==="tracking")renderAdminTracking();else if(adminState.tab==="voice")renderAdminVoice();else renderAdminQueue()}
 
 function renderAdminDisplay(){
   const display=normalizeDisplaySettings(adminState.data?.display),vehicleExclusion=adminState.data?.vehicleExclusion||{userEnabled:true};
@@ -3027,6 +3042,14 @@ function renderAdminQueue(){
   });
 }
 
+
+function adminHealthTone(status){return status==="FAIL"?"fail":status==="WARN"?"warn":"pass"}
+function updateAdminHealthBadge(){const badge=$("adminHealthBadge"),label=$("adminHealthBadgeLabel"),time=$("adminHealthBadgeTime"),data=adminHealthState.data;if(!badge)return;badge.classList.remove("health-pass","health-warn","health-fail","health-unknown");const status=data?.status||"UNKNOWN";badge.classList.add(`health-${status.toLowerCase()}`);if(label)label.textContent=status==="PASS"?"พร้อมใช้งาน":status==="WARN"?"ควรตรวจสอบ":status==="FAIL"?"มีปัญหา":adminHealthState.error?"ตรวจไม่สำเร็จ":"กำลังตรวจ";if(time)time.textContent=data?`ตรวจ ${formatDate(data.generatedAt)}`:adminHealthState.error?adminHealthState.error:"กำลังตรวจสอบ"}
+async function ensureAdminHealth(force=false){if(adminHealthState.busy)return adminHealthState.data;if(adminHealthState.data&&!force){updateAdminHealthBadge();return adminHealthState.data}adminHealthState.busy=true;adminHealthState.error="";try{adminHealthState.data=await api("/api/admin/diagnostics",{timeoutMs:15000});return adminHealthState.data}catch(error){adminHealthState.error=error.message||"ตรวจระบบไม่สำเร็จ";recordClientIssue("DIAGNOSTIC",adminHealthState.error,"/api/admin/diagnostics");return null}finally{adminHealthState.busy=false;updateAdminHealthBadge()}}
+function diagnosticClientHtml(){const c=clientHealthSnapshot(),issue=c.latestIssue;return `<section class="system-health-client"><header><div><b>เครื่องที่กำลังใช้งาน</b><small>ตรวจเฉพาะ Browser เครื่องนี้</small></div><span class="health-mini ${c.online&&c.serviceWorkerControlled?"pass":"warn"}">${c.online?"ออนไลน์":"ออฟไลน์"}</span></header><div class="system-health-client-grid"><span><small>หน้าเว็บ</small><b>${escapeHtml(c.frontendBuild)}</b></span><span><small>Service Worker</small><b>${c.serviceWorkerSupported?(c.serviceWorkerControlled?"ทำงาน":"ยังไม่ควบคุมหน้า"):"ไม่รองรับ"}</b></span><span><small>ปัญหา 24 ชม.</small><b>${c.issues24h}</b></span></div>${issue?`<div class="system-health-latest"><small>ล่าสุด ${escapeHtml(new Date(Number(issue.at||0)).toLocaleString("th-TH"))}</small><span>${escapeHtml(issue.message)}</span></div>`:""}</section>`}
+function renderAdminDiagnosticsContent(data){const panel=$("adminPanel");if(!panel||adminState.tab!=="health")return;if(!data){panel.innerHTML=`<div class="empty-state"><b>ตรวจระบบไม่สำเร็จ</b><span>${escapeHtml(adminHealthState.error||"กรุณาลองใหม่")}</span><button id="healthRetry" class="primary">ลองใหม่</button></div>`;$("healthRetry")?.addEventListener("click",()=>renderAdminDiagnostics(true));return}const tone=adminHealthTone(data.status),checks=Array.isArray(data.checks)?data.checks:[],repairable=Number(data.repairable?.total||0),latest=data.latestSync;panel.innerHTML=`<div class="admin-section-head clean-admin-head system-health-head"><div><h3>ตรวจระบบ</h3><p>ตรวจฐานข้อมูล การรับข้อมูล ความสัมพันธ์ และค่าที่จำเป็น โดยไม่แก้ข้อมูลปฏิบัติงาน</p></div><div class="system-health-actions"><button id="healthRefresh" class="quiet-button" type="button">ตรวจอีกครั้ง</button>${repairable?`<button id="healthRepair" class="primary" type="button">ซ่อมส่วนที่ปลอดภัย (${repairable})</button>`:""}</div></div><section class="system-health-summary ${tone}"><div><small>สถานะรวม</small><b>${escapeHtml(data.statusLabel||"-")}</b><span>ใช้เวลา ${Number(data.durationMs||0).toLocaleString("th-TH")} ms</span></div><div><small>Worker</small><b>${escapeHtml(data.build||"-")}</b><span>ตาราง ${Number(data.summary?.tables||0)} · ตัวช่วยค้นหา ${Number(data.summary?.indexes||0)}</span></div><div><small>รับข้อมูล Gate ล่าสุด</small><b>${latest?escapeHtml(String(latest.status||"-")):"ยังไม่มีข้อมูล"}</b><span>${latest?.finishedAt||latest?.startedAt?formatDate(latest.finishedAt||latest.startedAt):"-"}</span></div></section><section class="system-health-grid">${checks.map(item=>`<article class="system-health-check ${adminHealthTone(item.status)}"><span class="system-health-dot"></span><div><b>${escapeHtml(item.label)}</b><p>${escapeHtml(item.detail||"")}</p></div><strong>${item.status==="PASS"?"ผ่าน":item.status==="WARN"?"ตรวจดู":"ต้องแก้"}</strong></article>`).join("")}</section>${diagnosticClientHtml()}<section class="system-health-note"><b>ซ่อมส่วนที่ปลอดภัย</b><span>ระบบซ่อมได้เฉพาะรอบ Sync ที่ค้างเกิน 15 นาที ล้าง Session ที่หมดอายุเกิน 7 วัน และล้าง Cache สรุปข้อมูล ไม่แก้สถานะรถหรือประวัติขั้นตอนงาน</span></section>`;$("healthRefresh")?.addEventListener("click",()=>renderAdminDiagnostics(true));$("healthRepair")?.addEventListener("click",async()=>{const ok=await Swal.fire({icon:"warning",title:"ซ่อมส่วนที่ปลอดภัย",text:"จะจัดการเฉพาะสถานะ Sync ที่ค้างและ Session ที่หมดอายุ ไม่แก้ข้อมูลรถ",showCancelButton:true,confirmButtonText:"ตรวจและซ่อม",cancelButtonText:"ยกเลิก",reverseButtons:true,customClass:swalClasses(),width:420});if(!ok.isConfirmed)return;const button=$("healthRepair");if(button){button.disabled=true;button.textContent="กำลังตรวจ"}try{const result=await api("/api/admin/diagnostics/repair",{method:"POST",body:{confirmation:"SAFE_REPAIR"},timeoutMs:20000});adminHealthState.data=result.diagnostics;adminHealthState.error="";updateAdminHealthBadge();renderAdminDiagnosticsContent(adminHealthState.data);await showNotice("success",result.message||"ตรวจและซ่อมแล้ว")}catch(error){await showNotice("error",error.message||"ซ่อมไม่สำเร็จ")}})}
+async function renderAdminDiagnostics(force=false){const panel=$("adminPanel");if(!panel)return;if(force)adminHealthState.data=null;if(!adminHealthState.data){panel.innerHTML=`<div class="admin-data-loading"><span></span><b>กำลังตรวจระบบ</b><small>ตรวจเฉพาะส่วนสำคัญและไม่แก้ข้อมูล</small></div>`}const data=await ensureAdminHealth(force);renderAdminDiagnosticsContent(data)}
+
 async function renderAdminDataUsage(){
   const panel=$("adminPanel");if(!panel)return;
   panel.innerHTML=`<div class="admin-data-loading"><span></span><b>กำลังตรวจสอบการใช้ข้อมูล</b></div>`;
@@ -3230,9 +3253,9 @@ async function api(path, options={}) {
   }
   let response;
   try { response=await fetch(cfg.apiBaseUrl.replace(/\/$/,"")+path,{method:options.method||"GET",headers,body:options.body?JSON.stringify(options.body):undefined,signal}); setConnection(true); }
-  catch(error) { if(timer)clearTimeout(timer);if(error?.name==="AbortError")throw new Error("ระบบใช้เวลาตอบกลับนานเกินไป กรุณาลองใหม่");setConnection(false); throw new Error("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง"); }
+  catch(error) { if(timer)clearTimeout(timer);if(error?.name==="AbortError"){recordClientIssue("TIMEOUT","ระบบใช้เวลาตอบกลับนานเกินไป",path);throw new Error("ระบบใช้เวลาตอบกลับนานเกินไป กรุณาลองใหม่")}setConnection(false);recordClientIssue("NETWORK",error?.message||"เชื่อมต่อไม่ได้",path);throw new Error("เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง"); }
   if(timer)clearTimeout(timer);
-  const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"})); if (!response.ok || data.success===false) { if(response.status===401&&path!=="/api/auth/login") clearSession(); const error=new Error(data.message||"ดำเนินการไม่สำเร็จ");error.status=response.status;error.data=data;throw error; } return data;
+  const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"})); if (!response.ok || data.success===false) { if(response.status===401&&path!=="/api/auth/login") clearSession();if(response.status>=500)recordClientIssue(`API_${response.status}`,data.message||"ระบบตอบกลับผิดพลาด",path); const error=new Error(data.message||"ดำเนินการไม่สำเร็จ");error.status=response.status;error.data=data;throw error; } return data;
 }
 
 function setConnection(online) { state.online=online; $("connectionBanner").hidden=online; if($("syncStatus")) { $("syncStatus").textContent=online?"● พร้อมใช้งาน":"● รอเชื่อมต่อ"; $("syncStatus").style.color=online?"#08783a":"#a82020"; } if($("inboundSyncStatus")){ $("inboundSyncStatus").textContent=online?"● พร้อมใช้งาน":"● รอเชื่อมต่อ"; $("inboundSyncStatus").classList.toggle("is-online",online); $("inboundSyncStatus").classList.toggle("is-offline",!online);} }
