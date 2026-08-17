@@ -47,7 +47,7 @@ window.APPOINTMENT_DEV_CONFIG = {
 
   importApi: {
     enabled: false,
-    baseUrl: "",
+     baseUrl: "https://warehouse-appointment-dev.somchaibutphon.workers.dev",
     batchSize: 50
   }
 };
