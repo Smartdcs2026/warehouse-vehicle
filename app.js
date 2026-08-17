@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.17-round165-release-candidate";
+const FRONTEND_BUILD="2026.08.17-round166-tracking-secret-hardening";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
