@@ -7941,3 +7941,33 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
     font-size:9px!important;
   }
 }
+
+/* Round 157: configurable appointment validation */
+.appointment-rule-form{display:grid;gap:12px}
+.appointment-rule-switch{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}
+.appointment-rule-switch>div{display:grid;gap:3px;min-width:0}.appointment-rule-switch b{color:#173b67;font-size:14px}.appointment-rule-switch small{color:#72839a;font-size:10px;line-height:1.4}
+.appointment-rule-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.appointment-rule-grid>label,.appointment-rule-test{display:grid;gap:7px;align-content:start;padding:14px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}
+.appointment-rule-grid>label>span,.appointment-rule-test header b{color:#173b67;font-size:12px;font-weight:900}
+.appointment-rule-grid>label>small,.appointment-rule-test header small{color:#71829a;font-size:9.5px;line-height:1.4}
+.appointment-rule-grid input[type="text"],.appointment-rule-grid input:not([type]),.appointment-rule-grid textarea,.appointment-rule-test input{width:100%;min-height:40px;border:1px solid #ccd8e6;border-radius:9px;background:#fff;padding:8px 10px;color:#253b58;font:inherit;outline:none}
+.appointment-rule-grid textarea{resize:vertical;min-height:112px}
+.appointment-rule-grid input:focus,.appointment-rule-grid textarea:focus,.appointment-rule-test input:focus{border-color:#6e9ddd;box-shadow:0 0 0 3px rgba(65,111,195,.09)}
+.appointment-rule-check{gap:10px!important}.clean-check{display:flex!important;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e1e7ef;border-radius:9px;background:#fafcff}.clean-check input{width:16px!important;height:16px!important;min-height:0!important}.clean-check span{font-size:10.5px!important;color:#3d526d!important;font-weight:750!important}
+.appointment-rule-blocked{grid-row:span 2}
+.appointment-rule-test>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.appointment-rule-test-result{display:inline-flex;align-items:center;justify-content:center;min-height:38px;min-width:120px;padding:7px 10px;border-radius:9px;background:#f3f6fa;color:#687a91;font-size:10px;font-weight:850}.appointment-rule-test-result.is-valid{background:#edf8f2;color:#15724e}.appointment-rule-test-result.is-invalid{background:#fff0f0;color:#b42318}
+.appointment-rule-note{display:grid;gap:3px;padding:12px 14px;border:1px solid #dce6f1;border-radius:12px;background:#f7faff}.appointment-rule-note b{color:#214f86;font-size:11px}.appointment-rule-note span{color:#5f738d;font-size:9.5px;line-height:1.5}
+
+.dt-appointment-cell{display:flex!important;align-items:center!important;gap:5px!important;min-width:0!important}.dt-appointment-warning{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;padding:2px 5px;border:1px solid #efb5b5;border-radius:999px;background:#fff1f1;color:#b42318;font-size:7px;font-weight:900;line-height:1.15;vertical-align:middle}.dtm-record-head b .dt-appointment-warning{margin-left:5px;font-size:7.5px}.dt-detail-key b .dt-appointment-warning{margin-left:7px}.dt-detail-appointment-warning{display:block;margin-top:4px;color:#b42318;font-size:9px;font-style:normal;font-weight:800;line-height:1.25}
+.dt-missing-button{border-color:#e7b6b6!important;color:#a62323!important}.dt-missing-button.is-active{background:#a62323!important;border-color:#a62323!important;color:#fff!important}
+
+@media(max-width:760px){
+  .appointment-rule-grid{grid-template-columns:1fr}
+  .appointment-rule-blocked{grid-row:auto}
+  .appointment-rule-test>div{grid-template-columns:1fr}
+  .appointment-rule-test-result{width:100%}
+  .appointment-rule-switch{padding:12px}
+  .dt-appointment-cell{display:grid!important;gap:3px!important}
+  .dt-appointment-cell .dt-appointment-warning{width:max-content}
+}
+.appointment-rule-check{display:grid;align-content:start;padding:14px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}.appointment-rule-check>span{color:#173b67;font-size:12px;font-weight:900}
