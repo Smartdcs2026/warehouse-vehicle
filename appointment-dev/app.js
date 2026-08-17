@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171b";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171c";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171b";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -284,15 +284,20 @@
       setBusy(false);
       lastPreview={key:previewKey(snapshot),counts:total};
       showPreviewResult(total);
-      $("importButton").disabled=total.olderSkipped>0||total.conflicts>0;
+      const hasChanges=Number(total.inserted||0)+Number(total.updated||0)>0;
+      $("importButton").disabled=!hasChanges||total.olderSkipped>0||total.conflicts>0;
     }catch(e){setBusy(false);lastPreview=null;$("importButton").disabled=true;showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
     finally{btn.disabled=false}
   }
 
   function showPreviewResult(counts){
     const blocked=Number(counts.olderSkipped||0)>0||Number(counts.conflicts||0)>0;
+    const hasChanges=Number(counts.inserted||0)+Number(counts.updated||0)>0;
     if(window.Swal){
-      return Swal.fire({...swalBase(),icon:blocked?"warning":"success",title:blocked?"ยังไม่พร้อมนำเข้า":"พร้อมนำเข้า",html:countsHtml(counts),confirmButtonText:blocked?"รับทราบ":"ตกลง"});
+      const icon=blocked?"warning":hasChanges?"success":"info";
+      const title=blocked?"ยังไม่พร้อมนำเข้า":hasChanges?"พร้อมนำเข้า":"ไม่มีข้อมูลเปลี่ยนแปลง";
+      const note=!blocked&&!hasChanges?`<div class="swal-note">ข้อมูลทั้ง ${Number(counts.unchanged||0).toLocaleString()} นัดหมายตรงกับข้อมูลปัจจุบันแล้ว</div>`:"";
+      return Swal.fire({...swalBase(),icon,title,html:countsHtml(counts)+note,confirmButtonText:blocked?"รับทราบ":"ตกลง"});
     }
   }
 
@@ -330,6 +335,10 @@
     try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
     if(!lastPreview||lastPreview.key!==previewKey(snapshot)){showError("กรุณาตรวจการเปลี่ยนแปลงก่อนนำเข้า");return}
     if(Number(lastPreview.counts?.olderSkipped||0)>0||Number(lastPreview.counts?.conflicts||0)>0){showError("ยังมีรายการที่ต้องตรวจ จึงยังนำเข้าไม่ได้");return}
+    if(Number(lastPreview.counts?.inserted||0)+Number(lastPreview.counts?.updated||0)===0){
+      if(window.Swal)await Swal.fire({...swalBase(),icon:"info",title:"ไม่มีข้อมูลเปลี่ยนแปลง",html:`<div class="swal-note">ข้อมูลทั้งหมดตรงกับข้อมูลปัจจุบันแล้ว จึงไม่ต้องนำเข้าอีกครั้ง</div>`,confirmButtonText:"ตกลง"});
+      return;
+    }
     if(window.Swal){
       const confirm=await Swal.fire({...swalBase(),icon:"question",title:"ยืนยันนำเข้าข้อมูล?",html:countsHtml(lastPreview.counts),showCancelButton:true,confirmButtonText:"ยืนยันนำเข้า",cancelButtonText:"ยกเลิก"});
       if(!confirm.isConfirmed)return;
