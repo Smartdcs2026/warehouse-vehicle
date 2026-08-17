@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v170";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171b";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -139,10 +139,41 @@
   }
 
   function setBusy(on,text=""){const box=$("progress");box.hidden=!on;if(on)box.textContent=text}
-  function clearResult(){lastResult=null;lastPreview=null;$("result").hidden=true;$("errorBox").hidden=true;$("previewResult").hidden=true;$("importResult").hidden=true;$("importButton").disabled=true;applyControlsSafe()}
+  function clearResult(){lastResult=null;lastPreview=null;$("result").hidden=true;$("errorBox").hidden=true;$("importButton").disabled=true;applyControlsSafe()}
   function applyControlsSafe(){try{const api=config.importApi||{};$("importPanel").hidden=!(api.enabled&&api.baseUrl&&lastResult&&getIssueCount()===0)}catch{}}
-  function showError(msg){$("errorBox").hidden=false;$("errorBox").textContent=msg}
-  function showToast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.hidden=true,1800)}
+
+  function swalBase(){
+    return {
+      width:390,
+      buttonsStyling:false,
+      customClass:{popup:"swal-small",title:"swal-small-title",htmlContainer:"swal-small-html",confirmButton:"swal-btn",cancelButton:"swal-btn swal-btn-secondary",actions:"swal-small-actions"}
+    };
+  }
+
+  function showError(msg){
+    $("errorBox").hidden=true;
+    if(window.Swal){
+      return Swal.fire({...swalBase(),icon:"error",title:"ไม่สำเร็จ",text:String(msg||"เกิดข้อผิดพลาด"),confirmButtonText:"ตกลง"});
+    }
+    $("errorBox").hidden=false;$("errorBox").textContent=msg;
+  }
+
+  function showToast(msg){
+    if(window.Swal){
+      return Swal.fire({toast:true,position:"top-end",icon:"success",title:String(msg||"บันทึกแล้ว"),showConfirmButton:false,timer:1500,timerProgressBar:true,width:300,customClass:{popup:"swal-toast-small"}});
+    }
+  }
+
+  function countsHtml(counts={}){
+    const rows=[
+      ["เพิ่มใหม่",Number(counts.inserted||0)],
+      ["ปรับข้อมูล",Number(counts.updated||0)],
+      ["เดิม",Number(counts.unchanged||0)]
+    ];
+    if(Number(counts.olderSkipped||0)>0)rows.push(["ข้อมูลเก่ากว่า",Number(counts.olderSkipped||0)]);
+    if(Number(counts.conflicts||0)>0)rows.push(["ต้องตรวจ",Number(counts.conflicts||0)]);
+    return `<div class="swal-stats">${rows.map(([label,value])=>`<div class="swal-stat"><span>${label}</span><strong>${value.toLocaleString()}</strong></div>`).join("")}</div>`;
+  }
   function getWarningCount(){return (lastResult?.appointments||[]).reduce((n,a)=>n+(a.warnings?.length?1:0),0)}
   function getIssueCount(){return (lastResult?.stats?.invalidRows||0)+getWarningCount()}
 
@@ -225,8 +256,6 @@
   function invalidatePreview(){
     lastPreview=null;
     $("errorBox").hidden=true;
-    $("previewResult").hidden=true;
-    $("importResult").hidden=true;
     $("importButton").disabled=true;
   }
 
@@ -239,8 +268,8 @@
     if(!lastResult||getIssueCount()>0)return;
     let snapshot;
     try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
-    const token=getToken();if(!token)return;
-    const btn=$("previewButton");btn.disabled=true;$("importResult").hidden=true;$("previewResult").hidden=true;$("errorBox").hidden=true;
+    const token=await getToken();if(!token)return;
+    const btn=$("previewButton");btn.disabled=true;$("errorBox").hidden=true;
     try{
       const batchSize=Math.max(10,Math.min(100,Number(config.importApi?.batchSize)||50));
       const items=lastResult.appointments.map(itemForImport);
@@ -261,19 +290,23 @@
   }
 
   function showPreviewResult(counts){
-    const el=$("previewResult");el.hidden=false;
-    const parts=[`เพิ่มใหม่ ${Number(counts.inserted||0).toLocaleString()}`,`ปรับข้อมูล ${Number(counts.updated||0).toLocaleString()}`,`เดิม ${Number(counts.unchanged||0).toLocaleString()}`];
-    if(counts.olderSkipped)parts.push(`ข้อมูลเก่ากว่า ${Number(counts.olderSkipped).toLocaleString()}`);
-    if(counts.conflicts)parts.push(`ต้องตรวจ ${Number(counts.conflicts).toLocaleString()}`);
     const blocked=Number(counts.olderSkipped||0)>0||Number(counts.conflicts||0)>0;
-    el.classList.toggle("warn",blocked);
-    el.innerHTML=`<b>${blocked?"ยังไม่พร้อมนำเข้า":"พร้อมนำเข้า"}</b><span>${parts.join(" · ")}</span>`;
+    if(window.Swal){
+      return Swal.fire({...swalBase(),icon:blocked?"warning":"success",title:blocked?"ยังไม่พร้อมนำเข้า":"พร้อมนำเข้า",html:countsHtml(counts),confirmButtonText:blocked?"รับทราบ":"ตกลง"});
+    }
   }
 
   function apiUrl(path){return String(config.importApi?.baseUrl||"").replace(/\/+$/,"")+path}
-  function getToken(){
+  async function getToken(){
     let token=sessionStorage.getItem(TOKEN_KEY)||"";
-    if(!token){token=window.prompt("รหัสสำหรับการทดสอบ")||"";if(token)sessionStorage.setItem(TOKEN_KEY,token)}
+    if(token)return token;
+    if(window.Swal){
+      const result=await Swal.fire({...swalBase(),title:"รหัสสำหรับการทดสอบ",input:"password",inputPlaceholder:"กรอกรหัส",showCancelButton:true,confirmButtonText:"ตกลง",cancelButtonText:"ยกเลิก",inputAttributes:{autocomplete:"off"}});
+      token=String(result.value||"").trim();
+    }else{
+      token=window.prompt("รหัสสำหรับการทดสอบ")||"";
+    }
+    if(token)sessionStorage.setItem(TOKEN_KEY,token);
     return token;
   }
   async function apiPost(path,body,token){
@@ -297,8 +330,12 @@
     try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
     if(!lastPreview||lastPreview.key!==previewKey(snapshot)){showError("กรุณาตรวจการเปลี่ยนแปลงก่อนนำเข้า");return}
     if(Number(lastPreview.counts?.olderSkipped||0)>0||Number(lastPreview.counts?.conflicts||0)>0){showError("ยังมีรายการที่ต้องตรวจ จึงยังนำเข้าไม่ได้");return}
-    const token=getToken();if(!token)return;
-    const btn=$("importButton");btn.disabled=true;$("importResult").hidden=true;$("errorBox").hidden=true;
+    if(window.Swal){
+      const confirm=await Swal.fire({...swalBase(),icon:"question",title:"ยืนยันนำเข้าข้อมูล?",html:countsHtml(lastPreview.counts),showCancelButton:true,confirmButtonText:"ยืนยันนำเข้า",cancelButtonText:"ยกเลิก"});
+      if(!confirm.isConfirmed)return;
+    }
+    const token=await getToken();if(!token)return;
+    const btn=$("importButton");btn.disabled=true;$("errorBox").hidden=true;
     try{
       setBusy(true,"กำลังเตรียมนำเข้า");
       const start=await apiPost("/import/start",{fileHash:lastResult.fileHash,fileName:lastResult.fileName,sourceSheet:lastResult.sourceSheet,dateFrom:lastResult.dateRange?.[0]||null,dateTo:lastResult.dateRange?.[1]||null,totalAppointments:lastResult.totalAppointments,warehouseRule:{mode:config.warehouse?.matchMode,values:config.warehouse?.values},timeReference:config.timeReference,snapshotDate:snapshot.snapshotDate,snapshotTime:snapshot.snapshotTime},token);
@@ -319,13 +356,12 @@
   }
 
   function showImportResult(title,counts={}){
-    const el=$("importResult");el.hidden=false;
-    const parts=[`เพิ่มใหม่ ${(counts.inserted||0).toLocaleString()}`,`ปรับข้อมูล ${(counts.updated||0).toLocaleString()}`,`เดิม ${(counts.unchanged||0).toLocaleString()}`];
-    if(counts.olderSkipped)parts.push(`ข้ามข้อมูลเก่ากว่า ${Number(counts.olderSkipped).toLocaleString()}`);
-    if(counts.conflicts)parts.push(`ต้องตรวจ ${Number(counts.conflicts).toLocaleString()}`);
-    el.classList.toggle("warn",Number(counts.conflicts||0)>0);
-    el.innerHTML=`<b>${esc(title)}</b><span>${parts.join(" · ")}</span>`;
+    const duplicate=String(title||"").includes("เคยนำเข้า");
+    if(window.Swal){
+      return Swal.fire({...swalBase(),icon:duplicate?"info":"success",title:String(title||"เรียบร้อย"),html:countsHtml(counts),confirmButtonText:"ตกลง"});
+    }
   }
+
 
   document.addEventListener("DOMContentLoaded",bind);
 })();

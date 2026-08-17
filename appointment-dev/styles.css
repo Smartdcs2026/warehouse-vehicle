@@ -12,3 +12,20 @@
 
 /* Round 171A: hidden panels must stay hidden until they have content */
 .preview-result[hidden], .import-result[hidden] { display: none !important; }
+
+
+/* Round 171B: compact SweetAlert notifications */
+.swal2-popup.swal-small{width:min(390px,calc(100vw - 28px))!important;padding:18px 18px 16px!important;border-radius:16px!important;font-family:Arial,"Noto Sans Thai",sans-serif!important;box-shadow:0 18px 55px rgba(26,43,73,.22)!important}
+.swal-small .swal2-icon{width:3em!important;height:3em!important;margin:4px auto 10px!important}
+.swal-small .swal2-icon .swal2-icon-content{font-size:2em!important}
+.swal2-title.swal-small-title{padding:0!important;font-size:18px!important;line-height:1.35!important;color:#17233b!important}
+.swal2-html-container.swal-small-html{margin:10px 0 0!important;padding:0!important;font-size:13px!important;color:#526174!important}
+.swal-small-actions{margin:14px 0 0!important;gap:8px!important}
+.swal-btn{min-width:90px;border:0;border-radius:9px;padding:9px 15px;background:#315fa8;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+.swal-btn-secondary{background:#eef2f7;color:#475569}
+.swal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:4px}
+.swal-stat{border:1px solid #e2e8f0;border-radius:10px;padding:8px 6px;background:#f8fafc;text-align:center}
+.swal-stat span{display:block;font-size:11px;color:#64748b;margin-bottom:3px}
+.swal-stat strong{display:block;font-size:17px;color:#1e3f70}
+.swal2-popup.swal-toast-small{font-family:Arial,"Noto Sans Thai",sans-serif!important;border-radius:10px!important;padding:9px 12px!important;font-size:13px!important}
+@media(max-width:480px){.swal-stats{grid-template-columns:1fr 1fr}.swal2-popup.swal-small{padding:16px 14px 14px!important}}
