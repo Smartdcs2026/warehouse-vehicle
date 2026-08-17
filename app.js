@@ -2041,22 +2041,23 @@ function renderDatatableLayout(){
     </section>
     <main class="dt-main dt-main-full">
       <section class="dt-filter-shell dt-filter-shell-compact">
-        <div class="dt-filterbar dt-filterbar-r158-final">
-          <div class="dt-filter-main">
-            <div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div>
-            <select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select>
-            <select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select>
-            <select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select>
-            <select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select>
-            <select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select>
-          </div>
-          <div class="dt-action-group dt-action-group-r158">
-            <button id="dtReset" class="quiet-button" type="button">ล้างค่า</button>
-            <button id="dtProblem" class="outline-button ${datatableState.problemOnly?"is-active":""}" type="button">เฉพาะแจ้งเตือน</button>
-            ${appointmentRules.enabled?`<button id="dtInvalidAppointment" class="outline-button dt-missing-button ${datatableState.invalidAppointmentOnly?"is-active":""}" type="button">นัดหมายผิด</button>`:""}
-            ${exclusionAllowed?`<button id="dtExcludedList" class="outline-button dt-exclusions-button" type="button">นำออกแล้ว</button>`:""}
-            <button id="dtColumns" class="outline-button" type="button">คอลัมน์</button>
-          </div>
+        <div class="dt-filterbar dt-filterbar-r159">
+          <div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div>
+          <select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select>
+          <select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select>
+          <select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select>
+          <select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select>
+          <select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select>
+          <button id="dtProblem" class="outline-button dt-problem-compact ${datatableState.problemOnly?"is-active":""}" type="button" title="แสดงเฉพาะรายการแจ้งเตือน">แจ้งเตือน</button>
+          <details id="dtMoreActions" class="dt-more-actions">
+            <summary>เพิ่มเติม</summary>
+            <div class="dt-more-menu">
+              ${appointmentRules.enabled?`<button id="dtInvalidAppointment" class="outline-button dt-missing-button ${datatableState.invalidAppointmentOnly?"is-active":""}" type="button">นัดหมายผิด</button>`:""}
+              ${exclusionAllowed?`<button id="dtExcludedList" class="outline-button dt-exclusions-button" type="button">นำออกแล้ว</button>`:""}
+              <button id="dtColumns" class="outline-button" type="button">คอลัมน์</button>
+              <button id="dtReset" class="quiet-button" type="button">ล้างตัวกรอง</button>
+            </div>
+          </details>
         </div>
       </section>
       <section class="dt-table-card"><div id="dtTable" class="dt-table-wrap"><div class="loading">กำลังโหลดข้อมูล</div></div><footer id="dtPager" class="dt-pager"></footer></section></main>
@@ -2078,7 +2079,7 @@ function bindDatatableEvents(){
   $("dtFrom")?.addEventListener("change",()=>{datatableState.shiftAutoDate=false;datatableState.from=$("dtFrom").value;datatableState.page=1;renderDatatableBusinessDateNote();loadDatatable(true)});$("dtTo")?.addEventListener("change",()=>{datatableState.shiftAutoDate=false;datatableState.to=$("dtTo").value;datatableState.page=1;renderDatatableBusinessDateNote();loadDatatable(true)});$("dtShift")?.addEventListener("change",()=>{datatableState.shiftId=$("dtShift").value;adjustDatatableDateForCrossDayShift();syncDatatableShiftHint();syncDatatableDateLabels();renderDatatableBusinessDateNote();datatableState.page=1;loadDatatable(true)});
   $("dtSearch")?.addEventListener("input",()=>{clearTimeout(datatableState.searchTimer);datatableState.searchTimer=setTimeout(()=>{datatableState.search=$("dtSearch").value.trim();datatableState.page=1;loadDatatable(true)},350)});
   $("dtSla")?.addEventListener("change",()=>{datatableState.sla=$("dtSla").value;datatableState.page=1;loadDatatable(true)});$("dtStatus")?.addEventListener("change",()=>{datatableState.status=$("dtStatus").value;datatableState.rejectedOnly=false;datatableState.page=1;loadDatatable(true)});$("dtDoor")?.addEventListener("change",()=>{datatableState.door=$("dtDoor").value;datatableState.page=1;loadDatatable(true)});$("dtActor")?.addEventListener("change",()=>{datatableState.actor=$("dtActor").value;datatableState.page=1;loadDatatable(true)});$("dtSort")?.addEventListener("change",()=>{datatableState.sort=$("dtSort").value;datatableState.page=1;loadDatatable(true)});
-  $("dtProblem")?.addEventListener("click",()=>{datatableState.problemOnly=!datatableState.problemOnly;datatableState.page=1;$("dtProblem").classList.toggle("is-active",datatableState.problemOnly);loadDatatable(true)});$("dtInvalidAppointment")?.addEventListener("click",()=>{datatableState.invalidAppointmentOnly=!datatableState.invalidAppointmentOnly;datatableState.page=1;$("dtInvalidAppointment").classList.toggle("is-active",datatableState.invalidAppointmentOnly);loadDatatable(true)});$("dtExcludedList")?.addEventListener("click",showVehicleExclusions);$("dtReset")?.addEventListener("click",resetDatatableFilters);$("dtCompare")?.addEventListener("click",showDatatableCompare);$("dtRefresh")?.addEventListener("click",refreshDatatableAll);$("dtFullscreen")?.addEventListener("click",toggleFullscreen);$("dtExport")?.addEventListener("click",downloadDatatableExport);$("dtColumns")?.addEventListener("click",chooseDatatableColumns);$("dtAllRules")?.addEventListener("click",showDatatableAllRules);$("dtActivityButton")?.addEventListener("click",showDatatableActivity);
+  $("dtProblem")?.addEventListener("click",()=>{datatableState.problemOnly=!datatableState.problemOnly;datatableState.page=1;$("dtProblem").classList.toggle("is-active",datatableState.problemOnly);loadDatatable(true)});$("dtInvalidAppointment")?.addEventListener("click",()=>{datatableState.invalidAppointmentOnly=!datatableState.invalidAppointmentOnly;datatableState.page=1;$("dtInvalidAppointment").classList.toggle("is-active",datatableState.invalidAppointmentOnly);loadDatatable(true)});$("dtExcludedList")?.addEventListener("click",showVehicleExclusions);$("dtReset")?.addEventListener("click",resetDatatableFilters);$("dtCompare")?.addEventListener("click",showDatatableCompare);$("dtRefresh")?.addEventListener("click",refreshDatatableAll);$("dtFullscreen")?.addEventListener("click",toggleFullscreen);$("dtExport")?.addEventListener("click",downloadDatatableExport);$("dtColumns")?.addEventListener("click",chooseDatatableColumns);$("dtAllRules")?.addEventListener("click",showDatatableAllRules);$("dtActivityButton")?.addEventListener("click",showDatatableActivity);document.querySelectorAll("#dtMoreActions button").forEach(button=>button.addEventListener("click",()=>{const menu=$("dtMoreActions");if(menu)menu.open=false}));
   $("dtMobileFilterToggle")?.addEventListener("click",()=>toggleDatatableMobileFilters());$("dtMobileCompare")?.addEventListener("click",showDatatableCompare);$("dtMobileRefresh")?.addEventListener("click",refreshDatatableAll);$("dtMobileExport")?.addEventListener("click",downloadDatatableExport);
   bindDatatableViewportWatcher();
   document.querySelectorAll("[data-dt-quick]").forEach(button=>button.addEventListener("click",()=>runDatatableQuick(button.dataset.dtQuick)));
