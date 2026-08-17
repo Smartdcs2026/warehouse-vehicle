@@ -7559,3 +7559,38 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .dashboard-view-shell .r146-generated-kpis .opsdash-kpi>div>b{font-size:20px!important;}
   .dashboard-view-shell .r145-list .action-table-row>*{grid-template-columns:76px minmax(0,1fr)!important;}
 }
+
+
+/* Round 151: cleaner dashboard look, less gradient, simpler copy */
+.dashboard-view-shell .opsdash-panel .hour-chart i,
+.dashboard-view-shell .r146-hour-col>span>.in{background:#2563eb!important;}
+.dashboard-view-shell .opsdash-panel .dashboard-bars em,
+.dashboard-view-shell .opsdash-panel .door-capacity-rows em,
+.dashboard-view-shell .stage-time-chart em,
+.dashboard-view-shell .cycle-band-chart em,
+.dashboard-view-shell .r146-handover-progress>i>em{background:#2f6fd6!important;}
+.dashboard-view-shell .r146-hour-col>span>.out{background:#10b981!important;}
+
+.dashboard-view-shell .r146-command-card.danger{background:#fff7f7!important;}
+.dashboard-view-shell .r146-command-card.focus,
+.dashboard-view-shell .r146-command-card.warn{background:#fffaf2!important;}
+.dashboard-view-shell .r146-command-card.good{background:#f4fbf7!important;}
+.dashboard-view-shell .r146-generated-kpis .opsdash-kpi,
+.dashboard-view-shell .r146-stage-node,
+.dashboard-view-shell .r146-bottleneck-main{background:#fff!important;}
+.dashboard-view-shell .r146-bottleneck-main{border-color:#efd7ad!important;}
+
+.dashboard-view-shell .r146-bottom-tabs button.active{background:#1767dd!important;box-shadow:inset 0 3px 0 rgba(255,255,255,.12)!important;}
+.dashboard-view-shell .r146-bottom-tabs button:hover:not(.active){background:rgba(255,255,255,.04)!important;}
+.app-shell:not(.inbound-kiosk-shell) .mobile-nav::before,
+.mobile-nav::before{background:#3b73d1!important;}
+
+.dashboard-view-shell .r145-grid .opsdash-panel,
+.dashboard-view-shell .r146-generated-overview>.opsdash-panel,
+.dashboard-view-shell .r146-data-health{box-shadow:0 5px 14px rgba(27,52,88,.035)!important;}
+.dashboard-view-shell .r146-generated-kpis .opsdash-kpi,
+.dashboard-view-shell .r146-command-card,
+.dashboard-view-shell .r146-stage-node,
+.dashboard-view-shell .r146-bottleneck-main{box-shadow:none!important;}
+
+.dashboard-view-shell .r146-generated-head .r146-title-copy p{color:#5b6b80!important;font-weight:700!important;}
