@@ -3,10 +3,11 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v170";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v169";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v170";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
+  let lastPreview=null;
 
   function clone(v){return JSON.parse(JSON.stringify(v))}
   function deepMerge(base,extra){
@@ -43,9 +44,10 @@
     $("saveSettings").addEventListener("click",readSettings);
     $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
     $("search").addEventListener("input",renderPreview);
+    $("previewButton").addEventListener("click",previewData);
     $("importButton").addEventListener("click",importData);
-    $("snapshotDate").addEventListener("change",()=>{$("errorBox").hidden=true});
-    $("snapshotTime").addEventListener("change",()=>{$("errorBox").hidden=true});
+    $("snapshotDate").addEventListener("change",invalidatePreview);
+    $("snapshotTime").addEventListener("change",invalidatePreview);
     populateSettings();renderConfigSummary();applyControls();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
   }
@@ -124,7 +126,7 @@
     setBusy(true,"กำลังอ่านข้อมูล");clearResult();
     try{
       const buffer=await file.arrayBuffer();
-      const worker=new Worker("./excel-worker.js?v=20260818-r170");
+      const worker=new Worker("./excel-worker.js?v=20260818-r171");
       worker.onmessage=e=>{
         const m=e.data||{};
         if(m.type==="PROGRESS")setBusy(true,m.message||"กำลังตรวจข้อมูล");
@@ -137,7 +139,7 @@
   }
 
   function setBusy(on,text=""){const box=$("progress");box.hidden=!on;if(on)box.textContent=text}
-  function clearResult(){lastResult=null;$("result").hidden=true;$("errorBox").hidden=true;$("importResult").hidden=true;applyControlsSafe()}
+  function clearResult(){lastResult=null;lastPreview=null;$("result").hidden=true;$("errorBox").hidden=true;$("previewResult").hidden=true;$("importResult").hidden=true;$("importButton").disabled=true;applyControlsSafe()}
   function applyControlsSafe(){try{const api=config.importApi||{};$("importPanel").hidden=!(api.enabled&&api.baseUrl&&lastResult&&getIssueCount()===0)}catch{}}
   function showError(msg){$("errorBox").hidden=false;$("errorBox").textContent=msg}
   function showToast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.hidden=true,1800)}
@@ -156,6 +158,7 @@
     $("fileStatus").textContent=issues?"มีรายการต้องตรวจ":"พร้อมใช้งาน";
     $("fileStatus").classList.toggle("warn",!!issues);
     setSnapshotSuggestion(r.fileName);
+    invalidatePreview();
     $("issuePanel").hidden=!issues;
     $("issueSummary").textContent=issues?`${issues.toLocaleString()} รายการ`:"";
     renderPreview();renderErrors();applyControls();
@@ -215,6 +218,58 @@
     return {snapshotDate,snapshotTime};
   }
 
+  function previewKey(snapshot){
+    return [lastResult?.fileHash||"",snapshot.snapshotDate,snapshot.snapshotTime].join("|");
+  }
+
+  function invalidatePreview(){
+    lastPreview=null;
+    $("errorBox").hidden=true;
+    $("previewResult").hidden=true;
+    $("importResult").hidden=true;
+    $("importButton").disabled=true;
+  }
+
+  function addCounts(total,part){
+    for(const key of ["inserted","updated","unchanged","olderSkipped","conflicts"])total[key]+=Number(part?.[key]||0);
+    return total;
+  }
+
+  async function previewData(){
+    if(!lastResult||getIssueCount()>0)return;
+    let snapshot;
+    try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
+    const token=getToken();if(!token)return;
+    const btn=$("previewButton");btn.disabled=true;$("importResult").hidden=true;$("previewResult").hidden=true;$("errorBox").hidden=true;
+    try{
+      const batchSize=Math.max(10,Math.min(100,Number(config.importApi?.batchSize)||50));
+      const items=lastResult.appointments.map(itemForImport);
+      const total={inserted:0,updated:0,unchanged:0,olderSkipped:0,conflicts:0};
+      for(let offset=0;offset<items.length;offset+=batchSize){
+        const batch=items.slice(offset,offset+batchSize);
+        setBusy(true,`กำลังตรวจ ${Math.min(offset+batch.length,items.length).toLocaleString()} / ${items.length.toLocaleString()}`);
+        const part=await apiPost("/import/preview",{snapshotDate:snapshot.snapshotDate,snapshotTime:snapshot.snapshotTime,items:batch},token);
+        if(part.blockedOlder)throw new Error(part.message||"ชุดข้อมูลนี้เก่ากว่าข้อมูลที่มีอยู่");
+        addCounts(total,part.counts);
+      }
+      setBusy(false);
+      lastPreview={key:previewKey(snapshot),counts:total};
+      showPreviewResult(total);
+      $("importButton").disabled=total.olderSkipped>0||total.conflicts>0;
+    }catch(e){setBusy(false);lastPreview=null;$("importButton").disabled=true;showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
+  }
+
+  function showPreviewResult(counts){
+    const el=$("previewResult");el.hidden=false;
+    const parts=[`เพิ่มใหม่ ${Number(counts.inserted||0).toLocaleString()}`,`ปรับข้อมูล ${Number(counts.updated||0).toLocaleString()}`,`เดิม ${Number(counts.unchanged||0).toLocaleString()}`];
+    if(counts.olderSkipped)parts.push(`ข้อมูลเก่ากว่า ${Number(counts.olderSkipped).toLocaleString()}`);
+    if(counts.conflicts)parts.push(`ต้องตรวจ ${Number(counts.conflicts).toLocaleString()}`);
+    const blocked=Number(counts.olderSkipped||0)>0||Number(counts.conflicts||0)>0;
+    el.classList.toggle("warn",blocked);
+    el.innerHTML=`<b>${blocked?"ยังไม่พร้อมนำเข้า":"พร้อมนำเข้า"}</b><span>${parts.join(" · ")}</span>`;
+  }
+
   function apiUrl(path){return String(config.importApi?.baseUrl||"").replace(/\/+$/,"")+path}
   function getToken(){
     let token=sessionStorage.getItem(TOKEN_KEY)||"";
@@ -240,6 +295,8 @@
     if(!lastResult||getIssueCount()>0)return;
     let snapshot;
     try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
+    if(!lastPreview||lastPreview.key!==previewKey(snapshot)){showError("กรุณาตรวจการเปลี่ยนแปลงก่อนนำเข้า");return}
+    if(Number(lastPreview.counts?.olderSkipped||0)>0||Number(lastPreview.counts?.conflicts||0)>0){showError("ยังมีรายการที่ต้องตรวจ จึงยังนำเข้าไม่ได้");return}
     const token=getToken();if(!token)return;
     const btn=$("importButton");btn.disabled=true;$("importResult").hidden=true;$("errorBox").hidden=true;
     try{

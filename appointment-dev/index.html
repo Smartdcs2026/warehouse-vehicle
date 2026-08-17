@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r170">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r171">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 170</div>
+  <div class="build">Round 171</div>
 </header>
 
 <main>
@@ -122,15 +122,16 @@
         <label>วันที่ชุดข้อมูล<input id="snapshotDate" type="date"></label>
         <label>เวลา<input id="snapshotTime" type="time" step="60"></label>
       </div>
-      <button id="importButton" class="primary">นำเข้าข้อมูล</button>
+      <div class="import-actions"><button id="previewButton">ตรวจการเปลี่ยนแปลง</button><button id="importButton" class="primary" disabled>ยืนยันนำเข้า</button></div>
     </section>
+    <section id="previewResult" class="panel preview-result" hidden></section>
     <section id="importResult" class="panel import-result" hidden></section>
   </section>
 </main>
 
 <div id="toast" class="toast" hidden></div>
-<script src="./config.js?v=20260818-r170"></script>
-<script src="./excel-core.js?v=20260818-r170"></script>
-<script src="./app.js?v=20260818-r170"></script>
+<script src="./config.js?v=20260818-r171"></script>
+<script src="./excel-core.js?v=20260818-r171"></script>
+<script src="./app.js?v=20260818-r171"></script>
 </body>
 </html>

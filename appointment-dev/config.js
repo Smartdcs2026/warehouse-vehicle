@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round170-snapshot-version-guard",
+  build: "2026.08.18-round171-change-preview-uat",
   profileName: "ส่วนกลาง",
 
   controls: {
