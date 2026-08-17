@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.17-round169a-import-connection-fix",
+  build: "2026.08.18-round170-snapshot-version-guard",
   profileName: "ส่วนกลาง",
 
   controls: {

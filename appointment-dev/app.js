@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v169";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v168";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v170";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v169";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
 
@@ -44,6 +44,8 @@
     $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
     $("search").addEventListener("input",renderPreview);
     $("importButton").addEventListener("click",importData);
+    $("snapshotDate").addEventListener("change",()=>{$("errorBox").hidden=true});
+    $("snapshotTime").addEventListener("change",()=>{$("errorBox").hidden=true});
     populateSettings();renderConfigSummary();applyControls();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
   }
@@ -122,7 +124,7 @@
     setBusy(true,"กำลังอ่านข้อมูล");clearResult();
     try{
       const buffer=await file.arrayBuffer();
-      const worker=new Worker("./excel-worker.js?v=20260817-r169");
+      const worker=new Worker("./excel-worker.js?v=20260818-r170");
       worker.onmessage=e=>{
         const m=e.data||{};
         if(m.type==="PROGRESS")setBusy(true,m.message||"กำลังตรวจข้อมูล");
@@ -153,6 +155,7 @@
     $("fileRange").textContent=r.dateRange?.length?`${Core.displayDate(r.dateRange[0])} – ${Core.displayDate(r.dateRange[1])} · ${r.sourceSheet}`:r.sourceSheet;
     $("fileStatus").textContent=issues?"มีรายการต้องตรวจ":"พร้อมใช้งาน";
     $("fileStatus").classList.toggle("warn",!!issues);
+    setSnapshotSuggestion(r.fileName);
     $("issuePanel").hidden=!issues;
     $("issueSummary").textContent=issues?`${issues.toLocaleString()} รายการ`:"";
     renderPreview();renderErrors();applyControls();
@@ -188,6 +191,30 @@
     body.innerHTML=all.map(e=>`<tr><td>${esc(e.row)}</td><td>${esc(e.dc||"-")}</td><td>${esc(e.appointment||"-")}</td><td>${esc(e.rawDate||"-")}</td><td>${esc(e.message)}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">ไม่มีรายการที่ต้องตรวจ</td></tr>`;
   }
 
+  function setSnapshotSuggestion(fileName){
+    const found=inferSnapshot(fileName);
+    $("snapshotDate").value=found?.date||"";
+    $("snapshotTime").value=found?.time||"";
+  }
+
+  function inferSnapshot(fileName){
+    const name=String(fileName||"");
+    const m=name.match(/(?:^|\D)(\d{2})(\d{2})(\d{4}|\d{2})[_\-\s]+(\d{1,2})[.:](\d{2})(?:\D|$)/);
+    if(!m)return null;
+    const d=Number(m[1]),mo=Number(m[2]),y=m[3].length===4?Number(m[3]):2000+Number(m[3]);
+    const h=Number(m[4]),mi=Number(m[5]);
+    const dt=new Date(Date.UTC(y,mo-1,d));
+    if(dt.getUTCFullYear()!==y||dt.getUTCMonth()+1!==mo||dt.getUTCDate()!==d||h<0||h>23||mi<0||mi>59)return null;
+    return {date:`${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`,time:`${String(h).padStart(2,"0")}:${String(mi).padStart(2,"0")}`};
+  }
+
+  function snapshotForImport(){
+    const snapshotDate=$("snapshotDate").value;
+    const snapshotTime=$("snapshotTime").value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(snapshotDate)||!/^\d{2}:\d{2}$/.test(snapshotTime))throw new Error("กรุณาระบุวันที่และเวลาของชุดข้อมูล");
+    return {snapshotDate,snapshotTime};
+  }
+
   function apiUrl(path){return String(config.importApi?.baseUrl||"").replace(/\/+$/,"")+path}
   function getToken(){
     let token=sessionStorage.getItem(TOKEN_KEY)||"";
@@ -211,11 +238,13 @@
 
   async function importData(){
     if(!lastResult||getIssueCount()>0)return;
+    let snapshot;
+    try{snapshot=snapshotForImport()}catch(e){showError(e.message);return}
     const token=getToken();if(!token)return;
-    const btn=$("importButton");btn.disabled=true;$("importResult").hidden=true;
+    const btn=$("importButton");btn.disabled=true;$("importResult").hidden=true;$("errorBox").hidden=true;
     try{
       setBusy(true,"กำลังเตรียมนำเข้า");
-      const start=await apiPost("/import/start",{fileHash:lastResult.fileHash,fileName:lastResult.fileName,sourceSheet:lastResult.sourceSheet,dateFrom:lastResult.dateRange?.[0]||null,dateTo:lastResult.dateRange?.[1]||null,totalAppointments:lastResult.totalAppointments,warehouseRule:{mode:config.warehouse?.matchMode,values:config.warehouse?.values},timeReference:config.timeReference},token);
+      const start=await apiPost("/import/start",{fileHash:lastResult.fileHash,fileName:lastResult.fileName,sourceSheet:lastResult.sourceSheet,dateFrom:lastResult.dateRange?.[0]||null,dateTo:lastResult.dateRange?.[1]||null,totalAppointments:lastResult.totalAppointments,warehouseRule:{mode:config.warehouse?.matchMode,values:config.warehouse?.values},timeReference:config.timeReference,snapshotDate:snapshot.snapshotDate,snapshotTime:snapshot.snapshotTime},token);
       if(start.duplicate&&start.status==="COMPLETE"){
         setBusy(false);showImportResult("ไฟล์นี้เคยนำเข้าแล้ว",start.counts);return;
       }
@@ -234,7 +263,11 @@
 
   function showImportResult(title,counts={}){
     const el=$("importResult");el.hidden=false;
-    el.innerHTML=`<b>${esc(title)}</b><span>เพิ่มใหม่ ${(counts.inserted||0).toLocaleString()} · ปรับข้อมูล ${(counts.updated||0).toLocaleString()} · เดิม ${(counts.unchanged||0).toLocaleString()}</span>`;
+    const parts=[`เพิ่มใหม่ ${(counts.inserted||0).toLocaleString()}`,`ปรับข้อมูล ${(counts.updated||0).toLocaleString()}`,`เดิม ${(counts.unchanged||0).toLocaleString()}`];
+    if(counts.olderSkipped)parts.push(`ข้ามข้อมูลเก่ากว่า ${Number(counts.olderSkipped).toLocaleString()}`);
+    if(counts.conflicts)parts.push(`ต้องตรวจ ${Number(counts.conflicts).toLocaleString()}`);
+    el.classList.toggle("warn",Number(counts.conflicts||0)>0);
+    el.innerHTML=`<b>${esc(title)}</b><span>${parts.join(" · ")}</span>`;
   }
 
   document.addEventListener("DOMContentLoaded",bind);

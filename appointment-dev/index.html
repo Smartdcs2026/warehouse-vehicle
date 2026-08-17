@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260817-r169a">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r170">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 169A</div>
+  <div class="build">Round 170</div>
 </header>
 
 <main>
@@ -117,7 +117,11 @@
     </section>
 
     <section id="importPanel" class="panel import-panel" hidden>
-      <div><h2>พร้อมนำเข้า</h2><p>ข้อมูลผ่านการตรวจแล้ว และจะบันทึกเฉพาะข้อมูลของคลังที่ตั้งไว้</p></div>
+      <div class="import-copy"><h2>พร้อมนำเข้า</h2><p>ตรวจสอบวันที่และเวลาของชุดข้อมูลก่อนบันทึก</p></div>
+      <div class="snapshot-inputs">
+        <label>วันที่ชุดข้อมูล<input id="snapshotDate" type="date"></label>
+        <label>เวลา<input id="snapshotTime" type="time" step="60"></label>
+      </div>
       <button id="importButton" class="primary">นำเข้าข้อมูล</button>
     </section>
     <section id="importResult" class="panel import-result" hidden></section>
@@ -125,8 +129,8 @@
 </main>
 
 <div id="toast" class="toast" hidden></div>
-<script src="./config.js?v=20260817-r169a"></script>
-<script src="./excel-core.js?v=20260817-r169a"></script>
-<script src="./app.js?v=20260817-r169a"></script>
+<script src="./config.js?v=20260818-r170"></script>
+<script src="./excel-core.js?v=20260818-r170"></script>
+<script src="./app.js?v=20260818-r170"></script>
 </body>
 </html>
