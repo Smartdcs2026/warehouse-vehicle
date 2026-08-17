@@ -9,3 +9,6 @@
 .preview-result b{color:#176b39}.preview-result span{color:#365043}
 .preview-result.warn{border-color:#efc7a5;background:#fff8ef}.preview-result.warn b{color:#a44b12}
 @media(max-width:720px){.import-actions{width:100%}.import-actions button{flex:1}.preview-result{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* Round 171A: hidden panels must stay hidden until they have content */
+.preview-result[hidden], .import-result[hidden] { display: none !important; }
