@@ -2041,7 +2041,23 @@ function renderDatatableLayout(){
     </section>
     <main class="dt-main dt-main-full">
       <section class="dt-filter-shell dt-filter-shell-compact">
-        <div class="dt-filterbar"><div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div><select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select><select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select><select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select><select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select><select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select><button id="dtReset" class="quiet-button" type="button">ล้างค่า</button><button id="dtProblem" class="outline-button ${datatableState.problemOnly?"is-active":""}" type="button">เฉพาะแจ้งเตือน</button>${appointmentRules.enabled?`<button id="dtInvalidAppointment" class="outline-button dt-missing-button ${datatableState.invalidAppointmentOnly?"is-active":""}" type="button">นัดหมายผิด</button>`:""}${exclusionAllowed?`<button id="dtExcludedList" class="outline-button dt-exclusions-button" type="button">นำออกแล้ว</button>`:""}<button id="dtColumns" class="outline-button" type="button">คอลัมน์</button></div>
+        <div class="dt-filterbar dt-filterbar-r158-final">
+          <div class="dt-filter-main">
+            <div class="dt-search"><input id="dtSearch" value="${escapeHtml(datatableState.search)}" placeholder="ค้นหาเลขนัดหมาย / บริษัท / ทะเบียน / คนขับ"><span aria-hidden="true">⌕</span></div>
+            <select id="dtSla"><option value="ALL">ทุกระดับแจ้งเตือน</option>${["NORMAL","WATCH","WARNING","URGENT","CRITICAL"].map(v=>`<option value="${v}">${alertLevelLabel(v)}</option>`).join("")}</select>
+            <select id="dtStatus"><option value="ALL">ทุกสถานะ</option><option value="ACTIVE">ระหว่างดำเนินการ</option><option value="CLOSED">เสร็จสิ้น</option><option value="REJECTED">ปฏิเสธรับสินค้า</option>${Object.keys(DATATABLE_STATUS_OPTIONS).map(v=>`<option value="${v}">${DATATABLE_STATUS_OPTIONS[v]}</option>`).join("")}</select>
+            <select id="dtDoor"><option value="">ทุกประตู</option>${doorOptions}</select>
+            <select id="dtActor"><option value="">ผู้ดำเนินการทั้งหมด</option>${actorOptions}</select>
+            <select id="dtSort"><option value="start_desc">เรียงล่าสุด</option><option value="start_asc">เรียงเก่าสุด</option><option value="duration_desc">ใช้เวลามากสุด</option><option value="duration_asc">ใช้เวลาน้อยสุด</option><option value="appointment_asc">เลขนัดหมาย น้อย → มาก</option><option value="appointment_desc">เลขนัดหมาย มาก → น้อย</option><option value="company_asc">บริษัท A → Z</option></select>
+          </div>
+          <div class="dt-action-group dt-action-group-r158">
+            <button id="dtReset" class="quiet-button" type="button">ล้างค่า</button>
+            <button id="dtProblem" class="outline-button ${datatableState.problemOnly?"is-active":""}" type="button">เฉพาะแจ้งเตือน</button>
+            ${appointmentRules.enabled?`<button id="dtInvalidAppointment" class="outline-button dt-missing-button ${datatableState.invalidAppointmentOnly?"is-active":""}" type="button">นัดหมายผิด</button>`:""}
+            ${exclusionAllowed?`<button id="dtExcludedList" class="outline-button dt-exclusions-button" type="button">นำออกแล้ว</button>`:""}
+            <button id="dtColumns" class="outline-button" type="button">คอลัมน์</button>
+          </div>
+        </div>
       </section>
       <section class="dt-table-card"><div id="dtTable" class="dt-table-wrap"><div class="loading">กำลังโหลดข้อมูล</div></div><footer id="dtPager" class="dt-pager"></footer></section></main>
   </section>`;
