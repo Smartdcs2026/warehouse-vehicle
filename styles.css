@@ -7847,3 +7847,97 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .dashboard-theme-dialog>button>span{display:block!important;font-size:12px!important;font-weight:850!important;text-align:left!important;}
 .dashboard-theme-dialog>button>span strong,.dashboard-theme-dialog>button>span small{display:none!important;}
 @media(max-width:480px){.dashboard-theme-dialog{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+
+/* Round 155 — remove bad Gate In rows safely (ADMIN / USER) */
+.dt-missing-button{border-color:#f0b15e!important;color:#9a5a00!important;background:#fffaf2!important;font-weight:850!important}
+.dt-missing-button.is-active{border-color:#d97706!important;background:#d97706!important;color:#fff!important}
+.dt-exclusions-button{border-color:#b8c6d8!important;color:#42566f!important;background:#fff!important;font-weight:850!important}
+.dt-exclusions-button:hover{background:#f5f8fc!important}
+.dt-command.action-exclude,.dtm-action.action-exclude{border-color:#df8f8f!important;background:#fff7f7!important;color:#b42318!important;font-weight:900!important}
+.dt-command.action-exclude:hover,.dtm-action.action-exclude:hover{background:#fff0f0!important}
+
+.vehicle-exclude-swal .swal2-html-container,.vehicle-exclusions-swal .swal2-html-container{text-align:left!important}
+.vehicle-exclude-form{display:grid;gap:13px;text-align:left}
+.vehicle-exclude-summary{display:grid;gap:3px;padding:13px 14px;border:1px solid #f1d2d2;border-left:4px solid #dc2626;border-radius:12px;background:#fffafa}
+.vehicle-exclude-summary small{color:#7a8798;font-size:10px;font-weight:800}
+.vehicle-exclude-summary b{color:#b42318;font-size:16px}
+.vehicle-exclude-summary span{color:#334155;font-size:11px;font-weight:750}
+.vehicle-exclude-summary em{color:#7a8798;font-size:9px;font-style:normal}
+.vehicle-exclude-form>label{display:grid;gap:6px}
+.vehicle-exclude-form>label>span{color:#334155;font-size:11px;font-weight:900}
+.vehicle-exclude-form select,.vehicle-exclude-form textarea{width:100%;border:1px solid #d8e1ec;border-radius:10px;background:#fff;color:#172033;font:inherit;padding:9px 10px;outline:none}
+.vehicle-exclude-form select{height:42px}
+.vehicle-exclude-form textarea{resize:vertical;min-height:78px;line-height:1.45}
+.vehicle-exclude-form select:focus,.vehicle-exclude-form textarea:focus{border-color:#79a7e8;box-shadow:0 0 0 3px rgba(65,111,195,.08)}
+.vehicle-exclude-note{display:grid;gap:3px;padding:10px 12px;border:1px solid #dce6f1;border-radius:10px;background:#f8fafc}
+.vehicle-exclude-note b{color:#244b86;font-size:10px}
+.vehicle-exclude-note span{color:#62748a;font-size:9.5px;line-height:1.45}
+.vehicle-exclude-confirm{background:#b42318!important;border-color:#b42318!important}
+
+.vehicle-exclusion-list{display:grid;gap:9px;max-height:min(64vh,620px);overflow:auto;padding-right:3px}
+.vehicle-exclusion-card{display:grid;gap:9px;padding:12px 13px;border:1px solid #dce4ee;border-left:4px solid #c2410c;border-radius:12px;background:#fff}
+.vehicle-exclusion-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.vehicle-exclusion-card>header>div{display:grid;gap:2px}
+.vehicle-exclusion-card>header small,.vehicle-exclusion-grid small{color:#7a8798;font-size:8.5px;font-weight:800}
+.vehicle-exclusion-card>header b{color:#174c99;font-size:13px}
+.vehicle-exclusion-card>header>span{padding:4px 8px;border-radius:999px;background:#fff3e8;color:#a64b0a;font-size:8.5px;font-weight:900;text-align:right}
+.vehicle-exclusion-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.vehicle-exclusion-grid>div{display:grid;gap:2px;padding:8px 9px;border-radius:9px;background:#f7f9fc;min-width:0}
+.vehicle-exclusion-grid b{overflow:hidden;color:#293d56;font-size:9.5px;text-overflow:ellipsis;white-space:nowrap}
+.vehicle-exclusion-card>p{margin:0;padding:7px 9px;border-radius:8px;background:#fffaf3;color:#6e5535;font-size:9px;line-height:1.4}
+.vehicle-exclusion-card>footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:2px}
+.vehicle-exclusion-card>footer time{color:#8190a2;font-size:8.5px}
+.vehicle-exclusion-card>footer button{min-height:30px;padding:5px 10px;border:1px solid #afc5e1;border-radius:8px;background:#fff;color:#245ca6;font:850 9px/1 inherit;cursor:pointer}
+.vehicle-exclusion-card>footer button:hover{background:#f1f6fd}
+
+@media(max-width:760px){
+  .dt-filterbar .dt-missing-button,.dt-filterbar .dt-exclusions-button{min-height:38px!important}
+  .vehicle-exclude-swal,.vehicle-exclusions-swal{width:calc(100vw - 14px)!important}
+  .vehicle-exclusion-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .vehicle-exclusion-card{padding:11px}
+  .vehicle-exclusion-card>header{display:grid;gap:6px}
+  .vehicle-exclusion-card>header>span{width:max-content;max-width:100%;text-align:left}
+}
+@media(max-width:420px){
+  .vehicle-exclusion-grid{grid-template-columns:1fr}
+  .vehicle-exclusion-card>footer{align-items:flex-start;flex-direction:column}
+  .vehicle-exclusion-card>footer button{width:100%}
+}
+.vehicle-exclusion-setting-card .exclusion-icon{background:#fff1f1!important;color:#b42318!important;border:1px solid #f1c9c9!important;font-size:19px!important;font-weight:900!important}
+
+/* Round 156: manual removal of incorrect Gate In rows */
+.datatable-view-shell .dtm-record-actions.has-remove{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.datatable-view-shell .dtm-action-remove{
+  border:1px solid #e4a2a2!important;
+  background:#fff!important;
+  color:#b42318!important;
+}
+.datatable-view-shell .dtm-action-remove:hover{
+  background:#fff4f4!important;
+}
+.dt-detail-exclude-button{
+  border:1px solid #dc8d8d!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#b42318!important;
+  font-weight:900!important;
+  padding:9px 16px!important;
+}
+.dt-detail-exclude-button:hover{
+  background:#fff3f3!important;
+}
+.vehicle-exclude-summary>b{
+  overflow-wrap:anywhere;
+}
+@media(max-width:420px){
+  .datatable-view-shell .dtm-record-actions.has-remove{
+    gap:5px!important;
+  }
+  .datatable-view-shell .dtm-record-actions.has-remove .dtm-action{
+    min-height:38px!important;
+    padding:6px 5px!important;
+    font-size:9px!important;
+  }
+}
