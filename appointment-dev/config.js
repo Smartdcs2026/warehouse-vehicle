@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.17-round169-appointment-dev-clean-import",
+  build: "2026.08.17-round169a-import-connection-fix",
   profileName: "ส่วนกลาง",
 
   controls: {
@@ -46,8 +46,8 @@ window.APPOINTMENT_DEV_CONFIG = {
   },
 
   importApi: {
-    enabled: false,
-     baseUrl: "https://warehouse-appointment-dev.somchaibutphon.workers.dev",
+    enabled: true,
+    baseUrl: "https://warehouse-appointment-dev.somchaibutphon.workers.dev",
     batchSize: 50
   }
 };

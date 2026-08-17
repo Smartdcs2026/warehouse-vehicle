@@ -18,11 +18,23 @@
   function loadConfig(){
     try{
       const saved=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(OLD_STORAGE_KEY)||"{}";
-      return Core.normalizeConfig(deepMerge(BASE,JSON.parse(saved)));
-    }catch{return Core.normalizeConfig(clone(BASE))}
+      const merged=Core.normalizeConfig(deepMerge(BASE,JSON.parse(saved)));
+      // การเชื่อมต่อระบบบันทึกมาจากไฟล์ config เท่านั้น ไม่ให้ค่าค้างใน Browser ทับค่าใหม่
+      merged.importApi=clone(BASE.importApi||{});
+      return merged;
+    }catch{
+      const merged=Core.normalizeConfig(clone(BASE));
+      merged.importApi=clone(BASE.importApi||{});
+      return merged;
+    }
   }
   let config=loadConfig();
-  function saveConfig(){localStorage.setItem(STORAGE_KEY,JSON.stringify(config));renderConfigSummary();applyControls()}
+  function saveConfig(){
+    const saved=clone(config);
+    delete saved.importApi;
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+    renderConfigSummary();applyControls();
+  }
   function split(v){return String(v||"").split(/[\n,;|]+/).map(s=>s.trim()).filter(Boolean)}
   function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
@@ -187,7 +199,10 @@
     try{
       const res=await fetch(apiUrl(path),{method:"POST",headers:{"Content-Type":"application/json","X-Dev-Token":token},body:JSON.stringify(body),signal:ctrl.signal});
       const data=await res.json().catch(()=>({}));
-      if(!res.ok)throw new Error(data.message||"บันทึกข้อมูลไม่สำเร็จ");
+      if(!res.ok){
+        if(res.status===401)sessionStorage.removeItem(TOKEN_KEY);
+        throw new Error(data.message||"บันทึกข้อมูลไม่สำเร็จ");
+      }
       return data;
     }finally{clearTimeout(timer)}
   }
