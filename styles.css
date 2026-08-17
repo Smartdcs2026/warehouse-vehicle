@@ -7835,3 +7835,15 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.focus,
 .dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.warn{background:#32291d!important;}
 .dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.good{background:#183027!important;}
+
+
+/* Round 154: simple color selector — no marketing-style theme names */
+.dashboard-theme-menu{width:190px!important;}
+.dashboard-theme-menu>button{grid-template-columns:24px 1fr!important;align-items:center!important;padding:9px 10px!important;}
+.dashboard-theme-menu>button>span{display:block!important;font-size:11px!important;font-weight:850!important;}
+.dashboard-theme-menu>button>span strong,.dashboard-theme-menu>button>span small{display:none!important;}
+.dashboard-theme-dialog{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important;}
+.dashboard-theme-dialog>button{grid-template-columns:28px 1fr!important;align-items:center!important;min-height:52px!important;padding:10px 11px!important;}
+.dashboard-theme-dialog>button>span{display:block!important;font-size:12px!important;font-weight:850!important;text-align:left!important;}
+.dashboard-theme-dialog>button>span strong,.dashboard-theme-dialog>button>span small{display:none!important;}
+@media(max-width:480px){.dashboard-theme-dialog{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
