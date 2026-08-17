@@ -7656,3 +7656,182 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 @media(max-width:980px){
   .dashboard-mobile-menu #dashboardMobileTheme span{white-space:normal;}
 }
+
+
+/* Round 153: apply dashboard theme to the whole dashboard, not only controls */
+.dashboard-view-shell[data-dashboard-theme="blue"]{
+  --dash-page:#f3f6fa;--dash-surface:#ffffff;--dash-soft:#f6f8fb;--dash-soft-2:#eef3f8;
+  --dash-line:#d6e0eb;--dash-text:#10243e;--dash-muted:#6e8095;
+  --dash-accent:#2563eb;--dash-accent-strong:#1d4ed8;--dash-accent-soft:#edf4ff;
+  --dash-chart-primary:#2563eb;--dash-chart-secondary:#0f9f78;
+  --dash-table:#f3f7fb;--dash-nav:#08223e;--dash-nav-text:#9db0c5;--dash-nav-active:#1767dd;
+}
+.dashboard-view-shell[data-dashboard-theme="slate"]{
+  --dash-page:#f2f4f7;--dash-surface:#ffffff;--dash-soft:#f7f8fa;--dash-soft-2:#eceff3;
+  --dash-line:#d5dbe3;--dash-text:#1f2937;--dash-muted:#697586;
+  --dash-accent:#475569;--dash-accent-strong:#334155;--dash-accent-soft:#eef1f5;
+  --dash-chart-primary:#526273;--dash-chart-secondary:#0f766e;
+  --dash-table:#f2f4f7;--dash-nav:#202a36;--dash-nav-text:#b3bec9;--dash-nav-active:#475569;
+}
+.dashboard-view-shell[data-dashboard-theme="green"]{
+  --dash-page:#f1f6f3;--dash-surface:#ffffff;--dash-soft:#f4f9f6;--dash-soft-2:#e8f2ec;
+  --dash-line:#cfe0d6;--dash-text:#17352d;--dash-muted:#6c8279;
+  --dash-accent:#0f8f6d;--dash-accent-strong:#08745a;--dash-accent-soft:#e9f7f1;
+  --dash-chart-primary:#0f8f6d;--dash-chart-secondary:#3b82f6;
+  --dash-table:#f0f7f3;--dash-nav:#0b3029;--dash-nav-text:#a7c3ba;--dash-nav-active:#0f8f6d;
+}
+.dashboard-view-shell[data-dashboard-theme="indigo"]{
+  --dash-page:#f4f4fb;--dash-surface:#ffffff;--dash-soft:#f7f6fd;--dash-soft-2:#eceafb;
+  --dash-line:#dcd9ee;--dash-text:#26233f;--dash-muted:#75718c;
+  --dash-accent:#4f46e5;--dash-accent-strong:#3730a3;--dash-accent-soft:#efefff;
+  --dash-chart-primary:#4f46e5;--dash-chart-secondary:#0f9f78;
+  --dash-table:#f4f3fc;--dash-nav:#1f1c3d;--dash-nav-text:#b4b0d0;--dash-nav-active:#4f46e5;
+}
+.dashboard-view-shell[data-dashboard-theme="warm"]{
+  --dash-page:#f7f4ef;--dash-surface:#fffefa;--dash-soft:#faf7f2;--dash-soft-2:#f1ebe3;
+  --dash-line:#e2d8ca;--dash-text:#382c27;--dash-muted:#81746c;
+  --dash-accent:#a85a3a;--dash-accent-strong:#86462f;--dash-accent-soft:#fbefe7;
+  --dash-chart-primary:#a85a3a;--dash-chart-secondary:#0f766e;
+  --dash-table:#f8f3ed;--dash-nav:#382923;--dash-nav-text:#c5b5ad;--dash-nav-active:#a85a3a;
+}
+.dashboard-view-shell[data-dashboard-theme="dark"]{
+  --dash-page:#111827;--dash-surface:#1b2637;--dash-soft:#243247;--dash-soft-2:#2b394d;
+  --dash-line:#344357;--dash-text:#f4f7fb;--dash-muted:#a8b5c7;
+  --dash-accent:#60a5fa;--dash-accent-strong:#93c5fd;--dash-accent-soft:#243955;
+  --dash-chart-primary:#60a5fa;--dash-chart-secondary:#34d399;
+  --dash-table:#263449;--dash-nav:#0b1320;--dash-nav-text:#93a4b8;--dash-nav-active:#2563eb;
+}
+
+.dashboard-view-shell[data-dashboard-theme] .page-content,
+.dashboard-view-shell[data-dashboard-theme] .content{background:var(--dash-page)!important;color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-head,
+.dashboard-view-shell[data-dashboard-theme] .r146-data-health,
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-kpis .opsdash-kpi,
+.dashboard-view-shell[data-dashboard-theme] .r145-grid .opsdash-panel,
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-overview>.opsdash-panel,
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-node{background:var(--dash-surface)!important;border-color:var(--dash-line)!important;color:var(--dash-text)!important;}
+
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-head .opsdash-title h2,
+.dashboard-view-shell[data-dashboard-theme] .r145-grid .opsdash-panel h3,
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-overview>.opsdash-panel h3,
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-node b,
+.dashboard-view-shell[data-dashboard-theme] .r146-data-health b,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-numbers b,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-foot b{color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-head .opsdash-title p,
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-head .opsdash-title small,
+.dashboard-view-shell[data-dashboard-theme] .r145-grid .opsdash-panel-meta span,
+.dashboard-view-shell[data-dashboard-theme] .r146-generated-overview>.opsdash-panel-meta span,
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-node span,
+.dashboard-view-shell[data-dashboard-theme] .r146-data-health small,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-numbers small,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-numbers span,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-foot small{color:var(--dash-muted)!important;}
+
+.dashboard-view-shell[data-dashboard-theme] .calendar-button,
+.dashboard-view-shell[data-dashboard-theme] #dashboardShift,
+.dashboard-view-shell[data-dashboard-theme] .range-buttons,
+.dashboard-view-shell[data-dashboard-theme] .range-buttons button,
+.dashboard-view-shell[data-dashboard-theme] #dashboardRefresh,
+.dashboard-view-shell[data-dashboard-theme] #dashboardFullscreen,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-more-button,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-queue-button,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-button{background:var(--dash-surface)!important;border-color:var(--dash-line)!important;color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .range-buttons button.active{background:var(--dash-accent)!important;border-color:var(--dash-accent)!important;color:#fff!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-button>i{background:var(--dash-accent)!important;border-color:var(--dash-accent)!important;box-shadow:none!important;}
+
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu{background:var(--dash-surface)!important;border-color:var(--dash-line)!important;color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu>b{color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu>button{color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu>button small{color:var(--dash-muted)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu>button:hover,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-theme-menu>button.active{background:var(--dash-accent-soft)!important;border-color:var(--dash-accent)!important;color:var(--dash-accent-strong)!important;}
+
+/* theme swatches: solid corporate colors */
+.dashboard-theme-menu>button[data-dashboard-theme="blue"]>i,.dashboard-theme-dialog .theme-blue{background:#2563eb!important;}
+.dashboard-theme-menu>button[data-dashboard-theme="slate"]>i,.dashboard-theme-dialog .theme-slate{background:#475569!important;}
+.dashboard-theme-menu>button[data-dashboard-theme="green"]>i,.dashboard-theme-dialog .theme-green{background:#0f8f6d!important;}
+.dashboard-theme-menu>button[data-dashboard-theme="indigo"]>i,.dashboard-theme-dialog .theme-indigo{background:#4f46e5!important;}
+.dashboard-theme-menu>button[data-dashboard-theme="dark"]>i,.dashboard-theme-dialog .theme-dark{background:#253246!important;}
+.dashboard-theme-menu>button[data-dashboard-theme="warm"]>i,.dashboard-theme-dialog .theme-warm{background:#a85a3a!important;}
+
+/* structural accents and charts follow the selected theme */
+.dashboard-view-shell[data-dashboard-theme] .r146-hour-col>span>.in,
+.dashboard-view-shell[data-dashboard-theme] .opsdash-panel .hour-chart i,
+.dashboard-view-shell[data-dashboard-theme] .r145-grid .hour-chart i,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-bars em,
+.dashboard-view-shell[data-dashboard-theme] .door-capacity-rows em,
+.dashboard-view-shell[data-dashboard-theme] .stage-time-chart em,
+.dashboard-view-shell[data-dashboard-theme] .cycle-band-chart em,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-progress>i>em{background:var(--dash-chart-primary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-hour-col>span>.out{background:var(--dash-chart-secondary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .round12-combo .gate-in-bar{fill:var(--dash-chart-primary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .round12-combo .closed-bar{fill:var(--dash-chart-secondary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .opsdash-daily-line .total-line{stroke:var(--dash-chart-primary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .opsdash-daily-line .average-line{stroke:var(--dash-chart-secondary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .opsdash-daily-line .total-dot{stroke:var(--dash-chart-primary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .opsdash-daily-line .average-dot{stroke:var(--dash-chart-secondary)!important;}
+.dashboard-view-shell[data-dashboard-theme] .opsdash-daily-line text,
+.dashboard-view-shell[data-dashboard-theme] .opsdash-combo text,
+.dashboard-view-shell[data-dashboard-theme] .opsdash-line text{fill:var(--dash-muted)!important;}
+.dashboard-view-shell[data-dashboard-theme] .door-heat i{background:var(--dash-chart-primary)!important;opacity:calc(.16 + (var(--heat) * .84));}
+
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-matrix span,
+.dashboard-view-shell[data-dashboard-theme] .flow-insight-stats>div,
+.dashboard-view-shell[data-dashboard-theme] .handover-summary>div,
+.dashboard-view-shell[data-dashboard-theme] .performance-snapshot>div,
+.dashboard-view-shell[data-dashboard-theme] .r145-comparison-summary>div,
+.dashboard-view-shell[data-dashboard-theme] .comparison-summary>div,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-numbers>div{background:var(--dash-soft)!important;color:var(--dash-text)!important;border-color:var(--dash-line)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-matrix span,
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-matrix b{border-color:var(--dash-line)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-stage-matrix b{color:var(--dash-text)!important;}
+
+.dashboard-view-shell[data-dashboard-theme] .action-table-head,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-table-head{background:var(--dash-table)!important;color:var(--dash-muted)!important;border-color:var(--dash-line)!important;}
+.dashboard-view-shell[data-dashboard-theme] .action-table-row,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-table-row{background:var(--dash-surface)!important;border-color:var(--dash-line)!important;color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .action-table-row span,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-table-row span,
+.dashboard-view-shell[data-dashboard-theme] .dashboard-company-cell>small{color:var(--dash-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-company-cell>span{color:var(--dash-accent-strong)!important;}
+
+.dashboard-view-shell[data-dashboard-theme] .dashboard-bars i,
+.dashboard-view-shell[data-dashboard-theme] .door-capacity-rows i,
+.dashboard-view-shell[data-dashboard-theme] .stage-time-chart i,
+.dashboard-view-shell[data-dashboard-theme] .r146-bottleneck-list i,
+.dashboard-view-shell[data-dashboard-theme] .r146-handover-progress>i{background:var(--dash-soft-2)!important;}
+.dashboard-view-shell[data-dashboard-theme] .dashboard-bars b,
+.dashboard-view-shell[data-dashboard-theme] .stage-time-chart b,
+.dashboard-view-shell[data-dashboard-theme] .cycle-band-chart b{color:var(--dash-accent-strong)!important;}
+
+/* navigation follows theme across every dashboard tab */
+.dashboard-view-shell[data-dashboard-theme] .r146-bottom-tabs{background:var(--dash-nav)!important;border-color:var(--dash-nav)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-bottom-tabs button{color:var(--dash-nav-text)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-bottom-tabs button.active{background:var(--dash-nav-active)!important;color:#fff!important;}
+.dashboard-view-shell[data-dashboard-theme] .mobile-nav{background:var(--dash-surface)!important;border-top-color:var(--dash-line)!important;}
+.dashboard-view-shell[data-dashboard-theme] .mobile-nav button{color:var(--dash-muted)!important;}
+.dashboard-view-shell[data-dashboard-theme] .mobile-nav button.active{color:var(--dash-accent-strong)!important;}
+.dashboard-view-shell[data-dashboard-theme] .mobile-nav::before{background:var(--dash-accent)!important;}
+
+/* keep operational warning colors meaningful; theme only changes the surrounding UI */
+.dashboard-view-shell[data-dashboard-theme] .r146-command-card.neutral{background:var(--dash-surface)!important;border-color:var(--dash-line)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-command-card.neutral small,
+.dashboard-view-shell[data-dashboard-theme] .r146-command-card.neutral span{color:var(--dash-muted)!important;}
+.dashboard-view-shell[data-dashboard-theme] .r146-command-card.neutral b{color:var(--dash-text)!important;}
+
+/* dark theme: complete readable surfaces */
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-generated-head,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-data-health,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-generated-kpis .opsdash-kpi,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r145-grid .opsdash-panel,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-generated-overview>.opsdash-panel,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-stage-node,
+.dashboard-view-shell[data-dashboard-theme="dark"] .action-table-row,
+.dashboard-view-shell[data-dashboard-theme="dark"] .dashboard-table-row{box-shadow:none!important;}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-bottleneck-main{background:var(--dash-soft)!important;border-color:#9a6b2e!important;}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-bottleneck-main span{color:#d4b88c!important;}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.danger{background:#321f27!important;}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.focus,
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.warn{background:#32291d!important;}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-command-card.good{background:#183027!important;}
