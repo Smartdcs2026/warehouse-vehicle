@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r174">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r175">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 174</div>
+  <div class="build">Round 175</div>
 </header>
 
 <main>
@@ -97,7 +97,7 @@
     </div>
     <div class="match-fields">
       <label>Appointment<input id="matchAppointment" inputmode="numeric" autocomplete="off" placeholder="เช่น 2012960"></label>
-      <label>เวลา Gate In<input id="matchGateIn" type="datetime-local" step="60"></label>
+      <label>เวลา Gate In<input id="matchGateIn" type="text" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="dd/MM/yyyy HH:mm:ss"></label>
     </div>
     <div class="match-actions">
       <button id="matchButton" class="primary">ตรวจจับคู่</button>
@@ -153,8 +153,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="./config.js?v=20260818-r174"></script>
+<script src="./config.js?v=20260818-r175"></script>
 <script src="./excel-core.js?v=20260818-r171"></script>
-<script src="./app.js?v=20260818-r174"></script>
+<script src="./app.js?v=20260818-r175"></script>
 </body>
 </html>

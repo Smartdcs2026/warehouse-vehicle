@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v174";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v173";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v175";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v174";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -388,15 +388,38 @@
   function setDefaultGateIn(){
     const input=$("matchGateIn");
     if(!input||input.value)return;
-    const now=new Date();
-    const pad=n=>String(n).padStart(2,"0");
-    input.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const parts={};
+    for(const p of new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Bangkok",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date())){
+      if(p.type!=="literal")parts[p.type]=p.value;
+    }
+    input.value=`${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}:${parts.second}`;
   }
 
   function cleanAppointmentInput(value){return String(value||"").replace(/\s+/g,"").trim()}
-  function displayGateLocal(value){
-    const m=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
-    return m?`${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`:String(value||"-");
+  function parseDisplayDateTime(value){
+    const m=String(value||"").trim().match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
+    if(!m)return null;
+    const d=Number(m[1]),mo=Number(m[2]),y=Number(m[3]),h=Number(m[4]),mi=Number(m[5]),sec=Number(m[6]);
+    if(h>23||mi>59||sec>59)return null;
+    const dt=new Date(Date.UTC(y,mo-1,d));
+    if(dt.getUTCFullYear()!==y||dt.getUTCMonth()+1!==mo||dt.getUTCDate()!==d)return null;
+    return `${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:${m[6]}`;
+  }
+  function gateInputMachine(){
+    const machine=parseDisplayDateTime($("matchGateIn").value);
+    if(!machine)throw new Error("กรุณาระบุวันเวลาเป็น dd/MM/yyyy HH:mm:ss");
+    return machine;
+  }
+  function displayDateTime(value){
+    const s=String(value||"").trim();
+    if(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(s))return s;
+    const m=s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/);
+    return m?`${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}:${m[6]||"00"}`:(s||"-");
+  }
+  function displayPlannedDateTime(date,time){
+    const d=String(date||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const t=String(time||"").match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    return d&&t?`${d[3]}/${d[2]}/${d[1]} ${t[1]}:${t[2]}:${t[3]||"00"}`:"-";
   }
   function formatDelta(minutes){
     const n=Number(minutes||0),abs=Math.abs(n),h=Math.floor(abs/60),m=abs%60;
@@ -410,9 +433,9 @@
     const carrier=esc(a.carriersText||"-");
     return `<div class="match-swal-grid">
       <div><span>Appointment</span><strong>${esc(a.appointmentNo||"-")}</strong></div>
-      <div><span>วันที่นัด</span><strong>${esc(Core.displayDate(a.appointmentDate)||"-")}</strong></div>
-      <div><span>${esc(data.referenceMode||"-")}</span><strong>${esc(data.plannedTime||"-")}</strong></div>
-      <div><span>Gate In</span><strong>${esc(displayGateLocal(data.gateInLocal))}</strong></div>
+      <div><span>อ้างอิง</span><strong>${esc(data.referenceMode||"-")}</strong></div>
+      <div><span>เวลานัด</span><strong>${esc(data.plannedDateTimeDisplay||displayPlannedDateTime(a.appointmentDate,data.plannedTime))}</strong></div>
+      <div><span>Gate In</span><strong>${esc(data.gateInDisplay||displayDateTime(data.gateInLocal))}</strong></div>
     </div>
     <div class="match-result-line ${data.status==="LATE"?"late":data.status==="EARLY"?"early":"ontime"}">${esc(formatDelta(data.deltaMinutes))}</div>
     <div class="match-swal-detail"><span>บริษัท</span><b>${vendor}</b></div>
@@ -420,14 +443,14 @@
     <div class="match-swal-detail"><span>PO</span><b>${pos}</b></div>`;
   }
   function candidateListHtml(items=[]){
-    return `<div class="match-candidates">${items.slice(0,5).map(c=>`<div><b>${esc(c.dcCode||"-")}</b><span>${esc(Core.displayDate(c.appointmentDate))} · ${esc(c.plannedTime||"-")} · ${esc(formatDelta(c.deltaMinutes))}</span></div>`).join("")}</div>`;
+    return `<div class="match-candidates">${items.slice(0,5).map(c=>`<div><b>${esc(c.dcCode||"-")}</b><span>${esc(c.plannedDateTimeDisplay||displayPlannedDateTime(c.appointmentDate,c.plannedTime))} · ${esc(formatDelta(c.deltaMinutes))}</span></div>`).join("")}</div>`;
   }
 
   async function matchGatePreview(){
     const appointmentNo=cleanAppointmentInput($("matchAppointment").value);
-    const gateInLocal=$("matchGateIn").value;
+    let gateInLocal;
     if(!appointmentNo){showError("กรุณาระบุเลข Appointment");return}
-    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    try{gateInLocal=gateInputMachine()}catch(e){showError(e.message);return}
     const token=await getToken();if(!token)return;
     const btn=$("matchButton");btn.disabled=true;
     try{
@@ -484,7 +507,8 @@
       <div class="integration-lines">
         <div><span>Auto ID</span><b>${esc(gate.autoId||"-")}</b></div>
         <div><span>Appointment</span><b>${esc(gate.appointmentNo||"-")}</b></div>
-        <div><span>Gate In</span><b>${esc((gate.gateInLocal||"").replace("T"," ")||"-")}</b></div>
+        <div><span>เวลานัด</span><b>${esc(timing.plannedDateTimeDisplay||displayPlannedDateTime(appt.appointmentDate,timing.plannedTime))}</b></div>
+        <div><span>Gate In</span><b>${esc(gate.gateInDisplay||displayDateTime(gate.gateInLocal))}</b></div>
         <div><span>บริษัท</span><b>${esc(appt.vendorsText||"-")}</b></div>
         <div><span>Carrier</span><b>${esc(appt.carriersText||"-")}</b></div>
         <div><span>PO</span><b>${esc((appt.pos||[]).join(", ")||"-")}</b></div>
@@ -494,9 +518,9 @@
   }
   async function runGateIntegrationSimulator(){
     const appointmentNo=cleanAppointmentInput($("matchAppointment").value);
-    const gateInLocal=$("matchGateIn").value;
+    let gateInLocal;
     if(!appointmentNo){showError("กรุณาระบุเลข Appointment");return}
-    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    try{gateInLocal=gateInputMachine()}catch(e){showError(e.message);return}
     const token=await getToken();if(!token)return;
     const btn=$("integrationButton");btn.disabled=true;
     try{
@@ -534,8 +558,8 @@
     return `<div class="continuity-list">${rows.map(r=>`<div class="continuity-row ${r.pass?"pass":"fail"}"><span>${esc(r.label)}</span><b>${r.pass?"ผ่าน":"ไม่ผ่าน"}</b><small>${esc(r.detail)}</small></div>`).join("")}</div>`;
   }
   async function runGateContinuityUat(){
-    const gateInLocal=$("matchGateIn").value;
-    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    let gateInLocal;
+    try{gateInLocal=gateInputMachine()}catch(e){showError(e.message);return}
     const appointmentNo=cleanAppointmentInput($("matchAppointment").value)||"2012960";
     if(!$("matchAppointment").value)$("matchAppointment").value=appointmentNo;
     const token=await getToken();if(!token)return;

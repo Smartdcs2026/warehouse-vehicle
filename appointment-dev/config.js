@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round174-gate-integration-simulator",
+  build: "2026.08.18-round175-datetime-standard-match-performance",
   profileName: "ส่วนกลาง",
 
   controls: {
@@ -27,6 +27,8 @@ window.APPOINTMENT_DEV_CONFIG = {
   },
   date: {
     timezone: "Asia/Bangkok",
+    displayDateFormat: "dd/MM/yyyy",
+    displayDateTimeFormat: "dd/MM/yyyy HH:mm:ss",
     dateSystem: "AUTO",
     rejectAmbiguous: true,
     acceptedTextFormats: ["DD.MM.YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]
