@@ -8820,3 +8820,126 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{font-size:10px;}
   .inbound-kiosk-shell .driver-qr-caption p{font-size:10px;}
 }
+
+
+/* Round 191 — stable INBOUND QR after exiting fullscreen + emphasize document check */
+/* Normal (non-fullscreen) kiosk layout should not keep forcing fullscreen-style heights. */
+.inbound-kiosk-shell .inbound-workspace-r88{
+  align-items:start;
+}
+.inbound-kiosk-shell .inbound-scan-station,
+.inbound-kiosk-shell .inbound-list-card{
+  height:auto !important;
+}
+.inbound-kiosk-shell .inbound-scan-station{
+  min-height:0;
+  align-content:start;
+  overflow:visible;
+}
+.inbound-kiosk-shell .inbound-list-card{
+  min-height:0;
+  overflow:hidden;
+}
+.inbound-kiosk-shell #inboundRows{
+  max-height:calc(100vh - 355px);
+  overflow:auto;
+}
+.inbound-kiosk-shell .inbound-driver-qr{
+  height:auto;
+  min-height:0;
+}
+.inbound-kiosk-shell .driver-qr-body{
+  min-height:0 !important;
+  overflow:visible !important;
+}
+.inbound-kiosk-shell .driver-qr-caption,
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta,
+.inbound-kiosk-shell .driver-qr-caption p{
+  overflow:visible;
+}
+
+/* When fullscreen is active, restore controlled panel heights. */
+:fullscreen .inbound-kiosk-shell .inbound-scan-station,
+:fullscreen .inbound-kiosk-shell .inbound-list-card{
+  height:calc(100dvh - 206px) !important;
+  overflow:hidden;
+}
+:fullscreen .inbound-kiosk-shell #inboundRows{
+  max-height:none;
+  min-height:0;
+  overflow:auto;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-body{
+  overflow:auto !important;
+}
+@media (max-height:800px) and (min-width:900px){
+  :fullscreen .inbound-kiosk-shell .inbound-scan-station,
+  :fullscreen .inbound-kiosk-shell .inbound-list-card{
+    height:calc(100dvh - 182px) !important;
+  }
+}
+@media (max-height:680px) and (min-width:900px){
+  :fullscreen .inbound-kiosk-shell .inbound-scan-station,
+  :fullscreen .inbound-kiosk-shell .inbound-list-card{
+    height:calc(100dvh - 164px) !important;
+  }
+}
+
+/* Make the document-check KPI clearly stand out as the main Inbound action card. */
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2){
+  position:relative;
+  background:linear-gradient(180deg,#f5f9ff 0%,#ffffff 100%);
+  border:2px solid #4a7fe3;
+  box-shadow:0 12px 26px rgba(51,99,190,.14);
+  transform:translateY(-1px);
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2)::after{
+  content:"หลัก";
+  position:absolute;
+  top:8px;
+  right:10px;
+  min-width:42px;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#2e6de0;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.01em;
+  box-shadow:0 6px 12px rgba(46,109,224,.18);
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-icon{
+  width:46px;
+  height:46px;
+  color:#2f6ad2;
+  background:rgba(66,120,225,.12);
+  box-shadow:inset 0 0 0 1px rgba(66,120,225,.12);
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy small{
+  color:#2758a7;
+  font-size:12px;
+  font-weight:900;
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{
+  font-size:34px;
+  line-height:1;
+  color:#1d4fa8;
+  letter-spacing:-.02em;
+}
+.inbound-kiosk-shell .inbound-metrics-r88.is-four .inbound-metric:nth-child(2){
+  min-height:78px;
+}
+.inbound-kiosk-shell .inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{
+  font-size:38px;
+}
+@media (max-width:1180px){
+  .inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{font-size:30px;}
+}
+@media (max-width:620px){
+  .inbound-metrics-r88.is-four .inbound-metric:nth-child(2)::after{top:6px;right:8px;height:18px;font-size:9px;min-width:36px;}
+  .inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{font-size:28px;}
+}
