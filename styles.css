@@ -8703,3 +8703,120 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
     max-height:136px !important;
   }
 }
+
+
+/* Round 190 — make INBOUND QR panel match ADMIN layout */
+.inbound-kiosk-shell .inbound-driver-qr{
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow:hidden;
+}
+.inbound-kiosk-shell .inbound-driver-qr header{
+  margin-bottom:8px;
+}
+.inbound-kiosk-shell .driver-qr-body{
+  min-height:214px !important;
+  flex:1 1 auto;
+  display:grid !important;
+  place-items:center;
+  align-content:start;
+  gap:8px !important;
+  overflow:auto !important;
+  padding-right:2px;
+}
+.inbound-kiosk-shell .driver-qr-code{
+  width:min(100%,190px) !important;
+  max-width:190px !important;
+  max-height:none !important;
+  aspect-ratio:1 / 1;
+  margin:0 auto 8px !important;
+  padding:6px !important;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.inbound-kiosk-shell .driver-qr-code svg,
+.inbound-kiosk-shell .driver-qr-code img,
+.inbound-kiosk-shell .driver-qr-code canvas{
+  display:block;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+}
+.inbound-kiosk-shell .driver-qr-caption{
+  width:100%;
+  display:grid;
+  gap:5px;
+  text-align:center;
+  overflow:visible;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{
+  display:grid;
+  gap:3px;
+  text-align:left;
+  width:min(100%,240px);
+  max-width:240px;
+  margin:0 auto;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  overflow:visible;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta>span{
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  align-items:baseline;
+  gap:7px;
+  padding:0;
+  border:0;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta small{
+  margin:0;
+  color:#74849a;
+  font-size:10px;
+  line-height:1.2;
+  white-space:normal;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta b,
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{
+  margin:0;
+  min-width:0;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta b{
+  font-size:22px;
+  color:#0d55b9;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{
+  font-size:12px;
+  color:#263c5d;
+}
+.inbound-kiosk-shell .driver-qr-caption p{
+  width:min(100%,240px);
+  margin:2px auto 0;
+  padding:0;
+  border-radius:0;
+  background:transparent;
+  color:#6c7f9a;
+  font-size:11px;
+  line-height:1.35;
+  text-align:center;
+}
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .driver-qr-code{width:min(100%,170px) !important;max-width:170px !important;}
+  .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{width:min(100%,220px);max-width:220px;}
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .driver-qr-body{min-height:0 !important;}
+  .inbound-kiosk-shell .driver-qr-code{width:min(100%,148px) !important;max-width:148px !important;}
+  .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta>span{grid-template-columns:76px minmax(0,1fr);gap:6px;}
+  .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta b{font-size:18px;}
+  .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{font-size:10px;}
+  .inbound-kiosk-shell .driver-qr-caption p{font-size:10px;}
+}
