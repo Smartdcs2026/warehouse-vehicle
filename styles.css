@@ -9048,3 +9048,59 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"]::after{
   content:none !important;
 }
+
+
+/* Round 194 — clearer driver instruction above QR + more vertical breathing room */
+.inbound-kiosk-shell .inbound-driver-qr{
+  min-height:390px;
+  padding:14px 12px 16px;
+}
+.inbound-kiosk-shell .inbound-driver-qr header{
+  align-items:center;
+  margin-bottom:16px;
+  padding:2px 4px 10px;
+  border-bottom:1px solid #dbe8f8;
+}
+.inbound-kiosk-shell .inbound-driver-qr header small{
+  margin-bottom:2px;
+  color:#1765cc;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.01em;
+}
+.inbound-kiosk-shell .inbound-driver-qr header h2{
+  margin:0;
+  color:#0b55b7;
+  font-size:20px;
+  line-height:1.2;
+  font-weight:950;
+}
+.inbound-kiosk-shell .driver-qr-body{
+  padding-top:8px;
+  align-content:start;
+}
+.inbound-kiosk-shell .driver-qr-code{
+  margin-top:6px !important;
+  margin-bottom:12px !important;
+}
+.inbound-kiosk-shell .driver-qr-caption p{
+  margin-top:8px;
+  color:#2b5f9f;
+  font-weight:800;
+}
+:fullscreen .inbound-kiosk-shell .inbound-driver-qr{
+  min-height:0;
+  height:100%;
+}
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-driver-qr{min-height:350px;padding-top:12px;}
+  .inbound-kiosk-shell .inbound-driver-qr header{margin-bottom:12px;padding-bottom:8px;}
+  .inbound-kiosk-shell .inbound-driver-qr header h2{font-size:18px;}
+  .inbound-kiosk-shell .driver-qr-body{padding-top:4px;}
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-driver-qr{min-height:300px;}
+  .inbound-kiosk-shell .inbound-driver-qr header{margin-bottom:8px;}
+  .inbound-kiosk-shell .inbound-driver-qr header small{font-size:10px;}
+  .inbound-kiosk-shell .inbound-driver-qr header h2{font-size:16px;}
+}
