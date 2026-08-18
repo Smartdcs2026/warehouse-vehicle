@@ -9104,3 +9104,131 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .inbound-kiosk-shell .inbound-driver-qr header small{font-size:10px;}
   .inbound-kiosk-shell .inbound-driver-qr header h2{font-size:16px;}
 }
+
+
+/* Round 195 — final driver QR composition: one compact instruction, maximum QR space */
+.inbound-kiosk-shell .inbound-driver-qr{
+  min-height:410px;
+  padding:12px 12px 14px;
+}
+.inbound-kiosk-shell .inbound-driver-qr .driver-qr-guide-head{
+  min-height:34px;
+  margin:0 0 10px;
+  padding:0 2px 8px;
+  border-bottom:1px solid #dbe8f8;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  flex:0 0 auto;
+}
+.inbound-kiosk-shell .driver-qr-guide{
+  min-width:0;
+  color:#0b55b7;
+  font-size:14px;
+  line-height:1.15;
+  font-weight:950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  letter-spacing:.005em;
+}
+.inbound-kiosk-shell .driver-qr-guide i{
+  margin:0 4px;
+  color:#e6502f;
+  font-style:normal;
+  font-weight:950;
+}
+.inbound-kiosk-shell .driver-qr-timer{
+  flex:0 0 auto;
+  padding:4px 7px;
+  font-size:11px;
+}
+.inbound-kiosk-shell .driver-qr-body{
+  min-height:0 !important;
+  padding-top:4px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:7px !important;
+  overflow:visible !important;
+}
+.inbound-kiosk-shell .driver-qr-code{
+  width:min(100%,205px) !important;
+  max-width:205px !important;
+  max-height:205px !important;
+  margin:2px auto 6px !important;
+  flex:0 0 auto;
+}
+.inbound-kiosk-shell .driver-qr-caption{
+  width:100%;
+  gap:0 !important;
+  overflow:visible !important;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{
+  width:min(100%,245px);
+  max-width:245px;
+  margin:0 auto;
+}
+.inbound-kiosk-shell .driver-qr-caption p{
+  display:none !important;
+}
+
+/* Normal desktop has empty vertical room: keep the driver card comfortably tall. */
+@media (min-width:900px) and (min-height:760px){
+  .inbound-kiosk-shell .inbound-driver-qr{
+    min-height:420px;
+  }
+  .inbound-kiosk-shell .driver-qr-code{
+    width:min(100%,210px) !important;
+    max-width:210px !important;
+    max-height:210px !important;
+  }
+}
+
+/* Fullscreen keeps the same visual hierarchy but uses its available height. */
+:fullscreen .inbound-kiosk-shell .inbound-driver-qr{
+  min-height:0;
+  height:100%;
+  padding:10px 12px 12px;
+}
+:fullscreen .inbound-kiosk-shell .inbound-driver-qr .driver-qr-guide-head{
+  min-height:32px;
+  margin-bottom:8px;
+  padding-bottom:7px;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-code{
+  width:min(100%,200px) !important;
+  max-width:200px !important;
+  max-height:200px !important;
+}
+
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-driver-qr{
+    min-height:380px;
+    padding:10px 11px 12px;
+  }
+  .inbound-kiosk-shell .inbound-driver-qr .driver-qr-guide-head{
+    min-height:31px;
+    margin-bottom:7px;
+    padding-bottom:6px;
+  }
+  .inbound-kiosk-shell .driver-qr-guide{font-size:13px;}
+  .inbound-kiosk-shell .driver-qr-code,
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:min(100%,190px) !important;
+    max-width:190px !important;
+    max-height:190px !important;
+  }
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .inbound-driver-qr{min-height:330px;}
+  .inbound-kiosk-shell .driver-qr-guide{font-size:12px;}
+  .inbound-kiosk-shell .driver-qr-code,
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:min(100%,160px) !important;
+    max-width:160px !important;
+    max-height:160px !important;
+  }
+}
