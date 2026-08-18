@@ -2,59 +2,173 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#416fc3">
-  <meta name="referrer" content="no-referrer">
-  <script>
-    (()=>{
-      try{
-        const url=new URL(location.href);
-        let changed=false;
-        ["name","password","username","pass"].forEach(key=>{if(url.searchParams.has(key)){url.searchParams.delete(key);changed=true}});
-        if(changed)history.replaceState(null,"",`${url.pathname}${url.search}${url.hash}`);
-      }catch{}
-    })();
-  </script>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>ระบบบริหารรถขนส่ง</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=20260817-r166">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#315fa8">
+  <title>ข้อมูลนัดหมาย</title>
+  <link rel="stylesheet" href="./styles.css?v=20260818-r176">
 </head>
 <body>
-  <div id="connectionBanner" class="connection-banner" hidden>การเชื่อมต่อขัดข้อง กำลังลองใหม่</div>
-
-  <main id="loginView" class="login-view">
-    <section class="login-hero" aria-hidden="true"><div class="warehouse-art"><span class="spectrum-mark spectrum-mark-large"><i></i><i></i><i></i><i></i><i></i><i></i></span></div><h1>ระบบบริหารรถขนส่ง</h1><p>ติดตามงานภายในคลังตั้งแต่รถเข้าจนออกจากพื้นที่</p></section>
-    <form id="loginForm" class="login-card">
-      <header><h2>เข้าสู่ระบบ</h2><p id="thaiClock">--/--/---- --:--:--</p></header>
-      <label>ชื่อผู้ใช้<input id="loginName" name="name" autocomplete="username" required maxlength="120" placeholder="กรอกชื่อผู้ใช้"></label>
-      <label>รหัสผ่าน<div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="200" placeholder="กรอกรหัสผ่าน"><button type="button" id="togglePassword" aria-label="แสดงหรือซ่อนรหัสผ่าน">ดู</button></div></label>
-      <button class="primary login-button" type="submit">เข้าสู่ระบบ</button>
-      <p id="loginMessage" class="form-message" role="alert"></p>
-    </form>
-  </main>
-
-  <div id="appView" class="app-shell" hidden>
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark" aria-hidden="true"><span class="spectrum-mark"><i></i><i></i><i></i><i></i><i></i><i></i></span></span><div><strong id="brandName">ระบบบริหารรถขนส่ง</strong><small>คลังสินค้า</small></div></div>
-      <nav id="sideNav"></nav>
-      <div class="account"><b id="accountName">-</b><small id="accountRole">-</small><button id="logoutButton">ออกจากระบบ</button></div>
-    </aside>
-
-    <section class="content">
-      <header class="topbar"><button id="menuButton" class="menu-button" aria-label="เปิดเมนู">☰</button><div><h1 id="pageTitle">งานรับสินค้า</h1><p id="headerClock">--/--/---- --:--:--</p></div><span id="syncStatus" class="sync-status">● พร้อมใช้งาน</span></header>
-      <div id="pageContent" class="page-content" aria-live="polite"></div>
-    </section>
-    <nav id="mobileNav" class="mobile-nav"></nav>
+<header class="top">
+  <div>
+    <h1>ข้อมูลนัดหมาย</h1>
+    <p id="profileSummary"></p>
   </div>
+  <div class="build">Round 176</div>
+</header>
 
-  <div id="toast" class="toast" role="status" hidden><b>✓</b><span></span></div>
-  <script src="./sweetalert2.all.min.js"></script>
-  <script src="./jsqr.js"></script>
-  <script src="./config.js"></script>
-  <script src="./app.js?v=20260817-r166"></script>
+<main>
+  <section id="moduleOff" class="state-box" hidden>
+    <b>ปิดโมดูลข้อมูลนัดหมาย</b>
+    <span>เปิดใช้งานได้จากการตั้งค่าด้านล่าง</span>
+  </section>
+
+  <section id="workModeNotice" class="state-box mode-notice" hidden>
+    <b>Pre-Production</b>
+    <span>ทดสอบ Adapter เท่านั้น ยังไม่มีการแก้ข้อมูล Gate In งานจริง</span>
+  </section>
+
+  <section id="uploadPanel" class="panel upload">
+    <div>
+      <h2>อัปโหลดข้อมูลนัดหมาย</h2>
+      <p>เลือกไฟล์ที่ได้รับจากส่วนกลาง ระบบจะตรวจและแสดงข้อมูลก่อนบันทึก</p>
+    </div>
+    <label id="fileButton" class="file-btn">เลือกไฟล์<input id="fileInput" type="file" accept=".xlsb,.xlsx,application/vnd.ms-excel.sheet.binary.macroEnabled.12,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+  </section>
+
+  <div id="progress" class="progress" hidden></div>
+  <div id="errorBox" class="error" hidden></div>
+
+  <section class="panel settings-panel">
+    <details>
+      <summary><b>ตั้งค่า</b><span>สำหรับผู้ดูแลระบบ</span></summary>
+      <div class="settings">
+        <div class="switch-grid">
+          <label class="switch-card"><span>ใช้งานข้อมูลนัดหมาย</span><input id="moduleEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>อนุญาตให้อัปโหลด</span><input id="uploadEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ใช้ข้อมูลนัดหมายกับงานจริง</span><input id="useImportedData" type="checkbox"></label>
+          <label class="switch-card"><span>ทดสอบการจับคู่รถเข้า</span><input id="matchTestEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ทดสอบ Gate In Integration</span><input id="integrationSimulatorEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ทดสอบ Adapter ก่อนรวมระบบ</span><input id="preProductionAdapterEnabled" type="checkbox"></label>
+        </div>
+
+        <h3>การอ่านไฟล์</h3>
+        <div class="grid">
+          <label>ชื่อชีท<input id="sheetName"></label>
+          <label>ชื่อชีทสำรอง<input id="sheetAliases" placeholder="RAW_DATA, Raw Data"></label>
+          <label>วิธีเลือกรหัสคลัง<select id="warehouseMode"><option value="STARTS_WITH">ขึ้นต้นด้วย</option><option value="EXACT">ตรงกับ</option></select></label>
+          <label>รหัสคลัง<input id="warehouseValues" placeholder="906"></label>
+          <label>เวลาใช้เทียบรถเข้า<select id="timeReference"><option value="PERIOD">PERIOD</option><option value="FROM">FROM</option></select></label>
+          <label>ช่วงค้นหานัดหมาย (ชม.)<input id="searchWindowHours" type="number" min="1" max="168" step="1"></label>
+          <label>เป้าหมาย Query (ms)<input id="lookupTargetMs" type="number" min="20" max="2000" step="10"></label>
+          <label>เวลารอ Adapter สูงสุด (ms)<input id="adapterTimeoutMs" type="number" min="50" max="3000" step="10"></label>
+        </div>
+
+        <h3>ชื่อคอลัมน์</h3>
+        <div class="mapping">
+          <div class="mh">ข้อมูล</div><div class="mh">ชื่อปัจจุบัน</div><div class="mh alias-col">ชื่อสำรอง</div>
+          <script>
+            document.write([
+              ["dc","รหัสคลัง"],["date","วันที่นัด"],["period","รอบนัดหมาย"],["from","เวลาเริ่ม"],["to","เวลาสิ้นสุด"],
+              ["po","เลข PO"],["appointment","Appointment"],["vendor","บริษัท / Vendor"],["carrier","Carrier / ผู้ขนส่ง"]
+            ].map(([k,l])=>`<div>${l}</div><input id="h_${k}"><input class="alias-input" id="a_${k}" placeholder="คั่นด้วย ,">`).join(""));
+          </script>
+        </div>
+
+        <h3>ข้อมูลที่แสดง</h3>
+        <div class="check-grid">
+          <label><input id="showPeriod" type="checkbox"> PERIOD</label>
+          <label><input id="showFrom" type="checkbox"> FROM</label>
+          <label><input id="showTo" type="checkbox"> TO</label>
+          <label><input id="showVendor" type="checkbox"> บริษัท</label>
+          <label><input id="showCarrier" type="checkbox"> Carrier</label>
+          <label><input id="showPo" type="checkbox"> PO</label>
+        </div>
+
+        <h3>การแสดงผลเมื่อรวมกับระบบหลัก</h3>
+        <div class="target-matrix">
+          <div class="target-head">หน้า</div><div class="target-head">เปิด</div><div class="target-head">เวลา / ก่อน-ช้า</div><div class="target-head">บริษัท</div><div class="target-head">Carrier</div><div class="target-head">PO</div>
+          <div>Inbound</div><label><input id="target_inbound_enabled" type="checkbox"></label><label><input id="target_inbound_timing" type="checkbox"></label><label><input id="target_inbound_vendor" type="checkbox"></label><label><input id="target_inbound_carrier" type="checkbox"></label><label><input id="target_inbound_po" type="checkbox"></label>
+          <div>Receiving</div><label><input id="target_receiving_enabled" type="checkbox"></label><label><input id="target_receiving_timing" type="checkbox"></label><label><input id="target_receiving_vendor" type="checkbox"></label><label><input id="target_receiving_carrier" type="checkbox"></label><label><input id="target_receiving_po" type="checkbox"></label>
+          <div>Datatable</div><label><input id="target_datatable_enabled" type="checkbox"></label><label><input id="target_datatable_timing" type="checkbox"></label><label><input id="target_datatable_vendor" type="checkbox"></label><label><input id="target_datatable_carrier" type="checkbox"></label><label><input id="target_datatable_po" type="checkbox"></label>
+          <div>Dashboard</div><label><input id="target_dashboard_enabled" type="checkbox"></label><label><input id="target_dashboard_timing" type="checkbox"></label><label><input id="target_dashboard_vendor" type="checkbox"></label><label><input id="target_dashboard_carrier" type="checkbox"></label><label><input id="target_dashboard_po" type="checkbox"></label>
+          <div>จอคิว</div><label><input id="target_queue_enabled" type="checkbox"></label><label><input id="target_queue_timing" type="checkbox"></label><label><input id="target_queue_vendor" type="checkbox"></label><label><input id="target_queue_carrier" type="checkbox"></label><label><input id="target_queue_po" type="checkbox"></label>
+          <div>Track</div><label><input id="target_track_enabled" type="checkbox"></label><label><input id="target_track_timing" type="checkbox"></label><label><input id="target_track_vendor" type="checkbox"></label><label><input id="target_track_carrier" type="checkbox"></label><label><input id="target_track_po" type="checkbox"></label>
+        </div>
+
+        <div class="actions">
+          <button id="saveSettings" class="primary">บันทึก</button>
+          <button id="resetSettings">คืนค่าเริ่มต้น</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section id="matchTestPanel" class="panel match-panel" hidden>
+    <div class="match-copy">
+      <h2>ทดสอบจับคู่รถเข้า</h2>
+      <p>ตรวจการจับคู่ รูปแบบข้อมูล และความเร็วก่อนเชื่อม Gate In งานจริง</p>
+    </div>
+    <div class="match-fields">
+      <label>Appointment<input id="matchAppointment" inputmode="numeric" autocomplete="off" placeholder="เช่น 2012960"></label>
+      <label>เวลา Gate In<input id="matchGateIn" type="text" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="dd/MM/yyyy HH:mm:ss"></label>
+    </div>
+    <div class="match-actions">
+      <button id="matchButton" class="primary">ตรวจจับคู่</button>
+      <button id="integrationButton">จำลอง Gate In จริง</button>
+      <button id="failOpenButton">ทดสอบ Integration 4 กรณี</button>
+      <button id="adapterButton">ทดสอบ Adapter 5 กรณี</button>
+    </div>
+  </section>
+
+  <section id="result" hidden>
+    <div class="cards">
+      <article><small>ข้อมูลทั้งหมด</small><b id="sourceRows">0</b></article>
+      <article><small>ของคลังนี้</small><b id="warehouseRows">0</b></article>
+      <article><small>นัดหมาย</small><b id="appointmentCount">0</b></article>
+      <article><small>ต้องตรวจ</small><b id="issueCount">0</b></article>
+    </div>
+
+    <section class="panel file-summary">
+      <div><b id="fileName">-</b><span id="fileRange">-</span></div>
+      <span id="fileStatus" class="status-pill">ตรวจข้อมูลแล้ว</span>
+    </section>
+
+    <section class="panel">
+      <div class="table-head">
+        <div><h2>รายการนัดหมาย</h2><small id="shownCount"></small></div>
+        <input id="search" placeholder="ค้นหา Appointment / บริษัท / Carrier / PO">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="previewHead"></tr></thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="issuePanel" class="panel" hidden>
+      <details>
+        <summary><b>รายการที่ต้องตรวจ</b><span id="issueSummary"></span></summary>
+        <div class="table-wrap compact">
+          <table><thead><tr><th>แถว</th><th>คลัง</th><th>Appointment</th><th>วันที่</th><th>สาเหตุ</th></tr></thead><tbody id="errorBody"></tbody></table>
+        </div>
+      </details>
+    </section>
+
+    <section id="importPanel" class="panel import-panel" hidden>
+      <div class="import-copy"><h2>พร้อมนำเข้า</h2><p>ตรวจสอบวันที่และเวลาของชุดข้อมูลก่อนบันทึก</p></div>
+      <div class="snapshot-inputs">
+        <label>วันที่ชุดข้อมูล<input id="snapshotDate" type="date"></label>
+        <label>เวลา<input id="snapshotTime" type="time" step="60"></label>
+      </div>
+      <div class="import-actions"><button id="previewButton">ตรวจการเปลี่ยนแปลง</button><button id="importButton" class="primary" disabled>ยืนยันนำเข้า</button></div>
+    </section>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="./config.js?v=20260818-r176"></script>
+<script src="./excel-core.js?v=20260818-r171"></script>
+<script src="./app.js?v=20260818-r176"></script>
 </body>
 </html>
