@@ -9232,3 +9232,118 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
     max-height:160px !important;
   }
 }
+
+
+/* Round 196 — true full-height INBOUND QR panel in fullscreen */
+/* Fullscreen left column owns the full viewport height; do not subtract right-side header/table space. */
+:fullscreen .inbound-kiosk-shell .inbound-scan-station{
+  height:calc(100dvh - 22px) !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-rows:auto auto minmax(0,1fr) !important;
+  align-content:stretch !important;
+  gap:10px !important;
+  overflow:hidden !important;
+}
+:fullscreen .inbound-kiosk-shell .inbound-driver-qr{
+  min-height:0 !important;
+  height:100% !important;
+  max-height:none !important;
+  padding:12px 14px 14px !important;
+  overflow:hidden !important;
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) !important;
+}
+:fullscreen .inbound-kiosk-shell .inbound-driver-qr .driver-qr-guide-head{
+  min-height:36px !important;
+  margin:0 0 10px !important;
+  padding:0 2px 9px !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-body{
+  min-height:0 !important;
+  height:100% !important;
+  padding:6px 0 2px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  scrollbar-width:none !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-body::-webkit-scrollbar{
+  display:none !important;
+  width:0 !important;
+  height:0 !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-code{
+  width:clamp(220px,26dvh,258px) !important;
+  max-width:min(100%,258px) !important;
+  max-height:258px !important;
+  margin:2px auto 8px !important;
+  flex:0 0 auto !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption{
+  width:100% !important;
+  flex:0 0 auto !important;
+  overflow:visible !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{
+  width:min(100%,285px) !important;
+  max-width:285px !important;
+  margin:0 auto !important;
+  padding-top:2px !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta>span{
+  grid-template-columns:92px minmax(0,1fr) !important;
+  gap:8px !important;
+  padding:3px 0 !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta small{
+  font-size:10.5px !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta b{
+  font-size:22px !important;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{
+  font-size:11.5px !important;
+}
+
+/* Medium-height fullscreen: still fill the column, only scale content slightly. */
+@media (max-height:800px) and (min-width:900px){
+  :fullscreen .inbound-kiosk-shell .inbound-scan-station{
+    height:calc(100dvh - 18px) !important;
+    gap:8px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:clamp(195px,25dvh,225px) !important;
+    max-width:min(100%,225px) !important;
+    max-height:225px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{
+    width:min(100%,270px) !important;
+    max-width:270px !important;
+  }
+}
+@media (max-height:680px) and (min-width:900px){
+  :fullscreen .inbound-kiosk-shell .inbound-scan-station{
+    height:calc(100dvh - 14px) !important;
+    gap:6px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .inbound-driver-qr{
+    padding:8px 11px 9px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .inbound-driver-qr .driver-qr-guide-head{
+    min-height:30px !important;
+    margin-bottom:5px !important;
+    padding-bottom:5px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:clamp(165px,24dvh,190px) !important;
+    max-width:min(100%,190px) !important;
+    max-height:190px !important;
+  }
+  :fullscreen .inbound-kiosk-shell .driver-qr-caption .driver-qr-meta>span{
+    padding:1px 0 !important;
+  }
+}
