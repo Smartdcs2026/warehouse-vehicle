@@ -27,7 +27,7 @@ body {
 }
 button, input { font: inherit; }
 button { cursor: pointer; }
-button:disabled { cursor: wait; opacity: .7; }
+button:disabled { cursor: not-allowed; opacity: .7; }
 
 .connection-banner {
   position: fixed;
@@ -8444,3 +8444,6 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .appointment-admin-file-settings{margin-top:14px;border:1px solid var(--line);border-radius:13px;background:#fff;overflow:hidden}.appointment-admin-file-settings summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:13px 15px;list-style:none}.appointment-admin-file-settings summary::-webkit-details-marker{display:none}.appointment-admin-file-settings summary span{color:var(--muted);font-size:11px}.appointment-admin-file-body{border-top:1px solid var(--line);padding:14px}.appointment-map-head,.appointment-map-row{display:grid;grid-template-columns:minmax(135px,.55fr) minmax(180px,1fr) minmax(180px,1fr);gap:8px;align-items:center}.appointment-map-head{padding:4px 4px 7px;color:var(--muted);font-size:10px}.appointment-map-row{padding:6px 4px;border-top:1px solid #eef2f7}.appointment-map-row>b{font-size:12px;font-weight:700}.appointment-map-row input{width:100%;border:1px solid #c8d1df;border-radius:8px;padding:8px 9px;outline:0}.appointment-map-row input:focus{border-color:var(--blue)}
 @media(max-width:900px){.appointment-upload-head{align-items:stretch}.appointment-latest-card{grid-template-columns:1fr}.appointment-latest-card>div+div{border-left:0;border-top:1px solid var(--line)}.appointment-upload-summary{grid-template-columns:repeat(2,1fr)}.appointment-import-card{grid-template-columns:1fr 1fr}.appointment-import-actions{grid-column:1/-1}.appointment-preview-card>header{align-items:stretch;flex-direction:column}.appointment-preview-card header input{width:100%}}
 @media(max-width:620px){.appointment-upload-head{flex-direction:column}.appointment-file-button{width:100%}.appointment-file-summary{align-items:flex-start;flex-direction:column}.appointment-upload-summary{grid-template-columns:1fr 1fr}.appointment-upload-summary b{font-size:20px}.appointment-import-card{grid-template-columns:1fr}.appointment-import-actions{grid-column:auto}.appointment-import-actions button{flex:1}.appointment-map-head{display:none}.appointment-map-row{grid-template-columns:1fr}.appointment-map-row>b{padding-top:4px}.appointment-preview-card{padding:11px}.appointment-table-wrap{max-height:420px}}
+
+/* Round179C: disabled controls must not imitate a frozen browser cursor. */
+.appointment-import-actions button.is-busy{cursor:default!important;opacity:.72}
