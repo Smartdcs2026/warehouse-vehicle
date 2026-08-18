@@ -1,5 +1,5 @@
 const CACHE_PREFIX="wvf-static-";
-const CACHE="wvf-static-round188-inbound-fullscreen-layout-fix";
+const CACHE="wvf-static-round189-inbound-qr-overflow-fix";
 const CORE=["./","./index.html","./styles.css","./config.js","./app.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest"];
 const OPTIONAL=["./favicon.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./track.html","./track.css","./track.js","./queue.html","./queue.css","./queue.js","./voice-engine.js","./appointment-excel-worker.js","./appointment-public-display.js"];
 

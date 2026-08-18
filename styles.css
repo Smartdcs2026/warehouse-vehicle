@@ -8627,3 +8627,79 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
     font-size:10px;
   }
 }
+
+/* Round 189 — hard stop QR overflow in INBOUND fullscreen */
+.inbound-kiosk-shell .inbound-driver-qr{
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  min-height:0;
+  overflow:hidden;
+}
+.inbound-kiosk-shell .driver-qr-body{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:8px !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.inbound-kiosk-shell .driver-qr-code{
+  box-sizing:border-box;
+  flex:0 0 auto;
+  width:170px !important;
+  max-width:calc(100% - 12px) !important;
+  max-height:170px !important;
+  aspect-ratio:1 / 1;
+  padding:6px !important;
+  border:1px solid #dce5f2;
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden !important;
+  margin:0 auto !important;
+}
+.inbound-kiosk-shell .driver-qr-code svg,
+.inbound-kiosk-shell .driver-qr-code img,
+.inbound-kiosk-shell .driver-qr-code canvas{
+  display:block;
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+}
+.inbound-kiosk-shell .driver-qr-caption{
+  flex:1 1 auto;
+  min-width:0;
+  width:100%;
+  overflow:hidden;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta{
+  max-width:100%;
+  overflow:hidden;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta>span{
+  min-width:0;
+}
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta b,
+.inbound-kiosk-shell .driver-qr-caption .driver-qr-meta strong{
+  min-width:0;
+}
+:fullscreen .inbound-kiosk-shell .driver-qr-code{
+  width:176px !important;
+  max-width:calc(100% - 12px) !important;
+  max-height:176px !important;
+}
+@media (max-height:800px) and (min-width:900px){
+  .inbound-kiosk-shell .driver-qr-code,
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:152px !important;
+    max-height:152px !important;
+  }
+}
+@media (max-height:680px) and (min-width:900px){
+  .inbound-kiosk-shell .driver-qr-code,
+  :fullscreen .inbound-kiosk-shell .driver-qr-code{
+    width:136px !important;
+    max-height:136px !important;
+  }
+}
