@@ -1269,8 +1269,9 @@ const cfg=window.APP_CONFIG||{};
 const $=id=>document.getElementById(id);
 let timer=0,lastOk=0,inFlight=false,lastFingerprint="",hasRendered=false,terminalError=false;
 let siteClockTimer=0,siteClockGateIn=0,siteClockGateOut=0,retryDelay=15000;
-const TRACK_SNAPSHOT_KEY="wv_track_snapshot_v4";
-const TRACK_API_VERSION="2026-08-track-v4";
+const TRACK_SNAPSHOT_KEY="wv_track_snapshot_r187";
+const TRACK_API_MIN_VERSION=4;
+function isCompatibleTrackApiVersion(value){if(!value)return true;const match=String(value).trim().match(/^20\d{2}-\d{2}-track-v(\d+)$/);return Boolean(match)&&Number(match[1])>=TRACK_API_MIN_VERSION}
 const TRACK_ALERT_PREF_KEY="wv_track_alert_enabled_v1";
 const TRACK_ALERT_SEEN_PREFIX="wv_track_alert_seen_v1:";
 let trackAlertEnabled=readBoolStorage(TRACK_ALERT_PREF_KEY);
@@ -1372,7 +1373,7 @@ function recentQueueNotice(data,maxAgeSeconds=900){
   return Math.max(0,Math.floor(Date.now()/1000)-Number(notice.notifiedAt))<=maxAgeSeconds?notice:null;
 }
 function validateTrackPayload(data){
-  if(data?.apiVersion&&data.apiVersion!==TRACK_API_VERSION)throw new Error("หน้าแสดงผลและระบบติดตามเป็นคนละรุ่น กรุณาเปิดหน้าใหม่");
+  if(!isCompatibleTrackApiVersion(data?.apiVersion))throw new Error("รูปแบบข้อมูลติดตามไม่รองรับ กรุณาเปิดหน้าใหม่");
   const v=data?.vehicle;
   if(!v||!v.autoId||!Number(v.gateInAt)||!Array.isArray(data.timeline))throw new Error("ข้อมูลติดตามไม่ครบถ้วน กรุณาลองใหม่");
   if(v.status==="CLOSED"&&!data.closed)throw new Error("สถานะการติดตามยังไม่สอดคล้อง กรุณาลองใหม่");
