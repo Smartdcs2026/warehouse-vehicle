@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v172";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171c";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v173";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v172";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -49,6 +49,7 @@
     $("snapshotDate").addEventListener("change",invalidatePreview);
     $("snapshotTime").addEventListener("change",invalidatePreview);
     $("matchButton").addEventListener("click",matchGatePreview);
+    $("failOpenButton").addEventListener("click",runGateContinuityUat);
     $("matchAppointment").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();matchGatePreview()}});
     populateSettings();renderConfigSummary();applyControls();setDefaultGateIn();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
@@ -115,6 +116,7 @@
     const c=config.controls||{};
     const moduleOn=c.moduleEnabled!==false,uploadOn=moduleOn&&c.uploadEnabled!==false;
     $("moduleOff").hidden=moduleOn;
+    $("workModeNotice").hidden=!(moduleOn&&!c.useImportedData);
     $("uploadPanel").hidden=!moduleOn;
     $("fileButton").classList.toggle("disabled",!uploadOn);
     $("fileInput").disabled=!uploadOn;
@@ -447,6 +449,43 @@
         return;
       }
       await Swal.fire({...swalBase(),icon:"info",title:"ไม่พบข้อมูลนัดหมาย",html:`<div class="swal-note">ยังไม่พบ Appointment ${esc(appointmentNo)} ในข้อมูลที่นำเข้า</div>`,confirmButtonText:"ตกลง"});
+    }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
+  }
+
+
+  function continuityRow(label,data,expectedState){
+    const proceed=data?.gateProceed===true;
+    const state=String(data?.enrichmentState||"");
+    const stateOk=!expectedState||state===expectedState;
+    const pass=proceed&&stateOk;
+    const detail=state==="MATCHED"?"พบข้อมูลนัดหมาย":state==="NOT_FOUND"?"ไม่พบข้อมูล แต่รถทำงานต่อ":state==="UNAVAILABLE"?"ข้อมูลนัดหมายขัดข้อง แต่รถทำงานต่อ":state==="DISABLED"?"ปิดการใช้ข้อมูล แต่รถทำงานต่อ":state||"ไม่ทราบผล";
+    return {label,pass,detail};
+  }
+  function continuityHtml(rows){
+    return `<div class="continuity-list">${rows.map(r=>`<div class="continuity-row ${r.pass?"pass":"fail"}"><span>${esc(r.label)}</span><b>${r.pass?"ผ่าน":"ไม่ผ่าน"}</b><small>${esc(r.detail)}</small></div>`).join("")}</div>`;
+  }
+  async function runGateContinuityUat(){
+    const gateInLocal=$("matchGateIn").value;
+    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    const appointmentNo=cleanAppointmentInput($("matchAppointment").value)||"2012960";
+    if(!$("matchAppointment").value)$("matchAppointment").value=appointmentNo;
+    const token=await getToken();if(!token)return;
+    const btn=$("failOpenButton");btn.disabled=true;
+    const common={gateInLocal,referenceMode:config.timeReference||"PERIOD",searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),useAppointmentData:true};
+    try{
+      const normal=await apiPost("/gate/enrich-preview",{...common,appointmentNo},token);
+      const missing=await apiPost("/gate/enrich-preview",{...common,appointmentNo:"999999999999999"},token);
+      const unavailable=await apiPost("/gate/enrich-preview",{...common,appointmentNo,simulateFailure:true},token);
+      const rows=[
+        continuityRow("กรณีปกติ",normal,null),
+        continuityRow("ไม่พบ Appointment",missing,"NOT_FOUND"),
+        continuityRow("ข้อมูลนัดหมายขัดข้อง",unavailable,"UNAVAILABLE")
+      ];
+      const pass=rows.every(r=>r.pass);
+      if(window.Swal){
+        await Swal.fire({...swalBase(),icon:pass?"success":"error",title:pass?"Gate In ทำงานต่อได้ครบ":"พบกรณีที่ต้องแก้",html:continuityHtml(rows)+`<div class="swal-note">การตรวจข้อมูลนัดหมายเป็นส่วนเสริม และต้องไม่หยุดขั้นตอน Gate In</div>`,confirmButtonText:"ตกลง"});
+      }
     }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
     finally{btn.disabled=false}
   }

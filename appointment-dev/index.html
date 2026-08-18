@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r172">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r173">
 </head>
 <body>
 <header class="top">
@@ -13,13 +13,18 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 172</div>
+  <div class="build">Round 173</div>
 </header>
 
 <main>
   <section id="moduleOff" class="state-box" hidden>
-    <b>ปิดการใช้งานข้อมูลนัดหมาย</b>
+    <b>ปิดโมดูลข้อมูลนัดหมาย</b>
     <span>เปิดใช้งานได้จากการตั้งค่าด้านล่าง</span>
+  </section>
+
+  <section id="workModeNotice" class="state-box mode-notice" hidden>
+    <b>โหมดทดสอบ</b>
+    <span>ข้อมูลนัดหมายยังไม่เชื่อมกับ Gate In งานจริง</span>
   </section>
 
   <section id="uploadPanel" class="panel upload">
@@ -40,7 +45,7 @@
         <div class="switch-grid">
           <label class="switch-card"><span>ใช้งานข้อมูลนัดหมาย</span><input id="moduleEnabled" type="checkbox"></label>
           <label class="switch-card"><span>อนุญาตให้อัปโหลด</span><input id="uploadEnabled" type="checkbox"></label>
-          <label class="switch-card"><span>ใช้ข้อมูลที่นำเข้า</span><input id="useImportedData" type="checkbox"></label>
+          <label class="switch-card"><span>ใช้ข้อมูลนัดหมายกับงานจริง</span><input id="useImportedData" type="checkbox"></label>
           <label class="switch-card"><span>ทดสอบการจับคู่รถเข้า</span><input id="matchTestEnabled" type="checkbox"></label>
         </div>
 
@@ -86,13 +91,16 @@
   <section id="matchTestPanel" class="panel match-panel" hidden>
     <div class="match-copy">
       <h2>ทดสอบจับคู่รถเข้า</h2>
-      <p>ตรวจผลการจับคู่ก่อนเชื่อมเข้ากับระบบรถจริง</p>
+      <p>ตรวจผลการจับคู่และความต่อเนื่องก่อนเชื่อมระบบจริง</p>
     </div>
     <div class="match-fields">
       <label>Appointment<input id="matchAppointment" inputmode="numeric" autocomplete="off" placeholder="เช่น 2012960"></label>
       <label>เวลา Gate In<input id="matchGateIn" type="datetime-local" step="60"></label>
     </div>
-    <button id="matchButton" class="primary">ตรวจจับคู่</button>
+    <div class="match-actions">
+      <button id="matchButton" class="primary">ตรวจจับคู่</button>
+      <button id="failOpenButton">ทดสอบระบบไม่ให้ Gate In สะดุด</button>
+    </div>
   </section>
 
   <section id="result" hidden>
@@ -142,8 +150,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="./config.js?v=20260818-r172"></script>
+<script src="./config.js?v=20260818-r173"></script>
 <script src="./excel-core.js?v=20260818-r171"></script>
-<script src="./app.js?v=20260818-r172"></script>
+<script src="./app.js?v=20260818-r173"></script>
 </body>
 </html>

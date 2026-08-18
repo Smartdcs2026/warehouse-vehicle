@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round172-appointment-gate-match-preview",
+  build: "2026.08.18-round173-gate-enrichment-fail-open",
   profileName: "ส่วนกลาง",
 
   controls: {
@@ -20,7 +20,8 @@ window.APPOINTMENT_DEV_CONFIG = {
   timeReference: "PERIOD",
 
   matching: {
-    searchWindowHours: 36
+    searchWindowHours: 36,
+    failOpen: true
   },
   date: {
     timezone: "Asia/Bangkok",

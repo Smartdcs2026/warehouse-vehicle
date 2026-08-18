@@ -47,3 +47,17 @@
 .match-candidates{display:grid;gap:6px;margin-top:9px}.match-candidates>div{display:flex;justify-content:space-between;gap:10px;border:1px solid #e4eaf2;border-radius:8px;padding:7px 8px;background:#f8fafc;text-align:left}.match-candidates b{color:#263b5a}.match-candidates span{color:#66758a;text-align:right}
 @media(max-width:1100px){.switch-grid{grid-template-columns:repeat(2,1fr)}.match-panel{grid-template-columns:1fr}.match-panel>button{width:max-content}.match-fields{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.match-fields{grid-template-columns:1fr}.match-panel>button{width:100%}.match-swal-grid{grid-template-columns:1fr 1fr}.match-candidates>div{flex-direction:column}.match-candidates span{text-align:left}}
+
+
+/* Round 173: Gate In fail-open UAT + clear test mode */
+.state-box[hidden],.mode-notice[hidden]{display:none!important}
+.mode-notice{border-color:#cbdcf4;background:#f2f7ff;color:#315b91}
+.match-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.match-actions button{min-height:38px}
+.continuity-list{display:grid;gap:7px;margin-top:2px}
+.continuity-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;border:1px solid #e4eaf2;border-radius:9px;padding:8px 10px;text-align:left;background:#f8fafc}
+.continuity-row span{font-weight:700;color:#334155}.continuity-row b{font-size:12px}.continuity-row small{grid-column:1/-1;color:#6b778a}
+.continuity-row.pass{border-color:#cfe7d8;background:#f3faf6}.continuity-row.pass b{color:#16794f}
+.continuity-row.fail{border-color:#f0cbc7;background:#fff6f5}.continuity-row.fail b{color:#b42318}
+@media(max-width:1100px){.match-actions{justify-content:flex-start}.match-actions button{width:max-content}}
+@media(max-width:560px){.match-actions{width:100%}.match-actions button{width:100%}}
