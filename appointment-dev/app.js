@@ -3,8 +3,10 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v175";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v174";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v176";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v175";
+  const TARGET_KEYS=["inbound","receiving","datatable","dashboard","queue","track"];
+  const TARGET_FIELDS=["enabled","timing","vendor","carrier","po"];
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -19,13 +21,16 @@
   function loadConfig(){
     try{
       const saved=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(OLD_STORAGE_KEY)||"{}";
-      const merged=Core.normalizeConfig(deepMerge(BASE,JSON.parse(saved)));
+      const combined=deepMerge(BASE,JSON.parse(saved));
+      const merged=Core.normalizeConfig(combined);
       // การเชื่อมต่อระบบบันทึกมาจากไฟล์ config เท่านั้น ไม่ให้ค่าค้างใน Browser ทับค่าใหม่
       merged.importApi=clone(BASE.importApi||{});
+      merged.displayTargets=clone(combined.displayTargets||BASE.displayTargets||{});
       return merged;
     }catch{
       const merged=Core.normalizeConfig(clone(BASE));
       merged.importApi=clone(BASE.importApi||{});
+      merged.displayTargets=clone(BASE.displayTargets||{});
       return merged;
     }
   }
@@ -42,7 +47,7 @@
   function bind(){
     $("fileInput").addEventListener("change",()=>parseFile($("fileInput").files?.[0]));
     $("saveSettings").addEventListener("click",readSettings);
-    $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
+    $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));config.importApi=clone(BASE.importApi||{});config.displayTargets=clone(BASE.displayTargets||{});saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
     $("search").addEventListener("input",renderPreview);
     $("previewButton").addEventListener("click",previewData);
     $("importButton").addEventListener("click",importData);
@@ -51,6 +56,7 @@
     $("matchButton").addEventListener("click",matchGatePreview);
     $("failOpenButton").addEventListener("click",runGateContinuityUat);
     $("integrationButton").addEventListener("click",runGateIntegrationSimulator);
+    $("adapterButton").addEventListener("click",runPreProductionAdapterUat);
     $("matchAppointment").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();matchGatePreview()}});
     populateSettings();renderConfigSummary();applyControls();setDefaultGateIn();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
@@ -78,6 +84,7 @@
     $("useImportedData").checked=!!c.useImportedData;
     $("matchTestEnabled").checked=c.matchTestEnabled!==false;
     $("integrationSimulatorEnabled").checked=c.integrationSimulatorEnabled!==false;
+    $("preProductionAdapterEnabled").checked=c.preProductionAdapterEnabled!==false;
     $("sheetName").value=config.sheetName||"raw_data";
     $("sheetAliases").value=(config.sheetAliases||[]).join(", ");
     $("warehouseMode").value=config.warehouse?.matchMode||"STARTS_WITH";
@@ -85,27 +92,44 @@
     $("timeReference").value=config.timeReference||"PERIOD";
     $("searchWindowHours").value=String(Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)));
     $("lookupTargetMs").value=String(Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150)));
+    $("adapterTimeoutMs").value=String(Math.max(50,Math.min(3000,Number(config.matching?.adapterTimeoutMs)||250)));
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       $("h_"+key).value=config.fields?.[key]?.header||"";
       $("a_"+key).value=(config.fields?.[key]?.aliases||[]).join(", ");
     }
     for(const key of ["Period","From","To","Vendor","Carrier","Po"])$("show"+key).checked=d["show"+key]!==false;
+    const targets=config.displayTargets||{};
+    for(const page of TARGET_KEYS){
+      const rule=targets[page]||{};
+      for(const field of TARGET_FIELDS){
+        const el=$("target_"+page+"_"+field);
+        if(el)el.checked=field==="enabled"?rule.enabled!==false:!!rule[field];
+      }
+    }
   }
 
   function readSettings(){
     const c=clone(config);
-    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked,integrationSimulatorEnabled:$("integrationSimulatorEnabled").checked};
+    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked,integrationSimulatorEnabled:$("integrationSimulatorEnabled").checked,preProductionAdapterEnabled:$("preProductionAdapterEnabled").checked};
     c.sheetName=$("sheetName").value.trim()||"raw_data";
     c.sheetAliases=split($("sheetAliases").value);
     c.warehouse={...(c.warehouse||{}),matchMode:$("warehouseMode").value,values:split($("warehouseValues").value).map(x=>x.toUpperCase())};
     c.timeReference=$("timeReference").value;
-    c.matching={...(c.matching||{}),searchWindowHours:Math.max(1,Math.min(168,Math.round(Number($("searchWindowHours").value)||36))),lookupTargetMs:Math.max(20,Math.min(2000,Math.round(Number($("lookupTargetMs").value)||150)))};
+    c.matching={...(c.matching||{}),searchWindowHours:Math.max(1,Math.min(168,Math.round(Number($("searchWindowHours").value)||36))),lookupTargetMs:Math.max(20,Math.min(2000,Math.round(Number($("lookupTargetMs").value)||150))),adapterTimeoutMs:Math.max(50,Math.min(3000,Math.round(Number($("adapterTimeoutMs").value)||250)))};
     c.fields=c.fields||{};
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       c.fields[key]={...(c.fields[key]||{}),header:$("h_"+key).value.trim(),aliases:split($("a_"+key).value)};
     }
     c.display={showPeriod:$("showPeriod").checked,showFrom:$("showFrom").checked,showTo:$("showTo").checked,showVendor:$("showVendor").checked,showCarrier:$("showCarrier").checked,showPo:$("showPo").checked};
-    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.matching=c.matching;config.importApi=c.importApi||BASE.importApi||{};
+    c.displayTargets={};
+    for(const page of TARGET_KEYS){
+      c.displayTargets[page]={};
+      for(const field of TARGET_FIELDS){
+        const el=$("target_"+page+"_"+field);
+        c.displayTargets[page][field]=!!el?.checked;
+      }
+    }
+    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.displayTargets=c.displayTargets;config.matching=c.matching;config.importApi=c.importApi||BASE.importApi||{};
     saveConfig();showToast("บันทึกแล้ว");
     if(lastResult)renderResult();
   }
@@ -119,7 +143,7 @@
     const c=config.controls||{};
     const moduleOn=c.moduleEnabled!==false,uploadOn=moduleOn&&c.uploadEnabled!==false;
     $("moduleOff").hidden=moduleOn;
-    $("workModeNotice").hidden=!(moduleOn&&!c.useImportedData);
+    $("workModeNotice").hidden=!moduleOn;
     $("uploadPanel").hidden=!moduleOn;
     $("fileButton").classList.toggle("disabled",!uploadOn);
     $("fileInput").disabled=!uploadOn;
@@ -129,6 +153,7 @@
     $("importPanel").hidden=!(moduleOn&&uploadOn&&apiReady&&lastResult&&getIssueCount()===0);
     $("matchTestPanel").hidden=!(moduleOn&&c.matchTestEnabled!==false&&apiReady);
     $("integrationButton").hidden=!(moduleOn&&c.integrationSimulatorEnabled!==false&&apiReady);
+    $("adapterButton").hidden=!(moduleOn&&c.preProductionAdapterEnabled!==false&&apiReady);
   }
 
   async function parseFile(file){
@@ -581,6 +606,66 @@
       if(window.Swal){
         await Swal.fire({...swalBase(),icon:pass?"success":"error",title:pass?"Gate In ทำงานต่อได้ครบ":"พบกรณีที่ต้องแก้",html:continuityHtml(rows)+`<div class="swal-note">การตรวจข้อมูลนัดหมายเป็นส่วนเสริม และต้องไม่หยุดขั้นตอน Gate In</div>`,confirmButtonText:"ตกลง"});
       }
+    }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
+  }
+
+
+  function machineToBangkokEpoch(machine){
+    const ms=Date.parse(String(machine||"")+"+07:00");
+    if(!Number.isFinite(ms))throw new Error("วันเวลา Gate In ไม่ถูกต้อง");
+    return Math.floor(ms/1000);
+  }
+  function adapterStateLabel(state){
+    return ({MATCHED:"พบข้อมูล",NOT_FOUND:"ไม่พบ Appointment",DISABLED:"Admin ปิดใช้ข้อมูล",NO_APPOINTMENT_NUMBER:"ไม่มีเลข Appointment",TIMEOUT:"ตอบช้าเกินกำหนด",UNAVAILABLE:"ข้อมูลนัดหมายขัดข้อง",OUTSIDE_WINDOW:"นอกช่วงค้นหา",AMBIGUOUS:"พบมากกว่า 1 รายการ",NO_REFERENCE:"ไม่มีเวลาอ้างอิง",INVALID_INPUT:"ข้อมูล Gate In ไม่ครบ"})[String(state||"")]||String(state||"-");
+  }
+  function adapterUatRow(label,data,expectedState,expectedQuery){
+    const state=String(data?.adapter?.state||"");
+    const proceed=data?.gateProceed===true;
+    const query=data?.adapter?.queryAttempted===true;
+    const stateOk=!expectedState||state===expectedState;
+    const queryOk=expectedQuery===undefined||query===expectedQuery;
+    const pass=proceed&&stateOk&&queryOk;
+    const ms=Number(data?.performance?.lookupMs||0);
+    return {label,pass,detail:`${adapterStateLabel(state)} · ${query?"ค้น D1":"ไม่ค้น D1"} · ${ms.toFixed(1)} ms`};
+  }
+  function adapterProjectionHtml(projection={}){
+    const labels={inbound:"Inbound",receiving:"Receiving",datatable:"Datatable",dashboard:"Dashboard",queue:"จอคิว",track:"Track"};
+    return `<div class="adapter-pages">${TARGET_KEYS.map(page=>{const p=projection[page]||{},keys=Object.keys(p.fields||{});return `<div class="adapter-page ${p.enabled?"on":"off"}"><span>${esc(labels[page]||page)}</span><b>${p.enabled?"เปิด":"ปิด"}</b><small>${p.enabled?(keys.length?keys.map(k=>({timing:"เวลา",vendor:"บริษัท",carrier:"Carrier",po:"PO"}[k]||k)).join(" · "):"ไม่แสดงรายละเอียด"):"ไม่แสดงข้อมูลนัดหมาย"}</small></div>`}).join("")}</div>`;
+  }
+  async function runPreProductionAdapterUat(){
+    let gateInLocal;
+    try{gateInLocal=gateInputMachine()}catch(e){showError(e.message);return}
+    const appointmentNo=cleanAppointmentInput($("matchAppointment").value)||"2012960";
+    if(!$("matchAppointment").value)$("matchAppointment").value=appointmentNo;
+    const token=await getToken();if(!token)return;
+    const btn=$("adapterButton");btn.disabled=true;
+    const gateEpoch=machineToBangkokEpoch(gateInLocal);
+    const makeGate=no=>({auto_id:`PREPROD-${Date.now()}-${no||"NONE"}`,appointment_no:no||"",gate_in_at:gateEpoch,company_name:"DEV TEST",driver_name:"DEV TEST",vehicle_plate:"DEV-0000",province:"ปทุมธานี",vehicle_type:"DEV"});
+    const common={
+      moduleEnabled:true,useAppointmentData:true,referenceMode:config.timeReference||"PERIOD",
+      searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),
+      lookupTargetMs:Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150)),
+      adapterTimeoutMs:Math.max(50,Math.min(3000,Number(config.matching?.adapterTimeoutMs)||250)),
+      displayPolicy:config.displayTargets||{}
+    };
+    try{
+      const matched=await apiPost("/adapter/preprod",{...common,gateRecord:makeGate(appointmentNo)},token);
+      const missing=await apiPost("/adapter/preprod",{...common,gateRecord:makeGate("999999999999999")},token);
+      const disabled=await apiPost("/adapter/preprod",{...common,useAppointmentData:false,gateRecord:makeGate(appointmentNo)},token);
+      const noNumber=await apiPost("/adapter/preprod",{...common,gateRecord:makeGate("")},token);
+      const timeout=await apiPost("/adapter/preprod",{...common,simulateTimeout:true,gateRecord:makeGate(appointmentNo)},token);
+      const rows=[
+        adapterUatRow("พบ Appointment",matched,"MATCHED",true),
+        adapterUatRow("ไม่พบ Appointment",missing,"NOT_FOUND",true),
+        adapterUatRow("Admin ปิดใช้ข้อมูล",disabled,"DISABLED",false),
+        adapterUatRow("ไม่มีเลข Appointment",noNumber,"NO_APPOINTMENT_NUMBER",false),
+        adapterUatRow("ข้อมูลตอบช้าเกินกำหนด",timeout,"TIMEOUT",true)
+      ];
+      const pass=rows.every(r=>r.pass);
+      const zeroQueryPass=disabled?.adapter?.zeroQuery===true&&noNumber?.adapter?.zeroQuery===true&&Number(disabled?.performance?.lookupMs||0)===0&&Number(noNumber?.performance?.lookupMs||0)===0;
+      const html=continuityHtml(rows)+`<div class="adapter-zero ${zeroQueryPass?"pass":"fail"}"><span>ปิดใช้ข้อมูลแล้วไม่ Query Appointment</span><b>${zeroQueryPass?"ผ่าน":"ไม่ผ่าน"}</b></div>`+adapterProjectionHtml(matched?.pageProjection||{})+`<div class="swal-note">Adapter รับรูปแบบข้อมูลรถแบบระบบหลัก แต่รอบนี้ยังไม่แก้ไฟล์ Production และไม่เขียน Gate In</div>`;
+      if(window.Swal)await Swal.fire({...swalBase(),width:440,icon:pass&&zeroQueryPass?"success":"error",title:pass&&zeroQueryPass?"Adapter ก่อนรวมระบบ ผ่าน 5/5":"Adapter ยังมีจุดต้องแก้",html,confirmButtonText:"ตกลง"});
     }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
     finally{btn.disabled=false}
   }

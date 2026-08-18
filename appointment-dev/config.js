@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round175-datetime-standard-match-performance",
+  build: "2026.08.18-round176-preproduction-adapter",
   profileName: "ส่วนกลาง",
 
   controls: {
@@ -7,7 +7,8 @@ window.APPOINTMENT_DEV_CONFIG = {
     uploadEnabled: true,
     useImportedData: false,
     matchTestEnabled: true,
-    integrationSimulatorEnabled: true
+    integrationSimulatorEnabled: true,
+    preProductionAdapterEnabled: true
   },
 
   sheetName: "raw_data",
@@ -23,6 +24,7 @@ window.APPOINTMENT_DEV_CONFIG = {
   matching: {
     searchWindowHours: 36,
     lookupTargetMs: 150,
+    adapterTimeoutMs: 250,
     failOpen: true
   },
   date: {
@@ -53,6 +55,15 @@ window.APPOINTMENT_DEV_CONFIG = {
     showVendor: true,
     showCarrier: true,
     showPo: true
+  },
+
+  displayTargets: {
+    inbound:   { enabled: true,  timing: true,  vendor: true,  carrier: false, po: false },
+    receiving: { enabled: true,  timing: true,  vendor: true,  carrier: true,  po: true  },
+    datatable: { enabled: true,  timing: true,  vendor: true,  carrier: true,  po: true  },
+    dashboard: { enabled: true,  timing: true,  vendor: false, carrier: false, po: false },
+    queue:     { enabled: true,  timing: true,  vendor: false, carrier: false, po: false },
+    track:     { enabled: true,  timing: true,  vendor: true,  carrier: false, po: false }
   },
 
   importApi: {
