@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171c";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171b";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v172";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v171c";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -48,7 +48,9 @@
     $("importButton").addEventListener("click",importData);
     $("snapshotDate").addEventListener("change",invalidatePreview);
     $("snapshotTime").addEventListener("change",invalidatePreview);
-    populateSettings();renderConfigSummary();applyControls();
+    $("matchButton").addEventListener("click",matchGatePreview);
+    $("matchAppointment").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();matchGatePreview()}});
+    populateSettings();renderConfigSummary();applyControls();setDefaultGateIn();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
   }
 
@@ -72,11 +74,13 @@
     $("moduleEnabled").checked=c.moduleEnabled!==false;
     $("uploadEnabled").checked=c.uploadEnabled!==false;
     $("useImportedData").checked=!!c.useImportedData;
+    $("matchTestEnabled").checked=c.matchTestEnabled!==false;
     $("sheetName").value=config.sheetName||"raw_data";
     $("sheetAliases").value=(config.sheetAliases||[]).join(", ");
     $("warehouseMode").value=config.warehouse?.matchMode||"STARTS_WITH";
     $("warehouseValues").value=(config.warehouse?.values||["906"]).join(", ");
     $("timeReference").value=config.timeReference||"PERIOD";
+    $("searchWindowHours").value=String(Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)));
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       $("h_"+key).value=config.fields?.[key]?.header||"";
       $("a_"+key).value=(config.fields?.[key]?.aliases||[]).join(", ");
@@ -86,17 +90,18 @@
 
   function readSettings(){
     const c=clone(config);
-    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked};
+    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked};
     c.sheetName=$("sheetName").value.trim()||"raw_data";
     c.sheetAliases=split($("sheetAliases").value);
     c.warehouse={...(c.warehouse||{}),matchMode:$("warehouseMode").value,values:split($("warehouseValues").value).map(x=>x.toUpperCase())};
     c.timeReference=$("timeReference").value;
+    c.matching={...(c.matching||{}),searchWindowHours:Math.max(1,Math.min(168,Math.round(Number($("searchWindowHours").value)||36)))};
     c.fields=c.fields||{};
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       c.fields[key]={...(c.fields[key]||{}),header:$("h_"+key).value.trim(),aliases:split($("a_"+key).value)};
     }
     c.display={showPeriod:$("showPeriod").checked,showFrom:$("showFrom").checked,showTo:$("showTo").checked,showVendor:$("showVendor").checked,showCarrier:$("showCarrier").checked,showPo:$("showPo").checked};
-    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.importApi=c.importApi||BASE.importApi||{};
+    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.matching=c.matching;config.importApi=c.importApi||BASE.importApi||{};
     saveConfig();showToast("บันทึกแล้ว");
     if(lastResult)renderResult();
   }
@@ -115,7 +120,9 @@
     $("fileInput").disabled=!uploadOn;
     if(!moduleOn)clearResult();
     const api=config.importApi||{};
-    $("importPanel").hidden=!(moduleOn&&uploadOn&&api.enabled&&String(api.baseUrl||"").trim()&&lastResult&&getIssueCount()===0);
+    const apiReady=!!(api.enabled&&String(api.baseUrl||"").trim());
+    $("importPanel").hidden=!(moduleOn&&uploadOn&&apiReady&&lastResult&&getIssueCount()===0);
+    $("matchTestPanel").hidden=!(moduleOn&&c.matchTestEnabled!==false&&apiReady);
   }
 
   async function parseFile(file){
@@ -321,7 +328,7 @@
       const data=await res.json().catch(()=>({}));
       if(!res.ok){
         if(res.status===401)sessionStorage.removeItem(TOKEN_KEY);
-        throw new Error(data.message||"บันทึกข้อมูลไม่สำเร็จ");
+        throw new Error(data.message||"ดำเนินการไม่สำเร็จ");
       }
       return data;
     }finally{clearTimeout(timer)}
@@ -369,6 +376,79 @@
     if(window.Swal){
       return Swal.fire({...swalBase(),icon:duplicate?"info":"success",title:String(title||"เรียบร้อย"),html:countsHtml(counts),confirmButtonText:"ตกลง"});
     }
+  }
+
+
+  function setDefaultGateIn(){
+    const input=$("matchGateIn");
+    if(!input||input.value)return;
+    const now=new Date();
+    const pad=n=>String(n).padStart(2,"0");
+    input.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+
+  function cleanAppointmentInput(value){return String(value||"").replace(/\s+/g,"").trim()}
+  function displayGateLocal(value){
+    const m=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+    return m?`${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`:String(value||"-");
+  }
+  function formatDelta(minutes){
+    const n=Number(minutes||0),abs=Math.abs(n),h=Math.floor(abs/60),m=abs%60;
+    const parts=[];if(h)parts.push(`${h} ชม.`);if(m||!h)parts.push(`${m} นาที`);
+    return n>0?`ช้า ${parts.join(" ")}`:n<0?`มาก่อน ${parts.join(" ")}`:"ตรงเวลา";
+  }
+  function matchInfoHtml(data){
+    const a=data.appointment||{};
+    const pos=(a.pos||[]).slice(0,12).map(esc).join(", ")||"-";
+    const vendor=esc(a.vendorsText||"-");
+    const carrier=esc(a.carriersText||"-");
+    return `<div class="match-swal-grid">
+      <div><span>Appointment</span><strong>${esc(a.appointmentNo||"-")}</strong></div>
+      <div><span>วันที่นัด</span><strong>${esc(Core.displayDate(a.appointmentDate)||"-")}</strong></div>
+      <div><span>${esc(data.referenceMode||"-")}</span><strong>${esc(data.plannedTime||"-")}</strong></div>
+      <div><span>Gate In</span><strong>${esc(displayGateLocal(data.gateInLocal))}</strong></div>
+    </div>
+    <div class="match-result-line ${data.status==="LATE"?"late":data.status==="EARLY"?"early":"ontime"}">${esc(formatDelta(data.deltaMinutes))}</div>
+    <div class="match-swal-detail"><span>บริษัท</span><b>${vendor}</b></div>
+    <div class="match-swal-detail"><span>Carrier</span><b>${carrier}</b></div>
+    <div class="match-swal-detail"><span>PO</span><b>${pos}</b></div>`;
+  }
+  function candidateListHtml(items=[]){
+    return `<div class="match-candidates">${items.slice(0,5).map(c=>`<div><b>${esc(c.dcCode||"-")}</b><span>${esc(Core.displayDate(c.appointmentDate))} · ${esc(c.plannedTime||"-")} · ${esc(formatDelta(c.deltaMinutes))}</span></div>`).join("")}</div>`;
+  }
+
+  async function matchGatePreview(){
+    const appointmentNo=cleanAppointmentInput($("matchAppointment").value);
+    const gateInLocal=$("matchGateIn").value;
+    if(!appointmentNo){showError("กรุณาระบุเลข Appointment");return}
+    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    const token=await getToken();if(!token)return;
+    const btn=$("matchButton");btn.disabled=true;
+    try{
+      const data=await apiPost("/match/preview",{
+        appointmentNo,
+        gateInLocal,
+        referenceMode:config.timeReference||"PERIOD",
+        searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36))
+      },token);
+      if(!window.Swal)return;
+      if(data.matched){
+        const icon=data.status==="LATE"?"warning":data.status==="ON_TIME"?"success":"info";
+        const title=data.status==="LATE"?"ช้ากว่าเวลานัด":data.status==="EARLY"?"มาก่อนเวลานัด":"ตรงเวลานัด";
+        await Swal.fire({...swalBase(),icon,title,html:matchInfoHtml(data),confirmButtonText:"ตกลง"});
+        return;
+      }
+      if(data.ambiguous){
+        await Swal.fire({...swalBase(),icon:"warning",title:"พบมากกว่า 1 รายการ",html:`<div class="swal-note">ยังไม่เลือกให้อัตโนมัติ กรุณาตรวจรายการที่ใกล้เคียง</div>${candidateListHtml(data.candidates||[])}`,confirmButtonText:"รับทราบ"});
+        return;
+      }
+      if(data.reason==="OUTSIDE_WINDOW"){
+        await Swal.fire({...swalBase(),icon:"warning",title:"เวลาห่างจากรอบนัดหมาย",html:`<div class="swal-note">พบ Appointment แต่เวลา Gate In อยู่นอกช่วงค้นหาที่ตั้งไว้</div>${candidateListHtml(data.candidates||[])}`,confirmButtonText:"รับทราบ"});
+        return;
+      }
+      await Swal.fire({...swalBase(),icon:"info",title:"ไม่พบข้อมูลนัดหมาย",html:`<div class="swal-note">ยังไม่พบ Appointment ${esc(appointmentNo)} ในข้อมูลที่นำเข้า</div>`,confirmButtonText:"ตกลง"});
+    }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
   }
 
 

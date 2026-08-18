@@ -1,11 +1,12 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round171-change-preview-uat",
+  build: "2026.08.18-round172-appointment-gate-match-preview",
   profileName: "ส่วนกลาง",
 
   controls: {
     moduleEnabled: true,
     uploadEnabled: true,
-    useImportedData: false
+    useImportedData: false,
+    matchTestEnabled: true
   },
 
   sheetName: "raw_data",
@@ -17,6 +18,10 @@ window.APPOINTMENT_DEV_CONFIG = {
   },
 
   timeReference: "PERIOD",
+
+  matching: {
+    searchWindowHours: 36
+  },
   date: {
     timezone: "Asia/Bangkok",
     dateSystem: "AUTO",

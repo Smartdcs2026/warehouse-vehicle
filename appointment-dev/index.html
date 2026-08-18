@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r171c">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r172">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 171C</div>
+  <div class="build">Round 172</div>
 </header>
 
 <main>
@@ -41,6 +41,7 @@
           <label class="switch-card"><span>ใช้งานข้อมูลนัดหมาย</span><input id="moduleEnabled" type="checkbox"></label>
           <label class="switch-card"><span>อนุญาตให้อัปโหลด</span><input id="uploadEnabled" type="checkbox"></label>
           <label class="switch-card"><span>ใช้ข้อมูลที่นำเข้า</span><input id="useImportedData" type="checkbox"></label>
+          <label class="switch-card"><span>ทดสอบการจับคู่รถเข้า</span><input id="matchTestEnabled" type="checkbox"></label>
         </div>
 
         <h3>การอ่านไฟล์</h3>
@@ -50,6 +51,7 @@
           <label>วิธีเลือกรหัสคลัง<select id="warehouseMode"><option value="STARTS_WITH">ขึ้นต้นด้วย</option><option value="EXACT">ตรงกับ</option></select></label>
           <label>รหัสคลัง<input id="warehouseValues" placeholder="906"></label>
           <label>เวลาใช้เทียบรถเข้า<select id="timeReference"><option value="PERIOD">PERIOD</option><option value="FROM">FROM</option></select></label>
+          <label>ช่วงค้นหานัดหมาย (ชม.)<input id="searchWindowHours" type="number" min="1" max="168" step="1"></label>
         </div>
 
         <h3>ชื่อคอลัมน์</h3>
@@ -79,6 +81,18 @@
         </div>
       </div>
     </details>
+  </section>
+
+  <section id="matchTestPanel" class="panel match-panel" hidden>
+    <div class="match-copy">
+      <h2>ทดสอบจับคู่รถเข้า</h2>
+      <p>ตรวจผลการจับคู่ก่อนเชื่อมเข้ากับระบบรถจริง</p>
+    </div>
+    <div class="match-fields">
+      <label>Appointment<input id="matchAppointment" inputmode="numeric" autocomplete="off" placeholder="เช่น 2012960"></label>
+      <label>เวลา Gate In<input id="matchGateIn" type="datetime-local" step="60"></label>
+    </div>
+    <button id="matchButton" class="primary">ตรวจจับคู่</button>
   </section>
 
   <section id="result" hidden>
@@ -128,8 +142,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="./config.js?v=20260818-r171"></script>
+<script src="./config.js?v=20260818-r172"></script>
 <script src="./excel-core.js?v=20260818-r171"></script>
-<script src="./app.js?v=20260818-r171c"></script>
+<script src="./app.js?v=20260818-r172"></script>
 </body>
 </html>
