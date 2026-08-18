@@ -8943,3 +8943,102 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .inbound-metrics-r88.is-four .inbound-metric:nth-child(2)::after{top:6px;right:8px;height:18px;font-size:9px;min-width:36px;}
   .inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{font-size:28px;}
 }
+
+
+/* Round 192 — move emphasis from KPI card to table-head filter tab */
+/* Reset KPI emphasis for "รอตรวจเอกสาร" back to normal. */
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2){
+  background:#fff;
+  border:1px solid #d7e2f2;
+  box-shadow:none;
+  transform:none;
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2)::after{
+  content:none !important;
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-icon{
+  width:42px;
+  height:42px;
+  color:var(--metric-color,inherit);
+  background:rgba(0,0,0,.03);
+  box-shadow:none;
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy small{
+  color:#5f7187;
+  font-size:11px;
+  font-weight:800;
+}
+.inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{
+  font-size:30px;
+  line-height:1.05;
+  color:#173b6d;
+  letter-spacing:0;
+}
+.inbound-kiosk-shell .inbound-metrics-r88.is-four .inbound-metric:nth-child(2){
+  min-height:70px;
+}
+.inbound-kiosk-shell .inbound-metrics-r88.is-four .inbound-metric:nth-child(2) .inbound-metric-copy b{
+  font-size:30px;
+}
+
+/* Emphasize the filter tab above the table instead. */
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"]{
+  position:relative;
+  background:linear-gradient(180deg,#f6f9ff 0%,#ffffff 100%);
+  border:1.5px solid #8cb2ea;
+  color:#2058a7;
+  box-shadow:0 6px 14px rgba(49,95,175,.10);
+}
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"] span{
+  font-weight:900;
+}
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"] b{
+  min-width:24px;
+  height:24px;
+  padding:0 7px;
+  background:#2e6de0;
+  color:#fff;
+  font-size:11px;
+  box-shadow:0 6px 10px rgba(46,109,224,.18);
+}
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"]::after{
+  content:"ต้องตรวจ";
+  position:absolute;
+  top:-9px;
+  right:10px;
+  height:18px;
+  padding:0 7px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#2e6de0;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.01em;
+  box-shadow:0 4px 9px rgba(46,109,224,.18);
+}
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"].active{
+  background:linear-gradient(180deg,#edf4ff 0%,#dfeeff 100%);
+  border-color:#3a7be3;
+  color:#114c98;
+  box-shadow:inset 0 -2px 0 #1765cc,0 8px 16px rgba(23,101,204,.16);
+}
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"].active b{
+  background:#114c98;
+}
+@media (max-width:620px){
+  .inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"]::after{
+    top:-7px;
+    right:7px;
+    height:16px;
+    padding:0 6px;
+    font-size:8px;
+  }
+  .inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"] b{
+    min-width:22px;
+    height:22px;
+    font-size:10px;
+  }
+}
