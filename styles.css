@@ -9042,3 +9042,9 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
     font-size:10px;
   }
 }
+
+
+/* Round 193 — remove "ต้องตรวจ" label from document-check filter tab */
+.inbound-stage-tabs button[data-inbound-filter="WAITING_DOCUMENT_CHECK"]::after{
+  content:none !important;
+}
