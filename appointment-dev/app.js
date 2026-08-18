@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v173";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v172";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v174";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v173";
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
   let lastResult=null;
   let lastPreview=null;
@@ -50,6 +50,7 @@
     $("snapshotTime").addEventListener("change",invalidatePreview);
     $("matchButton").addEventListener("click",matchGatePreview);
     $("failOpenButton").addEventListener("click",runGateContinuityUat);
+    $("integrationButton").addEventListener("click",runGateIntegrationSimulator);
     $("matchAppointment").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();matchGatePreview()}});
     populateSettings();renderConfigSummary();applyControls();setDefaultGateIn();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
@@ -76,12 +77,14 @@
     $("uploadEnabled").checked=c.uploadEnabled!==false;
     $("useImportedData").checked=!!c.useImportedData;
     $("matchTestEnabled").checked=c.matchTestEnabled!==false;
+    $("integrationSimulatorEnabled").checked=c.integrationSimulatorEnabled!==false;
     $("sheetName").value=config.sheetName||"raw_data";
     $("sheetAliases").value=(config.sheetAliases||[]).join(", ");
     $("warehouseMode").value=config.warehouse?.matchMode||"STARTS_WITH";
     $("warehouseValues").value=(config.warehouse?.values||["906"]).join(", ");
     $("timeReference").value=config.timeReference||"PERIOD";
     $("searchWindowHours").value=String(Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)));
+    $("lookupTargetMs").value=String(Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150)));
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       $("h_"+key).value=config.fields?.[key]?.header||"";
       $("a_"+key).value=(config.fields?.[key]?.aliases||[]).join(", ");
@@ -91,12 +94,12 @@
 
   function readSettings(){
     const c=clone(config);
-    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked};
+    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked,integrationSimulatorEnabled:$("integrationSimulatorEnabled").checked};
     c.sheetName=$("sheetName").value.trim()||"raw_data";
     c.sheetAliases=split($("sheetAliases").value);
     c.warehouse={...(c.warehouse||{}),matchMode:$("warehouseMode").value,values:split($("warehouseValues").value).map(x=>x.toUpperCase())};
     c.timeReference=$("timeReference").value;
-    c.matching={...(c.matching||{}),searchWindowHours:Math.max(1,Math.min(168,Math.round(Number($("searchWindowHours").value)||36)))};
+    c.matching={...(c.matching||{}),searchWindowHours:Math.max(1,Math.min(168,Math.round(Number($("searchWindowHours").value)||36))),lookupTargetMs:Math.max(20,Math.min(2000,Math.round(Number($("lookupTargetMs").value)||150)))};
     c.fields=c.fields||{};
     for(const key of ["dc","date","period","from","to","po","appointment","vendor","carrier"]){
       c.fields[key]={...(c.fields[key]||{}),header:$("h_"+key).value.trim(),aliases:split($("a_"+key).value)};
@@ -125,6 +128,7 @@
     const apiReady=!!(api.enabled&&String(api.baseUrl||"").trim());
     $("importPanel").hidden=!(moduleOn&&uploadOn&&apiReady&&lastResult&&getIssueCount()===0);
     $("matchTestPanel").hidden=!(moduleOn&&c.matchTestEnabled!==false&&apiReady);
+    $("integrationButton").hidden=!(moduleOn&&c.integrationSimulatorEnabled!==false&&apiReady);
   }
 
   async function parseFile(file){
@@ -454,12 +458,76 @@
   }
 
 
+  function integrationStateLabel(state){
+    return ({MATCHED:"พบข้อมูลนัดหมาย",NOT_FOUND:"ไม่พบ Appointment",NO_REFERENCE:"ไม่มีเวลาอ้างอิง",OUTSIDE_WINDOW:"อยู่นอกช่วงค้นหา",AMBIGUOUS:"พบมากกว่า 1 รายการ",DISABLED:"ปิดการใช้ข้อมูล",UNAVAILABLE:"ข้อมูลนัดหมายไม่พร้อม"})[String(state||"")]||String(state||"-");
+  }
+  function integrationHtml(data){
+    const perf=data?.performance||{};
+    const enrich=data?.appointmentEnrichment||{};
+    const timing=data?.timing||{};
+    const gate=data?.gate||{};
+    const ms=Number(perf.lookupMs||0);
+    const total=Number(perf.totalMs||0);
+    const target=Number(perf.targetMs||0);
+    const perfClass=perf.withinTarget===false?"late":"ontime";
+    const timingLine=enrich.state==="MATCHED"?`<div class="match-result-line ${timing.status==="LATE"?"late":timing.status==="EARLY"?"early":"ontime"}">${esc(formatDelta(timing.deltaMinutes))}</div>`:"";
+    const appt=enrich.data?.appointment||{};
+    return `<div class="integration-contract">
+      <div class="integration-state"><span>สถานะ</span><b>${esc(integrationStateLabel(enrich.state))}</b><em>${data.gateProceed===true?"Gate In ทำงานต่อ":"Gate In ถูกหยุด"}</em></div>
+      <div class="integration-metrics">
+        <div><span>ค้นข้อมูล</span><strong>${ms.toFixed(1)} ms</strong></div>
+        <div><span>รวมทั้งหมด</span><strong>${total.toFixed(1)} ms</strong></div>
+        <div><span>เป้าหมาย</span><strong>≤ ${target} ms</strong></div>
+      </div>
+      <div class="match-result-line ${perfClass}">${perf.withinTarget===false?"ช้ากว่าเป้าหมายที่ตั้งไว้":"ความเร็วอยู่ในเป้าหมาย"}</div>
+      ${timingLine}
+      <div class="integration-lines">
+        <div><span>Auto ID</span><b>${esc(gate.autoId||"-")}</b></div>
+        <div><span>Appointment</span><b>${esc(gate.appointmentNo||"-")}</b></div>
+        <div><span>Gate In</span><b>${esc((gate.gateInLocal||"").replace("T"," ")||"-")}</b></div>
+        <div><span>บริษัท</span><b>${esc(appt.vendorsText||"-")}</b></div>
+        <div><span>Carrier</span><b>${esc(appt.carriersText||"-")}</b></div>
+        <div><span>PO</span><b>${esc((appt.pos||[]).join(", ")||"-")}</b></div>
+      </div>
+      <div class="swal-note">ข้อมูลนี้เป็นผลจำลอง Contract ก่อนเชื่อม Gate In งานจริง และไม่มีการแก้ข้อมูล Gate In</div>
+    </div>`;
+  }
+  async function runGateIntegrationSimulator(){
+    const appointmentNo=cleanAppointmentInput($("matchAppointment").value);
+    const gateInLocal=$("matchGateIn").value;
+    if(!appointmentNo){showError("กรุณาระบุเลข Appointment");return}
+    if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(gateInLocal)){showError("กรุณาระบุวันและเวลา Gate In");return}
+    const token=await getToken();if(!token)return;
+    const btn=$("integrationButton");btn.disabled=true;
+    try{
+      const data=await apiPost("/gate/integration-sim",{
+        gateRecord:{
+          autoId:`DEV-${Date.now()}`,
+          timestamp:gateInLocal,
+          appointmentNo,
+          company:"DEV TEST",driver:"DEV TEST",plate:"DEV-0000",province:"ปทุมธานี",vehicleType:"DEV"
+        },
+        useAppointmentData:true,
+        referenceMode:config.timeReference||"PERIOD",
+        searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),
+        lookupTargetMs:Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150))
+      },token);
+      if(window.Swal){
+        const icon=data.gateProceed!==true?"error":data.performance?.withinTarget===false?"warning":"success";
+        await Swal.fire({...swalBase(),width:420,icon,title:data.gateProceed===true?"Gate In Integration พร้อมทดสอบ":"Integration ไม่ผ่าน",html:integrationHtml(data),confirmButtonText:"ตกลง"});
+      }
+    }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
+  }
+
+
   function continuityRow(label,data,expectedState){
     const proceed=data?.gateProceed===true;
     const state=String(data?.enrichmentState||"");
     const stateOk=!expectedState||state===expectedState;
     const pass=proceed&&stateOk;
-    const detail=state==="MATCHED"?"พบข้อมูลนัดหมาย":state==="NOT_FOUND"?"ไม่พบข้อมูล แต่รถทำงานต่อ":state==="UNAVAILABLE"?"ข้อมูลนัดหมายขัดข้อง แต่รถทำงานต่อ":state==="DISABLED"?"ปิดการใช้ข้อมูล แต่รถทำงานต่อ":state||"ไม่ทราบผล";
+    const ms=Number(data?.performance?.lookupMs||0);
+    const detail=(state==="MATCHED"?"พบข้อมูลนัดหมาย":state==="NOT_FOUND"?"ไม่พบข้อมูล แต่รถทำงานต่อ":state==="UNAVAILABLE"?"ข้อมูลนัดหมายขัดข้อง แต่รถทำงานต่อ":state==="DISABLED"?"ปิดการใช้ข้อมูล แต่รถทำงานต่อ":state||"ไม่ทราบผล")+` · ${ms.toFixed(1)} ms`;
     return {label,pass,detail};
   }
   function continuityHtml(rows){
@@ -472,15 +540,18 @@
     if(!$("matchAppointment").value)$("matchAppointment").value=appointmentNo;
     const token=await getToken();if(!token)return;
     const btn=$("failOpenButton");btn.disabled=true;
-    const common={gateInLocal,referenceMode:config.timeReference||"PERIOD",searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),useAppointmentData:true};
+    const gateRecord=no=>({autoId:`UAT-${Date.now()}-${no}`,timestamp:gateInLocal,appointmentNo:no,company:"DEV TEST",driver:"DEV TEST",plate:"DEV-UAT",province:"ปทุมธานี",vehicleType:"DEV"});
+    const common={referenceMode:config.timeReference||"PERIOD",searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),lookupTargetMs:Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150)),useAppointmentData:true};
     try{
-      const normal=await apiPost("/gate/enrich-preview",{...common,appointmentNo},token);
-      const missing=await apiPost("/gate/enrich-preview",{...common,appointmentNo:"999999999999999"},token);
-      const unavailable=await apiPost("/gate/enrich-preview",{...common,appointmentNo,simulateFailure:true},token);
+      const normal=await apiPost("/gate/integration-sim",{...common,gateRecord:gateRecord(appointmentNo)},token);
+      const missing=await apiPost("/gate/integration-sim",{...common,gateRecord:gateRecord("999999999999999")},token);
+      const unavailable=await apiPost("/gate/integration-sim",{...common,gateRecord:gateRecord(appointmentNo),simulateFailure:true},token);
+      const disabled=await apiPost("/gate/integration-sim",{...common,useAppointmentData:false,gateRecord:gateRecord(appointmentNo)},token);
       const rows=[
         continuityRow("กรณีปกติ",normal,null),
         continuityRow("ไม่พบ Appointment",missing,"NOT_FOUND"),
-        continuityRow("ข้อมูลนัดหมายขัดข้อง",unavailable,"UNAVAILABLE")
+        continuityRow("ข้อมูลนัดหมายขัดข้อง",unavailable,"UNAVAILABLE"),
+        continuityRow("Admin ปิดการใช้ข้อมูล",disabled,"DISABLED")
       ];
       const pass=rows.every(r=>r.pass);
       if(window.Swal){

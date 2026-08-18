@@ -61,3 +61,13 @@
 .continuity-row.fail{border-color:#f0cbc7;background:#fff6f5}.continuity-row.fail b{color:#b42318}
 @media(max-width:1100px){.match-actions{justify-content:flex-start}.match-actions button{width:max-content}}
 @media(max-width:560px){.match-actions{width:100%}.match-actions button{width:100%}}
+
+
+/* Round 174: Gate In integration simulator */
+.integration-contract{display:grid;gap:8px;margin-top:2px}
+.integration-state{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;border:1px solid #dfe7f1;border-radius:9px;padding:8px 10px;background:#f8fafc;text-align:left}
+.integration-state span{font-size:10.5px;color:#748196}.integration-state b{font-size:13px;color:#1e3f70}.integration-state em{font-size:10.5px;font-style:normal;font-weight:800;color:#16794f}
+.integration-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.integration-metrics>div{border:1px solid #e4eaf2;border-radius:9px;padding:7px 6px;background:#fff;text-align:center}.integration-metrics span{display:block;font-size:10px;color:#748196}.integration-metrics strong{display:block;margin-top:2px;font-size:13px;color:#243b5d}
+.integration-lines{display:grid;gap:0;border:1px solid #e7edf4;border-radius:9px;overflow:hidden}.integration-lines>div{display:grid;grid-template-columns:90px 1fr;gap:8px;padding:7px 9px;border-bottom:1px solid #edf1f5;text-align:left}.integration-lines>div:last-child{border-bottom:0}.integration-lines span{color:#748196}.integration-lines b{color:#334155;overflow-wrap:anywhere}
+@media(max-width:1100px){.switch-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.integration-state{grid-template-columns:1fr}.integration-metrics{grid-template-columns:1fr 1fr}.integration-lines>div{grid-template-columns:78px 1fr}}

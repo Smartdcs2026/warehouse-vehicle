@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r173">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r174">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 173</div>
+  <div class="build">Round 174</div>
 </header>
 
 <main>
@@ -47,6 +47,7 @@
           <label class="switch-card"><span>อนุญาตให้อัปโหลด</span><input id="uploadEnabled" type="checkbox"></label>
           <label class="switch-card"><span>ใช้ข้อมูลนัดหมายกับงานจริง</span><input id="useImportedData" type="checkbox"></label>
           <label class="switch-card"><span>ทดสอบการจับคู่รถเข้า</span><input id="matchTestEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ทดสอบ Gate In Integration</span><input id="integrationSimulatorEnabled" type="checkbox"></label>
         </div>
 
         <h3>การอ่านไฟล์</h3>
@@ -57,6 +58,7 @@
           <label>รหัสคลัง<input id="warehouseValues" placeholder="906"></label>
           <label>เวลาใช้เทียบรถเข้า<select id="timeReference"><option value="PERIOD">PERIOD</option><option value="FROM">FROM</option></select></label>
           <label>ช่วงค้นหานัดหมาย (ชม.)<input id="searchWindowHours" type="number" min="1" max="168" step="1"></label>
+          <label>เป้าหมาย Query (ms)<input id="lookupTargetMs" type="number" min="20" max="2000" step="10"></label>
         </div>
 
         <h3>ชื่อคอลัมน์</h3>
@@ -91,7 +93,7 @@
   <section id="matchTestPanel" class="panel match-panel" hidden>
     <div class="match-copy">
       <h2>ทดสอบจับคู่รถเข้า</h2>
-      <p>ตรวจผลการจับคู่และความต่อเนื่องก่อนเชื่อมระบบจริง</p>
+      <p>ตรวจการจับคู่ รูปแบบข้อมูล และความเร็วก่อนเชื่อม Gate In งานจริง</p>
     </div>
     <div class="match-fields">
       <label>Appointment<input id="matchAppointment" inputmode="numeric" autocomplete="off" placeholder="เช่น 2012960"></label>
@@ -99,7 +101,8 @@
     </div>
     <div class="match-actions">
       <button id="matchButton" class="primary">ตรวจจับคู่</button>
-      <button id="failOpenButton">ทดสอบระบบไม่ให้ Gate In สะดุด</button>
+      <button id="integrationButton">จำลอง Gate In จริง</button>
+      <button id="failOpenButton">ทดสอบ Integration 4 กรณี</button>
     </div>
   </section>
 
@@ -150,8 +153,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="./config.js?v=20260818-r173"></script>
+<script src="./config.js?v=20260818-r174"></script>
 <script src="./excel-core.js?v=20260818-r171"></script>
-<script src="./app.js?v=20260818-r173"></script>
+<script src="./app.js?v=20260818-r174"></script>
 </body>
 </html>

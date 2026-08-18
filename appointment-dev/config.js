@@ -1,12 +1,13 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round173-gate-enrichment-fail-open",
+  build: "2026.08.18-round174-gate-integration-simulator",
   profileName: "ส่วนกลาง",
 
   controls: {
     moduleEnabled: true,
     uploadEnabled: true,
     useImportedData: false,
-    matchTestEnabled: true
+    matchTestEnabled: true,
+    integrationSimulatorEnabled: true
   },
 
   sheetName: "raw_data",
@@ -21,6 +22,7 @@ window.APPOINTMENT_DEV_CONFIG = {
 
   matching: {
     searchWindowHours: 36,
+    lookupTargetMs: 150,
     failOpen: true
   },
   date: {
