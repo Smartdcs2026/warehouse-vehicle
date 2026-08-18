@@ -9,19 +9,12 @@
   <link rel="icon" href="./favicon.png">
   <link rel="stylesheet" href="./track.css?v=20260811-r91">
   <script src="./config.js?v=20260811-r88"></script>
+  <script src="./appointment-public-display.js?v=20260818-r182"></script>
   <script defer src="./track.js?v=20260811-r91"></script>
 </head>
 <body>
   <main class="track-shell">
-    <header class="track-head">
-      <div class="track-brand"><img src="./icon-192.png" alt=""><div><b>ระบบบริหารรถขนส่ง</b><span>ติดตามสถานะรถ</span></div></div>
-      <div class="track-head-actions">
-        <button id="trackAlertToggle" class="track-alert-toggle" type="button" aria-pressed="false" title="เปิดเสียงและการสั่นเมื่อมีการเรียกคิว">
-          <span class="track-alert-mark" aria-hidden="true"></span><span id="trackAlertLabel">เสียงเตือน</span>
-        </button>
-        <div id="trackFresh" class="track-fresh">กำลังโหลด</div>
-      </div>
-    </header>
+    <header class="track-head"><div class="track-brand"><img src="./icon-192.png" alt=""><div><b>ระบบบริหารรถขนส่ง</b><span>ติดตามสถานะรถ</span></div></div><div class="track-head-actions"><button id="trackAlertToggle" class="track-alert-toggle" type="button" aria-pressed="false" title="เปิดเสียงและการสั่นเมื่อมีการเรียกคิว"><span class="track-alert-mark" aria-hidden="true"></span><span id="trackAlertLabel">เสียงเตือน</span></button><div id="trackFresh" class="track-fresh">กำลังโหลด</div></div></header>
     <section id="trackMain" class="track-main"><div class="track-loading"><span></span><b>กำลังตรวจสอบสถานะ</b></div></section>
     <footer class="track-foot"><span>ข้อมูลเฉพาะรถรายการนี้</span><span id="trackUpdated"></span></footer>
   </main>
