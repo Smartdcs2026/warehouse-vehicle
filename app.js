@@ -3,8 +3,8 @@
   const $=id=>document.getElementById(id);
   const Core=window.AppointmentExcelCore;
   const BASE=window.APPOINTMENT_DEV_CONFIG||{};
-  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v176";
-  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v175";
+  const STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v177";
+  const OLD_STORAGE_KEY="warehouse_vehicle_appointment_dev_profile_v176";
   const TARGET_KEYS=["inbound","receiving","datatable","dashboard","queue","track"];
   const TARGET_FIELDS=["enabled","timing","vendor","carrier","po"];
   const TOKEN_KEY="warehouse_vehicle_appointment_dev_token";
@@ -26,11 +26,13 @@
       // การเชื่อมต่อระบบบันทึกมาจากไฟล์ config เท่านั้น ไม่ให้ค่าค้างใน Browser ทับค่าใหม่
       merged.importApi=clone(BASE.importApi||{});
       merged.displayTargets=clone(combined.displayTargets||BASE.displayTargets||{});
+      merged.productionRollout=clone(BASE.productionRollout||{});
       return merged;
     }catch{
       const merged=Core.normalizeConfig(clone(BASE));
       merged.importApi=clone(BASE.importApi||{});
       merged.displayTargets=clone(BASE.displayTargets||{});
+      merged.productionRollout=clone(BASE.productionRollout||{});
       return merged;
     }
   }
@@ -38,6 +40,7 @@
   function saveConfig(){
     const saved=clone(config);
     delete saved.importApi;
+    delete saved.productionRollout;
     localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
     renderConfigSummary();applyControls();
   }
@@ -47,7 +50,7 @@
   function bind(){
     $("fileInput").addEventListener("change",()=>parseFile($("fileInput").files?.[0]));
     $("saveSettings").addEventListener("click",readSettings);
-    $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));config.importApi=clone(BASE.importApi||{});config.displayTargets=clone(BASE.displayTargets||{});saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
+    $("resetSettings").addEventListener("click",()=>{config=Core.normalizeConfig(clone(BASE));config.importApi=clone(BASE.importApi||{});config.displayTargets=clone(BASE.displayTargets||{});config.productionRollout=clone(BASE.productionRollout||{});saveConfig();populateSettings();clearResult();showToast("คืนค่าเริ่มต้นแล้ว")});
     $("search").addEventListener("input",renderPreview);
     $("previewButton").addEventListener("click",previewData);
     $("importButton").addEventListener("click",importData);
@@ -57,6 +60,7 @@
     $("failOpenButton").addEventListener("click",runGateContinuityUat);
     $("integrationButton").addEventListener("click",runGateIntegrationSimulator);
     $("adapterButton").addEventListener("click",runPreProductionAdapterUat);
+    $("readinessButton").addEventListener("click",runProductionReadinessUat);
     $("matchAppointment").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();matchGatePreview()}});
     populateSettings();renderConfigSummary();applyControls();setDefaultGateIn();
     if(!runSelfTests())showError("การตรวจวันที่และเวลาไม่ผ่าน กรุณาหยุดใช้งานหน้านี้ก่อน");
@@ -85,6 +89,7 @@
     $("matchTestEnabled").checked=c.matchTestEnabled!==false;
     $("integrationSimulatorEnabled").checked=c.integrationSimulatorEnabled!==false;
     $("preProductionAdapterEnabled").checked=c.preProductionAdapterEnabled!==false;
+    $("productionReadinessEnabled").checked=c.productionReadinessEnabled!==false;
     $("sheetName").value=config.sheetName||"raw_data";
     $("sheetAliases").value=(config.sheetAliases||[]).join(", ");
     $("warehouseMode").value=config.warehouse?.matchMode||"STARTS_WITH";
@@ -110,7 +115,7 @@
 
   function readSettings(){
     const c=clone(config);
-    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked,integrationSimulatorEnabled:$("integrationSimulatorEnabled").checked,preProductionAdapterEnabled:$("preProductionAdapterEnabled").checked};
+    c.controls={moduleEnabled:$("moduleEnabled").checked,uploadEnabled:$("uploadEnabled").checked,useImportedData:$("useImportedData").checked,matchTestEnabled:$("matchTestEnabled").checked,integrationSimulatorEnabled:$("integrationSimulatorEnabled").checked,preProductionAdapterEnabled:$("preProductionAdapterEnabled").checked,productionReadinessEnabled:$("productionReadinessEnabled").checked};
     c.sheetName=$("sheetName").value.trim()||"raw_data";
     c.sheetAliases=split($("sheetAliases").value);
     c.warehouse={...(c.warehouse||{}),matchMode:$("warehouseMode").value,values:split($("warehouseValues").value).map(x=>x.toUpperCase())};
@@ -129,7 +134,7 @@
         c.displayTargets[page][field]=!!el?.checked;
       }
     }
-    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.displayTargets=c.displayTargets;config.matching=c.matching;config.importApi=c.importApi||BASE.importApi||{};
+    config=Core.normalizeConfig(c);config.controls=c.controls;config.display=c.display;config.displayTargets=c.displayTargets;config.matching=c.matching;config.importApi=c.importApi||BASE.importApi||{};config.productionRollout=clone(BASE.productionRollout||{});
     saveConfig();showToast("บันทึกแล้ว");
     if(lastResult)renderResult();
   }
@@ -154,6 +159,7 @@
     $("matchTestPanel").hidden=!(moduleOn&&c.matchTestEnabled!==false&&apiReady);
     $("integrationButton").hidden=!(moduleOn&&c.integrationSimulatorEnabled!==false&&apiReady);
     $("adapterButton").hidden=!(moduleOn&&c.preProductionAdapterEnabled!==false&&apiReady);
+    $("readinessButton").hidden=!(moduleOn&&c.productionReadinessEnabled!==false&&apiReady);
   }
 
   async function parseFile(file){
@@ -666,6 +672,70 @@
       const zeroQueryPass=disabled?.adapter?.zeroQuery===true&&noNumber?.adapter?.zeroQuery===true&&Number(disabled?.performance?.lookupMs||0)===0&&Number(noNumber?.performance?.lookupMs||0)===0;
       const html=continuityHtml(rows)+`<div class="adapter-zero ${zeroQueryPass?"pass":"fail"}"><span>ปิดใช้ข้อมูลแล้วไม่ Query Appointment</span><b>${zeroQueryPass?"ผ่าน":"ไม่ผ่าน"}</b></div>`+adapterProjectionHtml(matched?.pageProjection||{})+`<div class="swal-note">Adapter รับรูปแบบข้อมูลรถแบบระบบหลัก แต่รอบนี้ยังไม่แก้ไฟล์ Production และไม่เขียน Gate In</div>`;
       if(window.Swal)await Swal.fire({...swalBase(),width:440,icon:pass&&zeroQueryPass?"success":"error",title:pass&&zeroQueryPass?"Adapter ก่อนรวมระบบ ผ่าน 5/5":"Adapter ยังมีจุดต้องแก้",html,confirmButtonText:"ตกลง"});
+    }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
+    finally{btn.disabled=false}
+  }
+
+
+  function sameGateContract(input,output){
+    const pairs=[
+      ["auto_id","autoId"],["appointment_no","appointmentNo"],["gate_in_at","gateInAt"],
+      ["company_name","company"],["driver_name","driver"],["vehicle_plate","plate"],
+      ["province","province"],["vehicle_type","vehicleType"]
+    ];
+    return pairs.every(([src,dst])=>String(input?.[src]??"")===String(output?.[dst]??""));
+  }
+  function isDisplayDateTime(value){return /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(String(value||""))}
+  function readinessItem(label,pass,detail){return {label,pass:pass===true,detail:String(detail||"")}}
+  function readinessHtml(items){
+    return `<div class="readiness-summary">${items.map(r=>`<div class="${r.pass?"pass":"fail"}"><span>${esc(r.label)}</span><b>${r.pass?"ผ่าน":"ไม่ผ่าน"}</b><small>${esc(r.detail)}</small></div>`).join("")}</div>`;
+  }
+  function median(values){const list=values.map(Number).filter(Number.isFinite).sort((a,b)=>a-b);if(!list.length)return 0;const m=Math.floor(list.length/2);return list.length%2?list[m]:(list[m-1]+list[m])/2}
+  async function readHealth(){
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
+    try{const res=await fetch(apiUrl("/health"),{cache:"no-store",signal:ctrl.signal});const data=await res.json().catch(()=>({}));if(!res.ok||data.ok!==true)throw new Error("อ่านสถานะระบบทดสอบไม่สำเร็จ");return data}finally{clearTimeout(timer)}
+  }
+  async function runProductionReadinessUat(){
+    let gateInLocal;try{gateInLocal=gateInputMachine()}catch(e){showError(e.message);return}
+    const appointmentNo=cleanAppointmentInput($("matchAppointment").value)||"2012960";
+    if(!$("matchAppointment").value)$("matchAppointment").value=appointmentNo;
+    const token=await getToken();if(!token)return;
+    const btn=$("readinessButton");btn.disabled=true;
+    const gateEpoch=machineToBangkokEpoch(gateInLocal);
+    const makeGate=no=>({auto_id:`READY-${Date.now()}-${no||"NONE"}`,appointment_no:no||"",gate_in_at:gateEpoch,company_name:"DEV TEST",driver_name:"DEV TEST",vehicle_plate:"DEV-0000",province:"ปทุมธานี",vehicle_type:"DEV"});
+    const rollout=config.productionRollout||BASE.productionRollout||{};
+    const common={moduleEnabled:true,useAppointmentData:true,referenceMode:config.timeReference||"PERIOD",searchWindowHours:Math.max(1,Math.min(168,Number(config.matching?.searchWindowHours)||36)),lookupTargetMs:Math.max(20,Math.min(2000,Number(config.matching?.lookupTargetMs)||150)),adapterTimeoutMs:Math.max(50,Math.min(3000,Number(config.matching?.adapterTimeoutMs)||250)),displayPolicy:config.displayTargets||{}};
+    try{
+      const health=await readHealth();
+      const input=makeGate(appointmentNo);
+      const matchedRuns=[];
+      const sampleCount=Math.max(1,Math.min(5,Number(rollout.queryBudgetSamples)||3));
+      for(let i=0;i<sampleCount;i++)matchedRuns.push(await apiPost("/adapter/preprod",{...common,gateRecord:input},token));
+      const matched=matchedRuns[matchedRuns.length-1];
+      const missing=await apiPost("/adapter/preprod",{...common,gateRecord:makeGate("999999999999999")},token);
+      const disabled=await apiPost("/adapter/preprod",{...common,useAppointmentData:false,gateRecord:input},token);
+      const noNumber=await apiPost("/adapter/preprod",{...common,gateRecord:makeGate("")},token);
+      const failure=await apiPost("/adapter/preprod",{...common,simulateFailure:true,gateRecord:input},token);
+      const timeout=await apiPost("/adapter/preprod",{...common,simulateTimeout:true,gateRecord:input},token);
+      const lookupMedian=median(matchedRuns.map(x=>Number(x?.performance?.lookupMs||0)));
+      const target=Number(common.lookupTargetMs||150);
+      const projection=matched?.pageProjection||{};
+      const projectionOk=TARGET_KEYS.every(page=>{const expected=(config.displayTargets||{})[page]||{};const actual=projection[page]||{};if((expected.enabled!==false)!==(actual.enabled===true))return false;if(expected.enabled===false)return Object.keys(actual.fields||{}).length===0;for(const field of ["timing","vendor","carrier","po"]){const should=expected[field]===true;const has=Object.prototype.hasOwnProperty.call(actual.fields||{},field);if(should!==has)return false}return true});
+      const items=[
+        readinessItem("Worker Round 177",health.productionReadinessGate===true&&health.adapterContractVersion===String(rollout.requiredContractVersion||"gate-appointment-v3-preprod"),`${health.build||"-"} · ${health.adapterContractVersion||"-"}`),
+        readinessItem("ค่า Production เริ่มต้นเป็นปิด",rollout.defaultUseImportedData===false&&health.productionDefaultOff===true,"ต้องเปิดโดย Admin ภายหลังเท่านั้น"),
+        readinessItem("ปิดแล้ว 0 Query",disabled?.adapter?.zeroQuery===true&&noNumber?.adapter?.zeroQuery===true&&Number(disabled?.performance?.lookupMs||0)===0&&Number(noNumber?.performance?.lookupMs||0)===0,"ปิดใช้ข้อมูล / ไม่มีเลข Appointment"),
+        readinessItem("Fail-open",[matched,missing,failure,timeout].every(x=>x?.gateProceed===true),"พบ · ไม่พบ · ขัดข้อง · Timeout ยังให้ Gate In ไปต่อ"),
+        readinessItem("ไม่เปลี่ยนข้อมูล Gate In เดิม",sameGateContract(input,matched?.gate),"Adapter คืนข้อมูลนัดหมายแยกจากข้อมูลรถเดิม"),
+        readinessItem("เวลาเก็บแบบเครื่อง + แสดงผลมาตรฐาน",Number.isInteger(Number(matched?.vehiclePatch?.appointment_plan_at))&&Number(matched?.vehiclePatch?.appointment_plan_at)>0&&isDisplayDateTime(matched?.vehiclePatch?.appointment_plan_at_display)&&isDisplayDateTime(matched?.gate?.gateInDisplay),"dd/MM/yyyy HH:mm:ss · Asia/Bangkok"),
+        readinessItem("นโยบายการแสดงผลแต่ละหน้า",projectionOk,"Inbound / Receiving / Datatable / Dashboard / จอคิว / Track"),
+        readinessItem("ดัชนี Matching พร้อม",health.matchIndexReady===true,"appointment_dev_appt_match_idx"),
+        readinessItem("ความเร็ว Matching",lookupMedian<=target,`Median ${lookupMedian.toFixed(1)} ms จาก ${sampleCount} ครั้ง · เป้าหมาย ≤ ${target} ms`),
+        readinessItem("Shadow mode ไม่เขียน Production",health.shadowMode===true&&health.productionWrite===false&&rollout.writeProduction===false,"รอบนี้ยังไม่มีการเขียน Gate In Production")
+      ];
+      const pass=items.every(x=>x.pass);
+      const lock=`<div class="readiness-lock"><span>สถานะสำหรับรอบถัดไป</span><b>${pass?"พร้อมสร้างแพ็กเชื่อม Production แบบ OFF":"ยังไม่พร้อม"}</b></div>`;
+      if(window.Swal)await Swal.fire({...swalBase(),width:500,icon:pass?"success":"error",title:pass?`Production Readiness ผ่าน ${items.length}/${items.length}`:"ยังมีจุดที่ต้องแก้",html:readinessHtml(items)+lock+adapterProjectionHtml(projection)+`<div class="swal-note">ยังไม่ติดตั้งลงระบบหลัก และยังไม่ใช้ DEV token เป็นสิทธิ์ของ Production</div>`,confirmButtonText:"ตกลง"});
     }catch(e){showError(e.name==="AbortError"?"การเชื่อมต่อนานเกินไป กรุณาลองอีกครั้ง":e.message)}
     finally{btn.disabled=false}
   }

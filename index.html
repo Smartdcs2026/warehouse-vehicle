@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#315fa8">
   <title>ข้อมูลนัดหมาย</title>
-  <link rel="stylesheet" href="./styles.css?v=20260818-r176">
+  <link rel="stylesheet" href="./styles.css?v=20260818-r177">
 </head>
 <body>
 <header class="top">
@@ -13,7 +13,7 @@
     <h1>ข้อมูลนัดหมาย</h1>
     <p id="profileSummary"></p>
   </div>
-  <div class="build">Round 176</div>
+  <div class="build">Round 177</div>
 </header>
 
 <main>
@@ -23,8 +23,8 @@
   </section>
 
   <section id="workModeNotice" class="state-box mode-notice" hidden>
-    <b>Pre-Production</b>
-    <span>ทดสอบ Adapter เท่านั้น ยังไม่มีการแก้ข้อมูล Gate In งานจริง</span>
+    <b>Production Readiness</b>
+    <span>ตรวจความพร้อมก่อนสร้างแพ็กสำหรับระบบหลัก ค่าเริ่มต้น Production ยังเป็นปิด</span>
   </section>
 
   <section id="uploadPanel" class="panel upload">
@@ -49,6 +49,14 @@
           <label class="switch-card"><span>ทดสอบการจับคู่รถเข้า</span><input id="matchTestEnabled" type="checkbox"></label>
           <label class="switch-card"><span>ทดสอบ Gate In Integration</span><input id="integrationSimulatorEnabled" type="checkbox"></label>
           <label class="switch-card"><span>ทดสอบ Adapter ก่อนรวมระบบ</span><input id="preProductionAdapterEnabled" type="checkbox"></label>
+          <label class="switch-card"><span>ตรวจความพร้อมก่อน Production</span><input id="productionReadinessEnabled" type="checkbox"></label>
+        </div>
+
+        <div class="production-safety-card">
+          <div><span>ค่าเริ่มต้น Production</span><b>ปิด</b><small>ยังไม่ใช้ข้อมูลนัดหมายกับงานจริงจนกว่า Admin จะเปิด</small></div>
+          <div><span>เมื่อปิดใช้งาน</span><b>0 Query</b><small>ไม่เรียก Appointment D1</small></div>
+          <div><span>การเขียน Gate In</span><b>ไม่มี</b><small>รอบนี้ยังเป็น Shadow / Read-only</small></div>
+          <div><span>วันที่เวลา</span><b>dd/MM/yyyy HH:mm:ss</b><small>Asia/Bangkok</small></div>
         </div>
 
         <h3>การอ่านไฟล์</h3>
@@ -117,6 +125,7 @@
       <button id="integrationButton">จำลอง Gate In จริง</button>
       <button id="failOpenButton">ทดสอบ Integration 4 กรณี</button>
       <button id="adapterButton">ทดสอบ Adapter 5 กรณี</button>
+      <button id="readinessButton">ตรวจความพร้อม Production</button>
     </div>
   </section>
 
@@ -167,8 +176,8 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="./config.js?v=20260818-r176"></script>
+<script src="./config.js?v=20260818-r177"></script>
 <script src="./excel-core.js?v=20260818-r171"></script>
-<script src="./app.js?v=20260818-r176"></script>
+<script src="./app.js?v=20260818-r177"></script>
 </body>
 </html>

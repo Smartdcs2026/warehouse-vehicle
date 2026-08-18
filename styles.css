@@ -79,3 +79,13 @@
 .adapter-zero{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:8px 10px;border-radius:9px;border:1px solid #e4eaf2;background:#f8fafc;text-align:left}.adapter-zero span{font-weight:700;color:#334155}.adapter-zero.pass{border-color:#cfe7d8;background:#f3faf6}.adapter-zero.pass b{color:#16794f}.adapter-zero.fail{border-color:#f0cbc7;background:#fff6f5}.adapter-zero.fail b{color:#b42318}
 .adapter-pages{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.adapter-page{display:grid;grid-template-columns:1fr auto;gap:2px 8px;border:1px solid #e4eaf2;border-radius:8px;padding:7px 8px;text-align:left;background:#f8fafc}.adapter-page span{font-weight:700;color:#334155}.adapter-page b{font-size:11px;color:#16794f}.adapter-page small{grid-column:1/-1;color:#6b778a}.adapter-page.off{opacity:.62}.adapter-page.off b{color:#94a3b8}
 @media(max-width:720px){.settings{overflow:hidden}.target-matrix{min-width:560px}.adapter-pages{grid-template-columns:1fr}}
+
+
+/* Round 177: Production readiness gate */
+.production-safety-card{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 18px}
+.production-safety-card>div{border:1px solid #dfe7f1;border-radius:10px;background:#f8fafc;padding:9px 10px;min-width:0}
+.production-safety-card span{display:block;font-size:10.5px;color:#738095}.production-safety-card b{display:block;margin-top:3px;font-size:13px;color:#1f4f86;overflow-wrap:anywhere}.production-safety-card small{display:block;margin-top:3px;color:#68778b;font-size:10.5px;line-height:1.35}
+.readiness-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}.readiness-summary>div{display:grid;grid-template-columns:1fr auto;gap:2px 8px;border:1px solid #e4eaf2;border-radius:8px;padding:7px 8px;text-align:left;background:#f8fafc}.readiness-summary span{font-weight:700;color:#334155}.readiness-summary b{font-size:11px}.readiness-summary small{grid-column:1/-1;color:#6b778a}.readiness-summary .pass{border-color:#cfe7d8;background:#f3faf6}.readiness-summary .pass b{color:#16794f}.readiness-summary .fail{border-color:#f0cbc7;background:#fff6f5}.readiness-summary .fail b{color:#b42318}
+.readiness-lock{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:8px 10px;border-radius:9px;background:#eef6ff;border:1px solid #cfe0f5;text-align:left}.readiness-lock span{font-weight:700;color:#315b91}.readiness-lock b{color:#174f86}
+@media(max-width:900px){.production-safety-card{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.production-safety-card,.readiness-summary{grid-template-columns:1fr}}

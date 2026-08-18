@@ -1,5 +1,5 @@
 window.APPOINTMENT_DEV_CONFIG = {
-  build: "2026.08.18-round176-preproduction-adapter",
+  build: "2026.08.18-round177-production-readiness-gate",
   profileName: "ส่วนกลาง",
 
   controls: {
@@ -8,7 +8,8 @@ window.APPOINTMENT_DEV_CONFIG = {
     useImportedData: false,
     matchTestEnabled: true,
     integrationSimulatorEnabled: true,
-    preProductionAdapterEnabled: true
+    preProductionAdapterEnabled: true,
+    productionReadinessEnabled: true
   },
 
   sheetName: "raw_data",
@@ -27,6 +28,17 @@ window.APPOINTMENT_DEV_CONFIG = {
     adapterTimeoutMs: 250,
     failOpen: true
   },
+
+  productionRollout: {
+    defaultUseImportedData: false,
+    shadowMode: true,
+    writeProduction: false,
+    requiredContractVersion: "gate-appointment-v3-preprod",
+    requiredDateTimeFormat: "dd/MM/yyyy HH:mm:ss",
+    mainVehicleFields: ["auto_id","appointment_no","gate_in_at","company_name","driver_name","vehicle_plate","province","vehicle_type"],
+    queryBudgetSamples: 3
+  },
+
   date: {
     timezone: "Asia/Bangkok",
     displayDateFormat: "dd/MM/yyyy",
