@@ -9451,3 +9451,63 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .data-source-connect-card>footer{display:flex;justify-content:flex-end;gap:9px;padding:0 20px 16px}
 .data-source-connect-card>.data-safe-note{margin:0 20px 18px}
 @media(max-width:720px){.data-source-connect-card>header{padding:15px;gap:10px}.data-source-connect-grid{grid-template-columns:1fr;padding:13px 15px 6px}.data-source-connect-steps{padding:8px 15px 14px}.data-source-connect-card>footer{padding:0 15px 14px;flex-wrap:wrap}.data-source-connect-card>.data-safe-note{margin:0 15px 15px}}
+
+/* Round 200 — flexible appointment files controlled by Admin */
+.appointment-source-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.appointment-probe-file{position:relative;overflow:hidden;cursor:pointer}
+.appointment-probe-file.is-busy{opacity:.65;pointer-events:none}
+.appointment-file-probe-panel{margin:10px 0 14px;padding:14px;border:1px solid #c9daf2;border-radius:14px;background:#f8fbff}
+.appointment-file-probe-panel[hidden]{display:none!important}
+.appointment-file-probe-panel>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.appointment-file-probe-panel>header>div{display:grid;gap:3px}
+.appointment-file-probe-panel>header b{font-size:15px;color:#173b6d}
+.appointment-file-probe-panel>header small{color:#60748f;line-height:1.35}
+.appointment-file-probe-panel>header label{display:grid;gap:4px;min-width:240px;font-size:11px;color:#60748f}
+.appointment-file-probe-panel select{min-height:38px;border:1px solid #cdd9e8;border-radius:9px;background:#fff;padding:7px 9px;color:#153456;font:inherit}
+.appointment-probe-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.appointment-probe-grid label{display:grid;gap:4px;min-width:0}
+.appointment-probe-grid label span{font-size:11px;font-weight:800;color:#425a78}
+.appointment-file-probe-panel p{margin:10px 0 0;font-size:11px;color:#61728a}
+.appointment-probe-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+
+.appointment-extra-fields-card{margin:12px 0;padding:14px;border:1px solid #d8e2ef;border-radius:14px;background:#fff}
+.appointment-extra-fields-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.appointment-extra-fields-card>header>div{display:grid;gap:3px}
+.appointment-extra-fields-card>header b{font-size:14px;color:#173b6d}
+.appointment-extra-fields-card>header small,.appointment-extra-fields-card>p{font-size:11px;line-height:1.4;color:#64758d}
+#appointmentExtraFieldsList{display:grid;gap:10px}
+.appointment-extra-empty{padding:16px;border:1px dashed #cbd8e8;border-radius:11px;text-align:center;color:#708097;background:#fafcff}
+.appointment-extra-field-row{border:1px solid #dbe5f1;border-radius:12px;padding:10px;background:#fbfdff}
+.appointment-extra-main{display:grid;grid-template-columns:1.05fr 1fr 1.35fr auto;gap:8px;align-items:end}
+.appointment-extra-main label{display:grid;gap:4px;min-width:0}
+.appointment-extra-main label span{font-size:10px;font-weight:800;color:#556b86}
+.appointment-extra-main input{min-width:0;height:36px;border:1px solid #d2ddeb;border-radius:8px;padding:7px 9px;font:inherit;color:#173653;background:#fff}
+.appointment-extra-remove{height:36px;border:1px solid #ead6d3;border-radius:8px;background:#fff;color:#a53c32;padding:0 11px;font:800 11px/1 inherit;cursor:pointer}
+.appointment-extra-options{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;margin-top:9px;padding-top:9px;border-top:1px solid #e9eef5}
+.appointment-extra-options>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.appointment-extra-options>div>b{font-size:10px;color:#536b88;margin-right:3px}
+.appointment-extra-options .clean-check{min-height:26px;padding:3px 7px;border-radius:7px;background:#fff;border:1px solid #e1e8f1;font-size:10px}
+
+.appointment-mapping-needed{margin:10px 0;padding:14px;border:1px solid #efd9a9;border-radius:13px;background:#fffaf0;display:grid;gap:10px}
+.appointment-mapping-needed[hidden]{display:none!important}
+.appointment-mapping-needed>div:first-child{display:grid;gap:3px}
+.appointment-mapping-needed b{color:#835a00}
+.appointment-mapping-needed span,.appointment-mapping-needed p{font-size:11px;line-height:1.4;color:#705e3b;margin:0}
+.appointment-mapping-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.appointment-mapping-summary>span{padding:8px 10px;border:1px solid #f0e1bc;border-radius:9px;background:#fff;display:grid;gap:2px}
+.appointment-mapping-summary small{font-size:9px;color:#8c7954}
+.appointment-mapping-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+
+@media (max-width:1000px){
+  .appointment-probe-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .appointment-extra-main{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .appointment-extra-remove{justify-self:start}
+  .appointment-extra-options{grid-template-columns:1fr}
+}
+@media (max-width:650px){
+  .appointment-file-probe-panel>header,.appointment-extra-fields-card>header{flex-direction:column}
+  .appointment-file-probe-panel>header label{min-width:0;width:100%}
+  .appointment-probe-grid,.appointment-extra-main,.appointment-mapping-summary{grid-template-columns:1fr}
+  .appointment-probe-actions{justify-content:stretch;flex-direction:column}
+  .appointment-probe-actions button{width:100%}
+}
