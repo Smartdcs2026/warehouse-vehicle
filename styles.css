@@ -9604,3 +9604,16 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .appointment-import-history-card{margin-bottom:12px;border:1px solid #d8e3f0;border-radius:13px;background:#fff;overflow:hidden}
 .appointment-import-history-card>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-bottom:1px solid #e5ebf3;background:#f8fbff}.appointment-import-history-card>header>div{display:grid;gap:3px}.appointment-import-history-card>header b{color:#174575;font-size:12px}.appointment-import-history-card>header small,.appointment-import-history-card>header span{color:#718198;font-size:9.5px}
 .appointment-import-history-wrap{overflow:auto;max-height:280px}.appointment-import-history-wrap table{width:100%;min-width:820px;border-collapse:collapse;font-size:9.5px}.appointment-import-history-wrap th{position:sticky;top:0;background:#f5f8fc;color:#60728b;text-align:left;padding:8px 9px;border-bottom:1px solid #dfe7f1}.appointment-import-history-wrap td{padding:8px 9px;border-bottom:1px solid #edf1f6;color:#304a6c;vertical-align:middle}.appointment-import-history-wrap td:first-child b,.appointment-import-history-wrap td:first-child small{display:block}.appointment-import-history-wrap td:first-child b{max-width:280px;color:#174f94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.appointment-import-history-wrap td:first-child small{margin-top:2px;color:#7a899b}.appointment-import-status{display:inline-flex;align-items:center;min-height:22px;padding:3px 8px;border-radius:999px;background:#f0f4f8;color:#5c6f86;font-weight:900}.appointment-import-status.complete{background:#ecf8f0;color:#16834b}.appointment-import-status.open{background:#fff7e8;color:#a76808}.appointment-import-status.failed{background:#fff0f0;color:#c33838}
+
+
+/* Round 203 Final — clear responsibility between appointment center, Dashboard and Datatable */
+.appointment-center-role-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px}
+.appointment-center-role-guide article{display:grid;grid-template-columns:1fr auto;grid-template-areas:"small button" "title button" "text button";align-items:center;column-gap:10px;min-width:0;padding:11px 12px;border:1px solid #dce6f2;border-radius:12px;background:#fff}
+.appointment-center-role-guide article:first-child{background:#f7fbff;border-color:#cfe0f5}
+.appointment-center-role-guide small{grid-area:small;color:#71839a;font-size:9px;font-weight:800}
+.appointment-center-role-guide b{grid-area:title;margin:2px 0;color:#174575;font-size:12px}
+.appointment-center-role-guide span{grid-area:text;color:#6c7d93;font-size:9.5px;line-height:1.35}
+.appointment-center-role-guide button{grid-area:button;align-self:center;min-height:32px;padding:0 10px;border:1px solid #c9d8ea;border-radius:8px;background:#fff;color:#1e5ca8;font:900 9.5px/1 inherit;cursor:pointer;white-space:nowrap}
+.appointment-center-role-guide button:hover{background:#edf5ff;border-color:#8fb6e7}
+@media(max-width:980px){.appointment-center-role-guide{grid-template-columns:1fr}.appointment-center-role-guide article{grid-template-columns:1fr auto}}
+@media(max-width:620px){.appointment-center-role-guide article{grid-template-columns:1fr;grid-template-areas:"small" "title" "text" "button"}.appointment-center-role-guide button{margin-top:8px;width:100%}}

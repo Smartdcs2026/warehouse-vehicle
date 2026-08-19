@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.19-round203-appointment-center-plan-volume";
+const FRONTEND_BUILD="2026.08.19-round203-final-appointment-center";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1355,7 +1355,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260819-r203",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260819-r203f",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -2678,18 +2678,22 @@ async function renderAppointmentUpload(){
 }
 function renderAppointmentCenterShell(){
   const data=appointmentCenterState.status||{},latest=data.schema?.latest,module=data.appointmentModule||{},tabs=appointmentCenterAllowedTabs();
-  $("pageContent").innerHTML=`<section class="appointment-center-head"><div><h2>ข้อมูลนัดหมาย</h2><p>ดูแผนเทียบงานจริง บริษัท ผู้ขนส่ง PO และรับไฟล์จากจุดเดียว</p></div><div class="appointment-center-head-actions">${state.user?.accessRights==="ADMIN"?`<button id="appointmentCenterSettings" class="outline-button" type="button">ตั้งค่าข้อมูลนัดหมาย</button>`:""}</div></section><section class="appointment-center-status"><div><small>ชุดข้อมูลล่าสุด</small><b>${latest?escapeHtml(appointmentDisplaySnapshot(latest.snapshotDate,latest.snapshotTime)):"ยังไม่มีข้อมูล"}</b><span>${latest?.fileName?escapeHtml(latest.fileName):"รอนำเข้าข้อมูล"}</span></div><div><small>ใช้กับงานจริง</small><b class="${module.useImportedData?"ok":"off"}">${module.useImportedData?"เปิด":"ปิด"}</b><span>${module.useImportedData?"พร้อมใช้ข้อมูลแผนกับรถจริง":"ข้อมูลไฟล์ยังไม่ถูกใช้กับงานจริง"}</span></div><div><small>การรับไฟล์</small><b class="${module.uploadEnabled?"ok":"off"}">${module.uploadEnabled?"เปิด":"ปิด"}</b><span>${module.uploadEnabled?"ADMIN และ USER รับไฟล์ได้":"การวิเคราะห์ข้อมูลเดิมยังใช้งานได้"}</span></div></section><nav class="appointment-center-tabs">${tabs.map(([key,label])=>`<button type="button" data-appointment-center-tab="${key}" class="${appointmentCenterState.tab===key?"active":""}">${label}</button>`).join("")}</nav><section id="appointmentCenterBody" class="appointment-center-body"></section>`;
+  $("pageContent").innerHTML=`<section class="appointment-center-head"><div><h2>ข้อมูลนัดหมาย</h2><p>ศูนย์วิเคราะห์รายละเอียดจากแผนและงานจริง · Dashboard ใช้ดูสรุป · Datatable ใช้ตรวจรถรายคัน</p></div><div class="appointment-center-head-actions">${state.user?.accessRights==="ADMIN"?`<button id="appointmentCenterSettings" class="outline-button" type="button">ตั้งค่าข้อมูลนัดหมาย</button>`:""}</div></section><section class="appointment-center-status"><div><small>ชุดข้อมูลล่าสุด</small><b>${latest?escapeHtml(appointmentDisplaySnapshot(latest.snapshotDate,latest.snapshotTime)):"ยังไม่มีข้อมูล"}</b><span>${latest?.fileName?escapeHtml(latest.fileName):"รอนำเข้าข้อมูล"}</span></div><div><small>ใช้กับงานจริง</small><b class="${module.useImportedData?"ok":"off"}">${module.useImportedData?"เปิด":"ปิด"}</b><span>${module.useImportedData?"พร้อมใช้ข้อมูลแผนกับรถจริง":"ข้อมูลไฟล์ยังไม่ถูกใช้กับงานจริง"}</span></div><div><small>การรับไฟล์</small><b class="${module.uploadEnabled?"ok":"off"}">${module.uploadEnabled?"เปิด":"ปิด"}</b><span>${module.uploadEnabled?"ADMIN และ USER รับไฟล์ได้":"การวิเคราะห์ข้อมูลเดิมยังใช้งานได้"}</span></div></section><nav class="appointment-center-tabs">${tabs.map(([key,label])=>`<button type="button" data-appointment-center-tab="${key}" class="${appointmentCenterState.tab===key?"active":""}">${label}</button>`).join("")}</nav><section id="appointmentCenterBody" class="appointment-center-body"></section>`;
   document.querySelectorAll("[data-appointment-center-tab]").forEach(btn=>btn.addEventListener("click",()=>appointmentCenterSetTab(btn.dataset.appointmentCenterTab)));
   $("appointmentCenterSettings")?.addEventListener("click",()=>{adminState.tab="appointmentData";try{localStorage.setItem("wvf_admin_tab","appointmentData")}catch{}navigate("admin")});
   appointmentRenderCenterTab();
 }
 function appointmentOverviewHtml(){
-  return`<section class="appointment-center-intro"><div><b>ภาพรวมวันนี้</b><span>ใช้ผลที่บันทึกไว้และข้อมูลสรุปจากฐานเดิม ไม่สร้างข้อมูลซ้ำ</span></div></section>${appointmentPlanActualAdminHtml(state.user?.accessRights==="ADMIN")}${appointmentPlanVolumeHtml()}`
+  return`<section class="appointment-center-role-guide"><article><small>ข้อมูลนัดหมาย</small><b>วิเคราะห์รายละเอียด</b><span>แผนเทียบเวลา จำนวนรถ บริษัท ผู้ขนส่ง PO และประวัติไฟล์</span></article><article><small>Dashboard</small><b>ดูภาพรวม</b><span>ใช้เฉพาะตัวเลขสำคัญและแนวโน้มสำหรับหัวหน้างาน</span><button id="appointmentGoDashboard" type="button">เปิด Dashboard</button></article><article><small>Datatable</small><b>ตรวจรถรายคัน</b><span>ค้นหา กรอง และตรวจเวลานัด ผลต่าง บริษัท ผู้ขนส่ง และ PO</span><button id="appointmentGoDatatable" type="button">เปิด Datatable</button></article></section><section class="appointment-center-intro"><div><b>ภาพรวมวันนี้</b><span>ใช้ผลที่บันทึกไว้และข้อมูลสรุปจากฐานเดิม ไม่สร้างข้อมูลซ้ำ</span></div></section>${appointmentPlanActualAdminHtml(state.user?.accessRights==="ADMIN")}${appointmentPlanVolumeHtml()}`
+}
+function appointmentBindCenterRoleLinks(){
+  $("appointmentGoDashboard")?.addEventListener("click",()=>navigate("dashboard"));
+  $("appointmentGoDatatable")?.addEventListener("click",()=>navigate("datatable"));
 }
 function appointmentRenderCenterTab(){
   const body=$("appointmentCenterBody");if(!body)return;const tab=appointmentCenterSafeTab(appointmentCenterState.tab);appointmentCenterState.tab=tab;
   if(tab==="overview"){
-    appointmentPlanActualAdminState.days=1;appointmentCenterState.volumeDays=1;body.innerHTML=appointmentOverviewHtml();appointmentBindPlanActualCenter(true);appointmentBindPlanVolume(true);return;
+    appointmentPlanActualAdminState.days=1;appointmentCenterState.volumeDays=1;body.innerHTML=appointmentOverviewHtml();appointmentBindCenterRoleLinks();appointmentBindPlanActualCenter(true);appointmentBindPlanVolume(true);return;
   }
   if(tab==="timing"){
     body.innerHTML=appointmentPlanActualAdminHtml(state.user?.accessRights==="ADMIN");appointmentBindPlanActualCenter(true);return;
