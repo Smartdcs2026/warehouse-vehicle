@@ -9431,3 +9431,23 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .appointment-retention-central-card{align-items:stretch;flex-direction:column}
   .appointment-retention-central-card button{width:100%}
 }
+
+
+/* Round 199.1 — secondary D1 connection: readable setup and read-only guard */
+.data-source-connect-card{margin-top:14px;border:1px solid #c9d9ec;border-radius:15px;background:#fff;overflow:hidden;box-shadow:0 8px 22px rgba(33,70,115,.05)}
+.data-source-connect-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:18px 20px;background:linear-gradient(180deg,#f7faff 0%,#fff 100%);border-bottom:1px solid #e1eaf4}
+.data-source-connect-card>header>div{min-width:0}
+.data-source-connect-card>header small{display:block;margin-bottom:3px;color:#6f839d;font-size:.72rem;font-weight:800}
+.data-source-connect-card>header h3{margin:0;color:#173f73;font-size:1.04rem}
+.data-source-connect-card>header p{margin:5px 0 0;color:#657a94;font-size:.8rem;line-height:1.45}
+.data-source-connect-card>header>span{flex:0 0 auto;padding:6px 10px;border-radius:999px;background:#fff4e8;color:#aa5c00;border:1px solid #f0d2ae;font-size:.74rem;font-weight:900}
+.data-source-connect-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px 20px 8px}
+.data-source-connect-grid article{min-width:0;padding:11px 13px;border:1px solid #dfe8f3;border-radius:11px;background:#fbfdff}
+.data-source-connect-grid small{display:block;color:#7a8ba2;font-size:.7rem;font-weight:800}
+.data-source-connect-grid b{display:block;margin-top:3px;color:#1d4779;font-size:.88rem;overflow-wrap:anywhere}
+.data-source-connect-steps{display:grid;gap:7px;padding:10px 20px 16px}
+.data-source-connect-steps>div{display:flex;align-items:center;gap:10px;min-height:38px;padding:7px 10px;border-radius:10px;background:#f7f9fc;color:#445d7b;font-size:.79rem;font-weight:700}
+.data-source-connect-steps i{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#e7f0ff;color:#1f64c8;font-style:normal;font-size:.72rem;font-weight:950}
+.data-source-connect-card>footer{display:flex;justify-content:flex-end;gap:9px;padding:0 20px 16px}
+.data-source-connect-card>.data-safe-note{margin:0 20px 18px}
+@media(max-width:720px){.data-source-connect-card>header{padding:15px;gap:10px}.data-source-connect-grid{grid-template-columns:1fr;padding:13px 15px 6px}.data-source-connect-steps{padding:8px 15px 14px}.data-source-connect-card>footer{padding:0 15px 14px;flex-wrap:wrap}.data-source-connect-card>.data-safe-note{margin:0 15px 15px}}
