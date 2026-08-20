@@ -10168,3 +10168,244 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:22px!important}
   .dashboard-view-shell .r146-generated-kpis .r2042-kpi>i{width:34px!important;height:34px!important;min-width:34px!important}
 }
+
+/* =========================================================
+   Round 204.2.3 — Dashboard Visual Final & Fullscreen Fit
+   Presentation only. No formula/API/D1 query changes.
+   ========================================================= */
+.dashboard-view-shell{
+  --r20423-panel-gap:8px;
+  --r20423-radius:11px;
+  --r20423-line:#dbe5ef;
+  --r20423-text:#112c49;
+  --r20423-muted:#73869b;
+}
+
+/* Final header balance after title is simplified to "Dashboard" */
+.dashboard-view-shell .r146-generated-head .r2042-title-copy{
+  min-width:220px!important;
+  align-content:center!important;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy h2{
+  margin:0!important;
+  font-size:21px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  color:var(--r20423-text)!important;
+  letter-spacing:-.025em!important;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy p{
+  margin:3px 0 0!important;
+  font-size:7.8px!important;
+  line-height:1.05!important;
+  color:var(--r20423-muted)!important;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy small{
+  margin-top:2px!important;
+  font-size:6.6px!important;
+  line-height:1!important;
+  color:#8b99aa!important;
+}
+
+/* Decision rail: stronger separation between attention, flow and data health */
+.dashboard-view-shell .r146-command-card,
+.dashboard-view-shell .r146-data-health{
+  border-radius:var(--r20423-radius)!important;
+  border-color:var(--r20423-line)!important;
+}
+.dashboard-view-shell .r146-command-card b{font-variant-numeric:tabular-nums}
+.dashboard-view-shell .r146-data-health>div{min-width:0!important}
+.dashboard-view-shell .r146-data-health>div+div{border-left:1px solid #e7edf4!important}
+.dashboard-view-shell .r146-data-health small,
+.dashboard-view-shell .r146-data-health b{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+/* Appointment band: keep all enabled metrics visually equal and traceable */
+.dashboard-view-shell .r2042-appointment-band{
+  border-color:var(--r20423-line)!important;
+  background:linear-gradient(180deg,#fff 0%,#fbfcfe 100%)!important;
+}
+.dashboard-view-shell .r2042-appointment-metrics>span{
+  min-width:0!important;
+  box-shadow:0 1px 2px rgba(20,50,82,.035)!important;
+}
+.dashboard-view-shell .r2042-appointment-metrics small,
+.dashboard-view-shell .r2042-appointment-metrics b,
+.dashboard-view-shell .r2042-appointment-metrics em{
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.dashboard-view-shell .r2042-lineage-button{transition:background .16s ease,border-color .16s ease,color .16s ease}
+.dashboard-view-shell .r2042-lineage-button:hover{background:#eef5ff!important;border-color:#8fb2df!important;color:#164f91!important}
+
+/* KPI cards: identical information density across all Dashboard menus */
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi{
+  border:1px solid var(--r20423-line)!important;
+  min-width:0!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi>div{min-width:0!important}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi small,
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi span{
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{font-variant-numeric:tabular-nums;letter-spacing:-.025em!important}
+
+/* Shared panel system: all tabs use the same hierarchy and fit rules */
+.dashboard-view-shell .r146-generated-content,
+.dashboard-view-shell .r146-generated-overview,
+.dashboard-view-shell .r145-grid{
+  gap:var(--r20423-panel-gap)!important;
+}
+.dashboard-view-shell .r2042-panel{
+  min-width:0!important;
+  min-height:0!important;
+  border:1px solid var(--r20423-line)!important;
+  border-radius:var(--r20423-radius)!important;
+  background:#fff!important;
+  overflow:hidden!important;
+}
+.dashboard-view-shell .r2042-panel>header{
+  min-width:0!important;
+  flex:0 0 auto!important;
+}
+.dashboard-view-shell .r2042-panel .r2042-panel-title,
+.dashboard-view-shell .r2042-panel .r2042-panel-title h3,
+.dashboard-view-shell .r2042-panel .opsdash-panel-meta{min-width:0!important}
+.dashboard-view-shell .r2042-panel .r2042-panel-title h3,
+.dashboard-view-shell .r2042-panel .opsdash-panel-meta span{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.dashboard-view-shell .r2042-panel>.opsdash-panel-body{
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+/* Overview charts / tables: improve readability without adding pixels */
+.dashboard-view-shell .r146-hourly-chart{min-height:0!important}
+.dashboard-view-shell .r146-hour-col{min-width:0!important}
+.dashboard-view-shell .r146-priority-table .action-table-row,
+.dashboard-view-shell .r146-priority-table .action-table-head{min-height:0!important}
+.dashboard-view-shell .r146-bottleneck-list>div{min-height:0!important}
+.dashboard-view-shell .r146-handover-progress{margin-top:5px!important}
+.dashboard-view-shell .r146-handover-numbers>div b{font-variant-numeric:tabular-nums}
+
+/* Secondary Dashboard menus: fixed grid areas must consume only the available viewport. */
+@media(min-width:1181px){
+  .dashboard-view-shell .r145-handover,
+  .dashboard-view-shell .r145-comparison,
+  .dashboard-view-shell .r145-performance,
+  .dashboard-view-shell .r145-capacity,
+  .dashboard-view-shell .r145-exceptions{
+    height:100%!important;
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  .dashboard-view-shell .r145-handover>.r2042-panel,
+  .dashboard-view-shell .r145-comparison>.r2042-panel,
+  .dashboard-view-shell .r145-performance>.r2042-panel,
+  .dashboard-view-shell .r145-capacity>.r2042-panel,
+  .dashboard-view-shell .r145-exceptions>.r2042-panel{
+    min-height:0!important;
+    height:100%!important;
+    overflow:hidden!important;
+  }
+  .dashboard-view-shell .r145-handover{grid-template-rows:minmax(0,.8fr) minmax(0,1.2fr)!important}
+  .dashboard-view-shell .r145-comparison{grid-template-rows:minmax(0,1.12fr) minmax(0,.88fr)!important}
+  .dashboard-view-shell .r145-performance{grid-template-rows:minmax(0,1fr) minmax(0,.92fr)!important}
+  .dashboard-view-shell .r145-capacity{grid-template-rows:minmax(0,.8fr) minmax(0,1.2fr)!important}
+  .dashboard-view-shell .r145-exceptions{grid-template-rows:minmax(0,.76fr) minmax(0,1.24fr)!important}
+}
+
+/* Fullscreen desktop is the canonical control-room layout: one viewport, no page scroll. */
+@media(min-width:1181px){
+  :fullscreen .dashboard-fullscreen-shell{
+    overflow:hidden!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell .page-content{
+    height:100vh!important;
+    max-height:100vh!important;
+    overflow:hidden!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-head{
+    min-height:52px!important;
+    flex-basis:52px!important;
+    margin-bottom:5px!important;
+    padding:4px 7px!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody:not(.loading){
+    height:calc(100vh - 57px)!important;
+    min-height:0!important;
+    grid-template-rows:66px 76px minmax(0,1fr) 42px!important;
+    gap:6px!important;
+    overflow:hidden!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan:not(.loading){
+    grid-template-rows:66px 50px 76px minmax(0,1fr) 42px!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{
+    height:50px!important;
+    min-height:50px!important;
+    padding-block:5px!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi{
+    height:76px!important;
+    min-height:76px!important;
+    padding:7px 9px!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:23px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi>i{
+    width:32px!important;height:32px!important;min-width:32px!important;border-radius:9px!important;
+  }
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel{padding:7px 8px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel>header{min-height:27px!important;margin-bottom:5px!important;padding-bottom:5px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel .r2042-panel-title h3{font-size:12.5px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel .opsdash-panel-meta span{font-size:6.8px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs{height:42px!important;min-height:42px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs button{font-size:8px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs button svg{width:15px!important;height:15px!important}
+}
+
+/* Additional density guard for 768–840px-high control-room screens. */
+@media(min-width:1181px) and (max-height:840px){
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-head{min-height:46px!important;flex-basis:46px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody:not(.loading){height:calc(100vh - 51px)!important;grid-template-rows:58px 68px minmax(0,1fr) 38px!important;gap:5px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan:not(.loading){grid-template-rows:58px 44px 68px minmax(0,1fr) 38px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{height:44px!important;min-height:44px!important;padding:4px 7px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-command-card{padding:6px 8px!important;grid-template-columns:30px minmax(0,1fr)!important;gap:7px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-command-card .r146-command-symbol{width:29px!important;height:29px!important;font-size:13px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-command-card b{font-size:14px!important;margin-top:2px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-command-card span{font-size:6.2px!important;margin-top:2px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-data-health small{font-size:6.4px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-data-health b{font-size:9.4px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-appointment-label b{font-size:10.4px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-appointment-label span{display:none!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-appointment-metrics b{font-size:11.5px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-appointment-metrics small{font-size:5.8px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi{height:68px!important;min-height:68px!important;padding:6px 8px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi small{font-size:7.2px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:20px!important;margin-top:3px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi span{font-size:6.2px!important;margin-top:3px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi>i{width:28px!important;height:28px!important;min-width:28px!important;font-size:13px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel{padding:6px 7px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel>header{min-height:24px!important;margin-bottom:4px!important;padding-bottom:4px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel .r2042-panel-title h3{font-size:11.5px!important}
+  :fullscreen .dashboard-fullscreen-shell .r2042-panel .opsdash-panel-meta span{font-size:6.1px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs{height:38px!important;min-height:38px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs button{font-size:7.3px!important;gap:4px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs button svg{width:13px!important;height:13px!important}
+}
+
+/* 1181–1450px desktop: preserve readability while keeping the one-screen rule. */
+@media(max-width:1450px) and (min-width:1181px){
+  .dashboard-view-shell .r146-generated-head .r2042-title-copy h2{font-size:18.5px!important}
+  .dashboard-view-shell .r146-generated-head .r2042-title-copy p{font-size:7px!important}
+  .dashboard-view-shell .r146-generated-head .r2042-title-copy small{font-size:6px!important}
+  .dashboard-view-shell .r2042-panel .r2042-panel-title h3{font-size:12.5px!important}
+  .dashboard-view-shell .r2042-panel .opsdash-panel-meta span{font-size:6.7px!important}
+}
