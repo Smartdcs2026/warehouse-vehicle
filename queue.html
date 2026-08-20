@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#eef5ff">
   <title>สถานะคิวรถขนส่ง</title>
   <link rel="icon" href="./favicon.png" type="image/png">
-  <link rel="stylesheet" href="./queue.css?v=20260813-r121">
+  <link rel="stylesheet" href="./queue.css?v=20260821-r2054">
 </head>
-<body data-queue-build="20260818-r182-appointment-display">
+<body data-queue-build="20260821-r2054-dual-queue-visual">
   <section id="queueLogin" class="queue-login">
     <div class="queue-login-card">
       <img src="./icon-192.png" alt="" aria-hidden="true">
@@ -21,11 +21,12 @@
     <section id="callPanel" class="call-panel idle"><div class="call-tag"><div class="call-icon">เรียก</div><b>กำลังเรียกคิว</b></div><div class="call-center"><div class="call-grid"><div class="call-number-block"><small>หมายเลขนัดหมาย</small><strong id="callNumber">รอการเรียกคิว</strong></div><div class="call-company-block"><small>บริษัท</small><strong id="callCompany">–</strong></div></div><div class="call-vehicle-meta"><div class="call-meta-item"><small>ทะเบียนรถ</small><b id="callPlate">–</b></div><div class="call-meta-item"><small>จังหวัด</small><b id="callProvince">–</b></div><div id="callDoorWrap" class="call-meta-item call-meta-door"><small>ประตู</small><b id="callDoor">–</b></div></div><div id="callStateRow" class="call-state-row"><span>สถานะการเรียก</span><b id="callStateText">ยังไม่เรียก</b></div></div><div class="call-instruction"><span class="arrow-icon" aria-hidden="true"></span><div><small id="callInstructionPrefix">กรุณาเข้ารับการตรวจรับสินค้า</small><strong id="callInstruction">รอการเรียกคิว</strong></div></div></section>
     <section id="summaryCards" class="queue-summary"></section>
     <section id="queueBoard" class="queue-board"><section class="next-panel"><header class="panel-title"><div class="title-with-icon"><span class="title-mark">รอ</span><div><h2>รอเข้าตรวจรับสินค้า</h2><small>รวมรถที่พร้อมเรียกและรถที่เรียกแล้ว</small></div></div><span id="nextPageLabel" class="page-label">ไม่มีคิวรอ</span></header><div class="next-table-head"><span>เลขนัดหมาย</span><span>บริษัท / ทะเบียนรถ</span><span>จังหวัด</span><span>ประตู</span></div><div id="nextQueue" class="next-list"></div></section><section class="work-panel"><header class="panel-title"><div class="title-with-icon"><span class="title-mark">งาน</span><h2>กำลังดำเนินการ</h2></div><span id="workCount" class="page-label">0 คัน</span></header><div id="workGroups" class="work-groups"></div></section><aside id="doorRail" class="door-rail" hidden><header class="door-rail-head"><div><small>ประตูรับสินค้า</small><h2>สถานะประตู</h2></div><div class="door-rail-head-meta"><span id="doorRailStats" class="door-rail-stats">–</span><span id="doorPageLabel" class="door-page-label">–</span></div></header><div id="doorRailList" class="door-rail-list"></div><footer class="door-rail-legend" aria-label="คำอธิบายสถานะประตู"><span><i class="legend-dot is-available"></i>ว่าง</span><span><i class="legend-dot is-called"></i>เรียกเข้า</span><span><i class="legend-dot is-use"></i>กำลังใช้งาน</span><span><i class="legend-dot is-draining"></i>ปิดหลังจบงาน</span></footer></aside></section>
+    <section id="queueVisualView" class="queue-visual-view" hidden aria-live="polite"></section>
     <footer class="queue-footer"><div><span>รีเฟรชอัตโนมัติทุก 3 วินาที</span></div><div><b id="updatedAt">–</b></div><div class="footer-spacer"></div><div><span>ข้อมูลจากระบบบริหารรถขนส่งคลังสินค้า</span></div><span id="rotationLabel" hidden></span></footer>
   </main>
   <script src="./config.js?v=20260813-r121"></script>
   <script src="./voice-engine.js?v=20260813-r121"></script>
   <script src="./appointment-public-display.js?v=20260820-r2041"></script>
-  <script src="./queue.js?v=20260813-r121"></script>
+  <script src="./queue.js?v=20260821-r2054"></script>
 </body>
 </html>

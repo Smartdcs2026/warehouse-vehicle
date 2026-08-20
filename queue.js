@@ -31,6 +31,9 @@ announcementCursor = announcementCursor === null ? null : Math.max(0, Number(ann
 let announcementPending = [];
 let announcementProcessing = false;
 let currentAnnouncement = null;
+let currentDisplayMode = "CLASSIC";
+let currentVisualTheme = "DARK";
+let visualRuntimeFailed = false;
 let workPages = {
   RECEIVING_IN_PROGRESS: 0,
   WAITING_DOCUMENT_RETURN: 0,
@@ -62,6 +65,11 @@ function init() {
   $("queueLoginForm")?.addEventListener("submit", loginQueue);
   $("soundButton")?.addEventListener("click", toggleSound);
   $("fullButton")?.addEventListener("click", toggleFull);
+  $("queueVisualView")?.addEventListener("click", event => {
+    const action=event.target.closest("[data-visual-action]")?.dataset.visualAction;
+    if(action==="sound")void toggleSound();
+    if(action==="full")void toggleFull();
+  });
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
@@ -95,6 +103,7 @@ function init() {
         ? '<span class="ui-full-mark" aria-hidden="true"></span> ออกจากเต็มหน้าจอ'
         : '<span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ';
     }
+    const visualFull=$("visualFullButton");if(visualFull)visualFull.textContent=document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ";
     setTimeout(() => {
       resetPages();
       applyDensity();
@@ -213,15 +222,11 @@ function tick() {
       year: "numeric"
     }).format(now);
   }
-  if ($("queueClock")) {
-    $("queueClock").textContent = new Intl.DateTimeFormat("en-GB", {
-      timeZone: tz,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    }).format(now);
-  }
+  const timeText = new Intl.DateTimeFormat("en-GB", {timeZone:tz,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now);
+  const dateText = new Intl.DateTimeFormat("th-TH", {timeZone:tz,day:"numeric",month:"short",year:"numeric"}).format(now);
+  if ($("queueClock")) $("queueClock").textContent = timeText;
+  if ($("visualQueueClock")) $("visualQueueClock").textContent = timeText;
+  if ($("visualQueueDate")) $("visualQueueDate").textContent = dateText;
 }
 
 async function loadQueue(force = false) {
@@ -321,7 +326,7 @@ function normalizeQueueData(raw) {
     recentNotices,
     voice: raw.voice && typeof raw.voice === "object" ? raw.voice : null,
     doorSettings: raw.doorSettings && typeof raw.doorSettings === "object" ? raw.doorSettings : null,
-    queueDisplay: raw.queueDisplay && typeof raw.queueDisplay === "object" ? raw.queueDisplay : {showDoorPanel:false,doorPanelEnabled:false},
+    queueDisplay: normalizeQueueDisplaySettings(raw.queueDisplay),
     appointmentLive: raw.appointmentLive && typeof raw.appointmentLive === "object" ? raw.appointmentLive : null,
     announcementMode: cleanText(raw.announcementMode || "LEGACY"),
     latestAnnouncementSequence: Math.max(0, Number(raw.latestAnnouncementSequence) || 0),
@@ -438,6 +443,10 @@ function normalizeAnnouncement(item){
 function normalizeDoorLive(item){
   return{doorCode:normalizeQueueDoorCode(item.doorCode),status:cleanText(item.status),activityStatus:cleanText(item.activityStatus),isActive:item.isActive!==false,occupancyCount:Math.max(0,Number(item.occupancyCount)||0),appointmentNo:cleanText(item.appointmentNo),vehiclePlate:cleanText(item.vehiclePlate),province:cleanText(item.province),companyName:cleanText(item.companyName),items:Array.isArray(item.items)?item.items:[]};
 }
+function normalizeQueueDisplaySettings(value){
+  const raw=value&&typeof value==="object"?value:{},mode=cleanText(raw.displayMode).toUpperCase(),theme=cleanText(raw.visualTheme).toUpperCase();
+  return{showDoorPanel:raw.showDoorPanel!==false,doorPanelEnabled:raw.doorPanelEnabled===true,displayMode:mode==="VISUAL"?"VISUAL":"CLASSIC",visualTheme:["LIGHT","DARK","NEON"].includes(theme)?theme:"DARK"};
+}
 function cleanText(value) {
   return String(value ?? "").trim();
 }
@@ -462,10 +471,10 @@ function safeCount(value, items, status) {
 
 function render(data) {
   syncVoiceSettings(data.voice);
-  renderSummary(data);
-  renderNext(data);
-  renderWork(data);
-  renderDoorRail(data);
+  applyQueueDisplayMode(data.queueDisplay);
+  if(currentDisplayMode==="VISUAL"){
+    try{renderVisual(data)}catch(error){visualRuntimeFailed=true;console.warn("visual queue render failed",error?.message||error);applyQueueDisplayMode({...data.queueDisplay,displayMode:"CLASSIC"});renderClassic(data);setHealth("error","จอ Visual ขัดข้อง — ใช้จอเดิม",error?.message||"")}
+  }else renderClassic(data);
   if(data.announcementMode === "CANONICAL"){
     ingestCanonicalAnnouncements(data);
     if(!announcementProcessing&&!currentAnnouncement&&!announcementPending.length)renderCall(latestAnnouncement(data));
@@ -474,7 +483,16 @@ function render(data) {
     processVoiceCalls(data);
   }
   setStableText($("updatedAt"), "อัปเดตล่าสุด " + formatTime(data.generatedAt));
+  setStableText($("visualUpdatedAt"), "อัปเดตล่าสุด " + formatTime(data.generatedAt));
 }
+function renderClassic(data){renderSummary(data);renderNext(data);renderWork(data);renderDoorRail(data)}
+function applyQueueDisplayMode(settings){
+  const normalized=normalizeQueueDisplaySettings(settings),app=$("queueApp"),visual=$("queueVisualView");
+  currentDisplayMode=normalized.displayMode==="VISUAL"&&visualRuntimeFailed?"CLASSIC":normalized.displayMode;currentVisualTheme=normalized.visualTheme;
+  if(app){app.classList.toggle("queue-visual-mode",currentDisplayMode==="VISUAL");app.dataset.queueTheme=currentVisualTheme.toLowerCase()}
+  if(visual)visual.hidden=currentDisplayMode!=="VISUAL";
+}
+
 
 function latestAnnouncement(data){
   const call=data?.calling||null,notice=data?.noticeCalling||null;
@@ -542,10 +560,10 @@ function doorRailItem(door){
 
 function renderUnavailable() {
   if(!currentAnnouncement)renderCall(null);
-  renderSummary({ counts: {} });
-  renderNext({ items: [] });
-  renderWork({ items: [] });
+  if(currentDisplayMode==="VISUAL")renderVisual({items:[],counts:{},doors:[],queueDisplay:{displayMode:"VISUAL",visualTheme:currentVisualTheme,doorPanelEnabled:false},generatedAt:Date.now()});
+  else{renderSummary({ counts: {} });renderNext({ items: [] });renderWork({ items: [] })}
   if ($("updatedAt")) $("updatedAt").textContent = "ยังไม่ได้รับข้อมูลจากระบบ";
+  if ($("visualUpdatedAt")) $("visualUpdatedAt").textContent = "ยังไม่ได้รับข้อมูลจากระบบ";
 }
 
 function renderSummary(data) {
@@ -671,6 +689,7 @@ function renderCall(item) {
     $("callStateText").textContent = "ยังไม่เรียก";
     $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
     $("callInstruction").textContent = "รอการเรียกคิว";
+    if(currentDisplayMode==="VISUAL")renderVisualCall(null);
     return;
   }
 
@@ -713,6 +732,7 @@ function renderCall(item) {
     void panel.offsetWidth;
     panel.classList.add("flash");
   }
+  if(currentDisplayMode==="VISUAL")renderVisualCall(item);
 }
 
 function readyItems(data) {
@@ -817,21 +837,15 @@ function workItem(item) {
 
 function rotatePages() {
   if (!latestData) return;
-
-  const ready = readyItems(latestData);
-  const nextPages = Math.ceil(ready.length / queuePageSize());
-  if (nextPages > 1) nextPage = (nextPage + 1) % nextPages;
-
-  const all = latestData.items || [];
-  for (const status of Object.keys(workPages)) {
-    const pages = Math.ceil(all.filter(item => item.status === status).length / workPageSize());
-    if (pages > 1) workPages[status] = (workPages[status] + 1) % pages;
+  const all=latestData.items||[],pageSize=currentDisplayMode==="VISUAL"?visualStagePageSize():null;
+  const ready=readyItems(latestData),nextPages=Math.ceil(ready.length/(pageSize||queuePageSize()));if(nextPages>1)nextPage=(nextPage+1)%nextPages;
+  for(const status of Object.keys(workPages)){const pages=Math.ceil(all.filter(item=>item.status===status).length/(pageSize||workPageSize()));if(pages>1)workPages[status]=(workPages[status]+1)%pages}
+  if(currentDisplayMode==="VISUAL"){
+    const doorInfo=visualDoorSelection(latestData);if(doorInfo.pages>1)doorPage=(doorPage+1)%doorInfo.pages;renderVisual(latestData,true);
+  }else{
+    const allDoors=Array.isArray(latestData.doors)?latestData.doors:[],importantDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),availableDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),availableSlots=Math.max(1,doorPageSize()-importantDoors.length),doorPages=Math.max(1,Math.ceil(availableDoors.length/availableSlots));if(doorPages>1)doorPage=(doorPage+1)%doorPages;
+    renderNext(latestData,true);renderWork(latestData,true);renderDoorRail(latestData,true);
   }
-  const allDoors=Array.isArray(latestData.doors)?latestData.doors:[],importantDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),availableDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),availableSlots=Math.max(1,doorPageSize()-importantDoors.length),doorPages=Math.max(1,Math.ceil(availableDoors.length/availableSlots));if(doorPages>1)doorPage=(doorPage+1)%doorPages;
-
-  renderNext(latestData, true);
-  renderWork(latestData, true);
-  renderDoorRail(latestData, true);
 }
 
 function fadePage(el) {
@@ -853,6 +867,7 @@ function setHealth(state, text, detail = "") {
   el.textContent = text;
   el.title = detail || text;
   el.dataset.state = state || "ok";
+  const visual=$("visualQueueHealth");if(visual){visual.textContent=text;visual.title=detail||text;visual.dataset.state=state||"ok"}
 }
 
 function refreshHealthAge() {
@@ -866,6 +881,55 @@ function refreshHealthAge() {
   if (age > STALE_AFTER_MS) {
     setHealth("stale", "ข้อมูลกำลังรออัปเดต", `ไม่ได้รับข้อมูลใหม่ ${Math.floor(age / 1000)} วินาที`);
   }
+}
+
+
+const VISUAL_STAGE_DEFS=[
+  {status:"READY_FOR_RECEIVING",number:"1",label:"รอเข้าตรวจรับสินค้า",tone:"ready"},
+  {status:"RECEIVING_IN_PROGRESS",number:"2",label:"กำลังตรวจรับสินค้า",tone:"progress"},
+  {status:"WAITING_DOCUMENT_RETURN",number:"3",label:"รอรับเอกสารคืน",tone:"return"},
+  {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
+];
+let visualStatusSnapshot=new Map();
+function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<720||w<1280)return 3;if(h>=1000&&w>=1700)return 5;return 4}
+function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
+function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
+function visualStageItems(data,status){return(data.items||[]).filter(item=>item.status===status).sort((a,b)=>(a.stageSince||0)-(b.stageSince||0))}
+function visualTruckSvg(){return `<svg class="visual-truck-svg" viewBox="0 0 64 40" aria-hidden="true"><path d="M5 8h34v23H5z" fill="currentColor" opacity=".18"/><path d="M39 15h11l8 9v7H39z" fill="currentColor" opacity=".30"/><path d="M9 11h26v16H9zM42 18h7l5 6H42z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="17" cy="32" r="4" fill="currentColor"/><circle cx="49" cy="32" r="4" fill="currentColor"/><path d="M4 31h55" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`}
+function visualWaitText(item){const sec=Math.max(0,Number(item?.elapsedSeconds)||0);return sec<60?"< 1 นาที":shortDuration(sec)}
+function visualVehicleCard(item,tone,changed=false){
+  const company=queueCompanyView(item),door=normalizeQueueDoorCode(item.doorCode),called=Number(item.calledAt||0)>0;
+  return `<article class="visual-vehicle-card tone-${tone}${called?" is-called":""}${changed?" is-transitioning":""}"><div class="visual-vehicle-icon">${visualTruckSvg()}</div><div class="visual-vehicle-copy"><div class="visual-vehicle-top"><b>${esc(item.appointmentNo||"–")}</b><span>${esc(item.vehiclePlate||"–")}</span></div><strong title="${esc(company.tooltip)}">${esc(company.primary||"ไม่ระบุบริษัท")}</strong><small>${esc(item.province||"")}${door?`<i>${esc(door)}</i>`:""}</small></div><time>${esc(visualWaitText(item))}</time></article>`;
+}
+function visualStageLane(data,def,changedAutos){
+  const items=visualStageItems(data,def.status),size=visualStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=visualPageFor(def.status);if(page>=pages){page=0;visualSetPage(def.status,0)}const shown=items.slice(page*size,page*size+size),rest=Math.max(0,items.length-shown.length);
+  return `<section class="visual-stage-lane tone-${def.tone}"><header><span>${def.number}</span><div><b>${def.label}</b><small>${items.length.toLocaleString("th-TH")} คัน${pages>1?` · ${page+1}/${pages}`:""}</small></div></header><div class="visual-stage-list">${shown.length?shown.map(item=>visualVehicleCard(item,def.tone,changedAutos.has(item.autoId))).join(""):'<div class="visual-stage-empty">ไม่มีรถในขั้นตอนนี้</div>'}</div>${rest?`<footer>+ อีก ${rest.toLocaleString("th-TH")} คัน</footer>`:'<footer class="is-clear">แสดงรายการปัจจุบัน</footer>'}</section>`;
+}
+function visualDoorSelection(data){
+  const raw=Array.isArray(data?.doors)?data.doors:[],seen=new Map();for(const door of raw){const code=normalizeQueueDoorCode(door.doorCode);if(!code)continue;const prev=seen.get(code);if(!prev||doorStatusRank(door.status)<doorStatusRank(prev.status))seen.set(code,{...door,doorCode:code})}
+  const doors=[...seen.values()].sort(compareQueueDoors),limit=(window.innerWidth||1280)>=1600?6:4,pages=Math.max(1,Math.ceil(doors.length/limit));if(doorPage>=pages)doorPage=0;return{all:doors,shown:doors.slice(doorPage*limit,doorPage*limit+limit),pages};
+}
+function visualDoorBay(door){const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"},occupied=Math.max(0,Number(door.occupancyCount)||0);return `<article class="visual-door-bay door-${esc(status.toLowerCase())}"><div class="visual-garage"><span class="visual-garage-code">${esc(door.doorCode||"–")}</span>${occupied?`<span class="visual-garage-truck">${visualTruckSvg()}</span>`:""}</div><div><b>${esc(labels[status]||status)}</b><small>${status==="DRAINING"?"ปิดหลังจบงาน":`${occupied} คัน`}</small></div></article>`}
+function visualSummaryCard(def,count){return `<article class="visual-summary-card tone-${def.tone}"><span>${def.number}</span><div><small>${def.label}</small><b>${Number(count||0).toLocaleString("th-TH")}</b><em>คัน</em></div></article>`}
+function visualChangedAutos(data){const changed=new Set(),next=new Map();for(const item of data.items||[]){if(item.autoId){next.set(item.autoId,item.status);if(visualStatusSnapshot.has(item.autoId)&&visualStatusSnapshot.get(item.autoId)!==item.status)changed.add(item.autoId)}}visualStatusSnapshot=next;return changed}
+function renderVisual(data,animate=false){
+  const root=$("queueVisualView");if(!root)return;const changedAutos=visualChangedAutos(data),call=currentAnnouncement||latestAnnouncement(data),doorInfo=visualDoorSelection(data),showDoors=Boolean(data?.queueDisplay?.doorPanelEnabled)&&doorInfo.all.length>0;
+  const html=`<div class="visual-queue-shell">
+    <header class="visual-queue-header"><div class="visual-brand"><img src="./icon-192.png" alt=""><div><small>ระบบบริหารจัดการคิวรถขนส่ง</small><h1>สถานะคิวรถขนส่ง</h1></div></div><div class="visual-head-actions"><div class="visual-datetime"><b id="visualQueueClock">--:--:--</b><span id="visualQueueDate">--</span></div><span id="visualQueueHealth" class="visual-health">กำลังเชื่อมต่อ</span><button id="visualSoundButton" data-visual-action="sound" type="button">เปิดเสียง</button><button id="visualFullButton" data-visual-action="full" type="button">${document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ"}</button></div></header>
+    <section class="visual-top"><article id="visualCallHero" class="visual-call-hero ${call?.appointmentNo?"is-active":"is-idle"}"><div class="visual-call-signal"><span class="visual-signal-ring">${visualTruckSvg()}</span><b id="visualCallState">${call?.appointmentNo?"กำลังเรียก":"รอการเรียกคิว"}</b></div><div class="visual-call-main"><small>หมายเลขนัดหมาย</small><strong id="visualCallNumber">${esc(call?.appointmentNo||"รอการเรียกคิว")}</strong><b id="visualCallCompany">${esc(queueCompanyView(call||{}).primary||"–")}</b><span id="visualCallPlan" class="visual-call-plan">${esc(visualPlanText(call))}</span></div><div class="visual-call-vehicle"><small>ทะเบียนรถ</small><b id="visualCallPlate">${esc(call?.vehiclePlate||"–")}</b><span id="visualCallProvince">${esc(call?.province||"–")}</span></div><div class="visual-call-door"><small>ประตู</small><b id="visualCallDoor">${esc(call?.doorCode||"–")}</b><span id="visualCallInstruction">${esc(visualCallInstructionText(call))}</span></div></article>
+    <div class="visual-summary-grid">${VISUAL_STAGE_DEFS.map(def=>visualSummaryCard(def,data.counts?.[def.status]||0)).join("")}</div></section>
+    <section class="visual-flow-grid${showDoors?" has-doors":""}"><div class="visual-stage-grid">${VISUAL_STAGE_DEFS.map(def=>visualStageLane(data,def,changedAutos)).join('<i class="visual-flow-arrow">›</i>')}</div>${showDoors?`<aside class="visual-door-panel"><header><div><small>ประตูรับสินค้า</small><b>สถานะประตู</b></div><span>${doorInfo.all.length} ประตู</span></header><div class="visual-door-grid">${doorInfo.shown.map(visualDoorBay).join("")}</div>${doorInfo.pages>1?`<footer>หมุนแสดงประตูว่างอัตโนมัติ · ${doorPage+1}/${doorInfo.pages}</footer>`:""}</aside>`:""}</section>
+    <footer class="visual-queue-footer"><span>ข้อมูลชุดเดียวกับจอคิวแบบเดิม · รีเฟรชทุก 3 วินาที</span><b id="visualUpdatedAt">อัปเดตล่าสุด –</b><span>การเคลื่อนไหวทำงานเฉพาะเมื่อสถานะเปลี่ยน</span></footer>
+  </div>`;
+  const changed=setStableHTML(root,html);root.hidden=false;syncVisualControls();if(animate&&changed){root.classList.remove("page-fade");void root.offsetWidth;root.classList.add("page-fade")}
+}
+function visualPlanText(item){const p=item?.appointmentEnrichment?.projection||item?.appointment_enrichment?.projection||null;if(!p)return"";const bits=[];if(p.plannedAtDisplay)bits.push(`นัด ${p.plannedAtDisplay}`);if(Array.isArray(p.pos)&&p.pos.length)bits.push(`PO ${p.pos.slice(0,2).join(", ")}${p.pos.length>2?"…":""}`);return bits.join(" · ")}
+function visualCallInstructionText(item){if(!item?.appointmentNo)return"รอ Receiving เรียกรถ";const type=String(item.callType||"").toUpperCase();if(type==="NOTICE_DOCUMENT_ROOM")return"กรุณาติดต่อห้องเอกสาร";if(type==="NOTICE_DOOR")return item.doorCode?`กรุณาติดต่อประตู ${item.doorCode}`:"กรุณาติดต่อที่ประตู";if(type==="NOTICE_VEHICLE")return"กรุณาติดต่อที่รถของท่าน";return item.doorCode?`กรุณาเข้าประตู ${item.doorCode}`:"กรุณาเข้าตรวจรับสินค้า"}
+function renderVisualCall(item){
+  const hero=$("visualCallHero");if(!hero)return;const company=queueCompanyView(item||{});hero.classList.toggle("is-active",Boolean(item?.appointmentNo));hero.classList.toggle("is-idle",!item?.appointmentNo);setStableText($("visualCallNumber"),item?.appointmentNo||"รอการเรียกคิว");setStableText($("visualCallCompany"),company.primary||"–");setStableText($("visualCallPlan"),visualPlanText(item));setStableText($("visualCallPlate"),item?.vehiclePlate||"–");setStableText($("visualCallProvince"),item?.province||"–");setStableText($("visualCallDoor"),item?.doorCode||"–");setStableText($("visualCallInstruction"),visualCallInstructionText(item));const type=String(item?.callType||"").toUpperCase();setStableText($("visualCallState"),!item?.appointmentNo?"รอการเรียกคิว":type.startsWith("NOTICE_")?"เรียกเพิ่มเติม":type==="RECALL"?"กำลังเรียกซ้ำ":type==="DOOR_CHANGED"?"เปลี่ยนประตูและเรียก": "กำลังเรียก");
+}
+function syncVisualControls(){
+  tick();updateSoundButton();const source=$("queueHealth"),visual=$("visualQueueHealth");if(source&&visual){visual.textContent=source.textContent;visual.dataset.state=source.dataset.state||"ok";visual.title=source.title||source.textContent}
 }
 
 function shortDuration(sec) {
@@ -939,16 +1003,9 @@ function syncVoiceSettings(settings){
 }
 
 function updateSoundButton(){
-  const button=$("soundButton");if(!button)return;
-  if(!voiceAdminEnabled){
-    button.disabled=true;button.classList.remove("sound-on");
-    button.innerHTML='<span class="ui-sound-mark off" aria-hidden="true"></span> เสียงถูกปิด';
-    button.title="ผู้ดูแลระบบปิดเสียงประกาศ";
-    return;
-  }
-  button.disabled=false;button.title="";
-  if(audioEnabled){button.classList.add("sound-on");button.innerHTML='<span class="ui-sound-mark on" aria-hidden="true"></span> ระบบเสียงพร้อม'}
-  else{button.classList.remove("sound-on");button.innerHTML='<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง'}
+  const button=$("soundButton"),visual=$("visualSoundButton");
+  const apply=(target,compact=false)=>{if(!target)return;if(!voiceAdminEnabled){target.disabled=true;target.classList.remove("sound-on");target.innerHTML=compact?"เสียงถูกปิด":'<span class="ui-sound-mark off" aria-hidden="true"></span> เสียงถูกปิด';target.title="ผู้ดูแลระบบปิดเสียงประกาศ";return}target.disabled=false;target.title="";if(audioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงพร้อม":'<span class="ui-sound-mark on" aria-hidden="true"></span> ระบบเสียงพร้อม'}else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียง":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง'}};
+  apply(button,false);apply(visual,true);
 }
 
 async function toggleSound() {

@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.20-round205.3-analysis-friendly-export";
+const FRONTEND_BUILD="2026.08.21-round205.4-dual-queue-visual";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -3559,22 +3559,34 @@ async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",vehicl
 
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;
-  const queueUrl=new URL("./queue.html?v=20260811-r88",location.href).href;
-  const queueDisplay=adminState.data?.queueDisplay||{showDoorPanel:true};
-  const showDoorPanel=queueDisplay.showDoorPanel!==false;
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>ใช้สำหรับจอส่วนกลาง ต้องเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบหรือผู้ใช้งาน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260811-r88" target="_blank" rel="noopener">เปิดจอคิว</a></div>
-  <section class="admin-form-card admin-queue-display-card"><header><div><b>การแสดงสถานะประตู</b><small>เลือกว่าจะให้จอคิวแสดงรายการประตูด้านขวาหรือไม่</small></div></header><label class="admin-toggle-row"><span><b>แสดงสถานะประตูในจอคิว</b><small>ปิดได้เมื่อต้องการพื้นที่แสดงคิวมากขึ้น โดยไม่กระทบการใช้ประตูของงาน</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label><div class="admin-form-actions"><button id="queueDisplaySaveButton" class="primary" type="button">บันทึก</button></div></section>
-  <section class="admin-queue-guide"><article><b>เรียกรถแยกจากเริ่มตรวจรับ</b><p>พนักงานกด “เรียกรถ” ก่อน เมื่อรถเข้าจุดตรวจรับจริงจึงกด “เริ่มตรวจรับ” เพื่อให้เวลาทำงานตรงกับเหตุการณ์จริง</p></article><article><b>เรียกซ้ำและเปลี่ยนประตู</b><p>รถที่ยังไม่เข้าจุดตรวจรับสามารถเรียกซ้ำได้ และเมื่อเปิดใช้ประตูสามารถเปลี่ยนประตูพร้อมเรียกใหม่โดยเก็บประวัติเดิมไว้</p></article><article><b>กรณีปิดประตู</b><p>เมื่อผู้ดูแลปิดการใช้ประตู ระบบจะไม่บังคับ ไม่แสดง และไม่อ่านหมายเลขประตูในการเรียกรถ</p></article></section>
+  const queueUrl=new URL("./queue.html?v=20260821-r2054",location.href).href;
+  const queueDisplay=adminState.data?.queueDisplay||{showDoorPanel:true,displayMode:"CLASSIC",visualTheme:"DARK"};
+  const showDoorPanel=queueDisplay.showDoorPanel!==false,displayMode=String(queueDisplay.displayMode||"CLASSIC").toUpperCase()==="VISUAL"?"VISUAL":"CLASSIC",visualTheme=["LIGHT","DARK","NEON"].includes(String(queueDisplay.visualTheme||"").toUpperCase())?String(queueDisplay.visualTheme).toUpperCase():"DARK";
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>เลือกจอแบบเดิมหรือแบบ Visual โดยทั้งสองแบบใช้ข้อมูลคิว เสียง ประตู และเงื่อนไขชุดเดียวกัน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260821-r2054" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  <section class="admin-form-card admin-queue-display-card queue-display-mode-card"><header><div><b>รูปแบบจอคิว</b><small>จอเดิมยังเก็บไว้ครบ หาก Visual มีปัญหาสามารถกลับมาใช้แบบเดิมได้ทันทีโดยไม่ Deploy ใหม่</small></div></header><div class="queue-display-mode-options">
+    <label class="queue-display-choice ${displayMode==="CLASSIC"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="CLASSIC" ${displayMode==="CLASSIC"?"checked":""}><span><b>แบบเดิม</b><small>รูปแบบที่ใช้งานอยู่ปัจจุบัน เน้นตารางและสถานะงาน</small></span></label>
+    <label class="queue-display-choice ${displayMode==="VISUAL"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="VISUAL" ${displayMode==="VISUAL"?"checked":""}><span><b>แบบ Visual</b><small>การ์ดรถหลายคันต่อขั้นตอน พร้อมภาพประตูและการเคลื่อนไหวเบา ๆ เมื่อสถานะเปลี่ยน</small></span></label>
+  </div></section>
+  <section id="queueVisualThemeCard" class="admin-form-card admin-queue-display-card ${displayMode==="VISUAL"?"":"is-muted"}"><header><div><b>ธีมจอ Visual</b><small>เลือกให้เหมาะกับทีวีและแสงของพื้นที่ โดยไม่เปลี่ยนข้อมูลหรือเสียงประกาศ</small></div></header><div class="queue-theme-choices">
+    <label class="queue-theme-choice theme-light ${visualTheme==="LIGHT"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="LIGHT" ${visualTheme==="LIGHT"?"checked":""}><i></i><span><b>สว่าง</b><small>เหมาะกับพื้นที่สว่าง</small></span></label>
+    <label class="queue-theme-choice theme-dark ${visualTheme==="DARK"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="DARK" ${visualTheme==="DARK"?"checked":""}><i></i><span><b>เข้ม</b><small>สบายตาบนทีวี</small></span></label>
+    <label class="queue-theme-choice theme-neon ${visualTheme==="NEON"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="NEON" ${visualTheme==="NEON"?"checked":""}><i></i><span><b>นีออน</b><small>สีเด่น เหมาะกับจอใหญ่</small></span></label>
+  </div></section>
+  <section class="admin-form-card admin-queue-display-card"><header><div><b>การแสดงสถานะประตู</b><small>ใช้ได้กับทั้งจอเดิมและจอ Visual</small></div></header><label class="admin-toggle-row"><span><b>แสดงสถานะประตูในจอคิว</b><small>ปิดได้เมื่อต้องการพื้นที่แสดงรถมากขึ้น โดยไม่กระทบการใช้ประตูของงาน</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label></section>
+  <section class="admin-queue-guide queue-visual-guide"><article><b>ข้อมูลและเสียงชุดเดียวกัน</b><p>จอเดิมและ Visual ใช้ API คิวเดียวกัน เสียงเดิม และกฎเรียกรถ/เรียกซ้ำ/เปลี่ยนประตูชุดเดียวกัน จึงไม่เกิดสถานะคนละชุด</p></article><article><b>Visual รองรับรถหลายคัน</b><p>แต่ละขั้นตอนแสดงรถหลายคันพร้อมจำนวนรวม คันที่เกินพื้นที่จอจะหมุนหน้าอัตโนมัติ ไม่สร้าง Query เพิ่ม</p></article><article><b>ลูกเล่นไม่ขวางงานหลัก</b><p>การ์ดรถเคลื่อนไหวเฉพาะตอนข้อมูลเปลี่ยน หาก Browser ลดการเคลื่อนไหว ระบบยังแสดงข้อมูลครบโดยไม่พึ่ง Animation</p></article></section>
+  <div class="admin-form-actions clean-sticky-actions"><button id="queueDisplaySaveButton" class="primary" type="button">บันทึกการแสดงผล</button></div>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
+  const syncQueueDisplayControls=()=>{const mode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||"CLASSIC",card=$("queueVisualThemeCard");card?.classList.toggle("is-muted",mode!=="VISUAL");document.querySelectorAll(".queue-display-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));document.querySelectorAll(".queue-theme-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked))};
+  document.querySelectorAll('input[name="queueDisplayMode"],input[name="queueVisualTheme"]').forEach(input=>input.addEventListener("change",syncQueueDisplayControls));syncQueueDisplayControls();
   $("queueDisplaySaveButton")?.addEventListener("click",async()=>{
     if(adminState.busy)return;
-    const button=$("queueDisplaySaveButton"),showDoorPanel=$("queueDoorPanelEnabled")?.checked!==false;
+    const button=$("queueDisplaySaveButton"),showDoorPanel=$("queueDoorPanelEnabled")?.checked!==false,displayMode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||"CLASSIC",visualTheme=document.querySelector('input[name="queueVisualTheme"]:checked')?.value||"DARK";
     adminState.busy=true;if(button){button.disabled=true;button.textContent="กำลังบันทึก"}
     try{
-      const result=await api("/api/admin/queue-display",{method:"POST",body:{showDoorPanel}});
+      const result=await api("/api/admin/queue-display",{method:"POST",body:{showDoorPanel,displayMode,visualTheme}});
       adminState.data=await api("/api/admin/settings");
       renderAdminShell();
-      await showNotice("success",result.message||"บันทึกการแสดงสถานะประตูแล้ว");
+      await showNotice("success",result.message||"บันทึกการแสดงผลจอคิวแล้ว");
     }catch(error){
       await showNotice("error",error.message||"บันทึกไม่สำเร็จ กรุณาลองใหม่");
     }finally{adminState.busy=false}
