@@ -9676,3 +9676,54 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .appointment-recalc-confirm p{margin:0 0 10px}
 @media(max-width:1100px){.appointment-timing-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.appointment-timing-rule-grid{grid-template-columns:1fr}.appointment-timing-rule-preview{align-items:stretch}.appointment-timing-rule-preview>span{width:100%}}
+
+
+/* Round 204.1.2 — Appointment Center UX simplification */
+.appointment-center-head-r20412{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 12px;margin-bottom:8px;border:1px solid #d9e4f0;border-radius:13px;background:#fff}
+.appointment-center-title{min-width:0}.appointment-center-title h2{font-size:18px}.appointment-center-title p{font-size:10px}
+.appointment-center-context{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:0;flex-wrap:wrap}
+.appointment-center-context .dataset{display:grid;gap:1px;min-width:150px;padding-right:10px;border-right:1px solid #e2e8f0}
+.appointment-center-context .dataset small{color:#71839a;font-size:8.5px;font-weight:800}.appointment-center-context .dataset b{color:#24486f;font-size:10.5px;white-space:nowrap}
+.state-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border-radius:999px;font-size:9px;font-weight:900;white-space:nowrap}
+.state-chip.is-on{background:#eef9f2;color:#167a49;border:1px solid #cbe8d6}.state-chip.is-upload{background:#eef5ff;color:#1e5eaa;border:1px solid #cfdef2}.state-chip.is-off{background:#f6f7f9;color:#7a8492;border:1px solid #e1e5eb}
+.appointment-center-settings-button,.appointment-refresh-button{min-height:30px;padding:0 10px;border:1px solid #cad7e7;border-radius:8px;background:#fff;color:#285d9d;font:900 9px/1 inherit;cursor:pointer}
+.appointment-center-settings-button:hover,.appointment-refresh-button:hover{background:#f1f6fc}
+.appointment-center-tabs-r20412{grid-template-columns:repeat(4,minmax(0,1fr));padding:4px;gap:4px;margin-bottom:10px}
+.appointment-center-tabs-r20412 button{min-height:34px}
+.appointment-workspace-r20412{display:grid;gap:9px}
+.appointment-center-subtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:4px;border:1px solid #dbe4ef;border-radius:10px;background:#f6f8fb}
+.appointment-center-subtabs.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.appointment-center-subtabs button{min-height:32px;border:0;border-radius:7px;background:transparent;color:#60758f;font:900 9.5px/1.15 inherit;cursor:pointer}
+.appointment-center-subtabs button.active{background:#fff;color:#145caf;box-shadow:0 1px 5px rgba(30,70,120,.12)}
+.appointment-overview-r20412{display:grid;gap:9px}.appointment-overview-r20412>header{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 0}
+.appointment-overview-r20412>header b{display:block;color:#173f70;font-size:13px}.appointment-overview-r20412>header span{color:#76869a;font-size:9.5px}
+.appointment-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.appointment-overview-panel{min-width:0;padding:12px;border:1px solid #dce5ef;border-radius:12px;background:#fff}
+.appointment-overview-panel.timing{border-top:3px solid #2d78d3}.appointment-overview-panel.volume{border-top:3px solid #17a06a}
+.appointment-overview-panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.appointment-overview-panel-head small,.appointment-overview-panel-head b{display:block}.appointment-overview-panel-head small{color:#7a889a;font-size:8.5px}.appointment-overview-panel-head b{margin-top:2px;color:#23496f;font-size:12px}
+.appointment-overview-panel-head button{border:0;background:transparent;color:#2a65aa;font:900 9px/1 inherit;cursor:pointer;padding:5px}
+.appointment-overview-summary-body{display:grid;gap:8px;min-height:68px}.appointment-overview-loading,.appointment-overview-empty{display:grid;place-items:center;min-height:66px;border:1px dashed #dce5ef;border-radius:9px;background:#fafbfd;color:#76859a;font-size:9.5px;text-align:center;padding:10px}
+.appointment-overview-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.appointment-overview-kpis.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.appointment-overview-kpis span{display:grid;gap:2px;min-width:0;padding:8px;border-radius:8px;background:#f7f9fc;border:1px solid #e7ebf1}
+.appointment-overview-kpis small{color:#77869a;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.appointment-overview-kpis b{font-size:14px;color:#294b70}
+.appointment-overview-kpis span.good{background:#f1faf5;border-color:#d1ebdc}.appointment-overview-kpis span.good b{color:#13824b}
+.appointment-overview-kpis span.bad{background:#fff4f4;border-color:#f0d0d0}.appointment-overview-kpis span.bad b{color:#c34444}
+.appointment-overview-kpis span.warn{background:#fff9ee;border-color:#eedeb8}.appointment-overview-kpis span.warn b{color:#a86b13}
+.appointment-overview-kpis span.info{background:#f2f7fd;border-color:#d5e3f4}.appointment-overview-kpis span.info b{color:#1e66ba}
+.appointment-overview-rule{padding:7px 8px;border-radius:8px;background:#f7f9fb;color:#6d7c8f;font-size:8.8px}.appointment-overview-rule b{color:#32577f}
+.appointment-plan-actual-card-r20412,.appointment-plan-volume-card-r20412,.appointment-partner-card-r20412{margin-top:0}
+.appointment-plan-actual-card-r20412>header,.appointment-plan-volume-card-r20412>header,.appointment-partner-card-r20412>header{align-items:center;margin-bottom:9px}
+.appointment-plan-actual-card-r20412 .appointment-plan-actual-actions,.appointment-plan-volume-card-r20412 .appointment-plan-volume-actions,.appointment-partner-card-r20412 .appointment-partner-actions{align-items:center}
+.appointment-plan-actual-card-r20412 .appointment-plan-actual-actions select,.appointment-plan-volume-card-r20412 .appointment-plan-volume-actions select,.appointment-partner-card-r20412 .appointment-partner-actions select{height:32px;min-width:92px;border-radius:8px}
+.appointment-admin-menu{position:relative}.appointment-admin-menu summary{display:flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid #d8c999;border-radius:8px;background:#fffaf0;color:#8a641c;font:900 9px/1 inherit;cursor:pointer;list-style:none}.appointment-admin-menu summary::-webkit-details-marker{display:none}
+.appointment-admin-menu>div{position:absolute;right:0;top:36px;z-index:12;display:grid;gap:4px;min-width:180px;padding:6px;border:1px solid #dce4ee;border-radius:9px;background:#fff;box-shadow:0 9px 24px rgba(35,60,90,.14)}
+.appointment-admin-menu button{min-height:31px;padding:0 9px;border:0;border-radius:7px;background:#f4f7fb;color:#315878;text-align:left;font:800 9px/1 inherit;cursor:pointer}.appointment-admin-menu button:hover{background:#edf4fb}.appointment-admin-menu button.danger{background:#fff4f4;color:#b44646}
+@media(max-width:980px){.appointment-overview-grid{grid-template-columns:1fr}.appointment-center-context .dataset{display:none}}
+@media(max-width:760px){.appointment-center-head-r20412{align-items:flex-start}.appointment-center-context{width:100%;justify-content:flex-start}.appointment-center-tabs-r20412{grid-template-columns:repeat(2,minmax(0,1fr))}.appointment-center-subtabs.three{grid-template-columns:1fr}.appointment-overview-kpis,.appointment-overview-kpis.four{grid-template-columns:repeat(2,minmax(0,1fr))}.appointment-plan-actual-card-r20412>header,.appointment-plan-volume-card-r20412>header,.appointment-partner-card-r20412>header{align-items:flex-start}}
+.appointment-plan-actual-summary-r20412{grid-template-columns:repeat(5,minmax(0,1fr))}
+.appointment-plan-volume-summary-r20412{grid-template-columns:repeat(4,minmax(0,1fr))}
+.appointment-partner-summary-r20412{grid-template-columns:repeat(4,minmax(0,1fr))}
+.appointment-partner-note b{color:#294f7c}
+@media(max-width:980px){.appointment-plan-actual-summary-r20412{grid-template-columns:repeat(3,minmax(0,1fr))}.appointment-plan-volume-summary-r20412,.appointment-partner-summary-r20412{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.appointment-plan-actual-summary-r20412{grid-template-columns:repeat(2,minmax(0,1fr))}}
