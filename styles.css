@@ -10425,3 +10425,14 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .production-export-required{display:inline-flex;align-items:center;margin-left:6px;padding:2px 7px;border-radius:999px;background:#e8f1ff;color:#225fb8;font-size:10px;font-style:normal;font-weight:800;vertical-align:middle}
 .production-export-datasets input[disabled]+span{opacity:1}
 .production-export-datasets label:has(input[disabled]){border-color:#a9c7f7;background:#f7fbff}
+
+/* Round 205.2 — Simple Operational Export */
+.production-export-simple{gap:14px}
+.production-export-main-sheet{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 14px;border:1px solid #cfe0f7;border-radius:13px;background:#f7fbff}
+.production-export-main-sheet>span{display:inline-flex;align-items:center;justify-content:center;min-width:78px;padding:5px 9px;border-radius:999px;background:#e8f1ff;color:#245fae;font-size:10px;font-weight:900}
+.production-export-main-sheet>div{display:grid;gap:3px;min-width:0}.production-export-main-sheet b{font-size:14px;color:#173b68}.production-export-main-sheet small{font-size:11px;line-height:1.4;color:#667b96}.production-export-main-sheet em{font-size:10px;font-style:normal;font-weight:900;color:#2d7a55;white-space:nowrap}
+.production-export-main-sheet.issue{border-color:#f1d9a7;background:#fffaf0}.production-export-main-sheet.issue>span{background:#fff0cc;color:#9a5a00}.production-export-main-sheet.issue b{color:#805000}
+.production-export-optional{border:1px solid #dce6f3;border-radius:13px;background:#fff;overflow:hidden}.production-export-optional summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:#fbfcfe}.production-export-optional summary b{font-size:13px;color:#1c3f6b}.production-export-optional summary span{font-size:11px;color:#7a899d}
+.production-export-datasets.simple-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border-top:1px solid #e6edf6}.production-export-datasets.simple-options label{display:flex;align-items:flex-start;gap:8px;padding:10px;border:1px solid #e1e8f1;border-radius:10px;background:#fff}.production-export-datasets.simple-options label:has(input:checked){border-color:#8ab2ef;background:#f5f9ff}.production-export-datasets.simple-options label>span{display:grid;gap:2px}.production-export-datasets.simple-options b{font-size:12px;color:#25486f}.production-export-datasets.simple-options small{font-size:10px;line-height:1.35;color:#75859a}
+@media(max-width:900px){.production-export-datasets.simple-options{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.production-export-main-sheet{grid-template-columns:1fr}.production-export-main-sheet>span{justify-self:start}.production-export-main-sheet em{justify-self:start}.production-export-datasets.simple-options{grid-template-columns:1fr}}
