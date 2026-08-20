@@ -9727,3 +9727,115 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .appointment-partner-note b{color:#294f7c}
 @media(max-width:980px){.appointment-plan-actual-summary-r20412{grid-template-columns:repeat(3,minmax(0,1fr))}.appointment-plan-volume-summary-r20412,.appointment-partner-summary-r20412{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.appointment-plan-actual-summary-r20412{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* =========================================================
+   Round 204.2 — Professional Executive Dashboard
+   Visual-only redesign. Formulas and data contracts unchanged.
+   ========================================================= */
+.dashboard-view-shell{
+  --r2042-shadow:0 8px 24px rgba(15,35,62,.065);
+  --r2042-shadow-soft:0 3px 12px rgba(15,35,62,.045);
+  --r2042-radius:14px;
+}
+.dashboard-view-shell .page-content{background:var(--dash-page,#f3f6fa)!important}
+.dashboard-view-shell .r2042-dashboard-eyebrow{display:block;margin-bottom:3px;color:var(--dash-accent,#2563eb);font-size:7.5px;font-weight:950;letter-spacing:.16em;line-height:1;text-transform:uppercase}
+.dashboard-view-shell .r146-generated-head{border:1px solid var(--dash-line,#d6e0eb)!important;border-radius:16px!important;box-shadow:var(--r2042-shadow)!important;background:var(--dash-surface,#fff)!important}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy h2{letter-spacing:-.025em!important}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy p{margin-top:4px!important;color:var(--dash-muted,#6e8095)!important}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy small{color:var(--dash-muted,#6e8095)!important;opacity:.82}
+.dashboard-view-shell .r146-generated-head .opsdash-filter{padding:4px!important;border:1px solid var(--dash-line,#d6e0eb);border-radius:12px!important;background:var(--dash-soft,#f6f8fb);box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.dashboard-view-shell .r146-generated-head .opsdash-filter>button,
+.dashboard-view-shell .r146-generated-head .opsdash-filter select,
+.dashboard-view-shell .r146-generated-head .range-buttons{border-color:transparent!important;background:var(--dash-surface,#fff)!important;box-shadow:0 1px 3px rgba(15,35,62,.04)!important}
+.dashboard-view-shell .r146-generated-head .range-buttons{padding:2px!important;display:flex!important}
+.dashboard-view-shell .r146-generated-head .range-buttons button{border-radius:8px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.dashboard-view-shell .r146-generated-head .range-buttons button.active{background:var(--dash-accent,#2563eb)!important;color:#fff!important;box-shadow:0 4px 10px color-mix(in srgb,var(--dash-accent,#2563eb) 24%,transparent)!important}
+.dashboard-view-shell .dashboard-theme-button>i{box-shadow:0 0 0 3px var(--dash-accent-soft,#edf4ff)}
+
+/* executive decision rail */
+.dashboard-view-shell .r146-command-strip{gap:9px!important}
+.dashboard-view-shell .r146-command-card,.dashboard-view-shell .r146-data-health{position:relative;border:1px solid var(--dash-line,#d6e0eb)!important;border-radius:14px!important;background:var(--dash-surface,#fff)!important;box-shadow:var(--r2042-shadow-soft)!important;overflow:hidden}
+.dashboard-view-shell .r146-command-card{border-left:1px solid var(--dash-line,#d6e0eb)!important;padding:9px 12px!important}
+.dashboard-view-shell .r146-command-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#94a3b8}
+.dashboard-view-shell .r146-command-card.danger::before{background:#ef4444}.dashboard-view-shell .r146-command-card.focus::before,.dashboard-view-shell .r146-command-card.warn::before{background:#f59e0b}.dashboard-view-shell .r146-command-card.good::before{background:#10b981}
+.dashboard-view-shell .r146-command-card.danger,.dashboard-view-shell .r146-command-card.focus,.dashboard-view-shell .r146-command-card.warn,.dashboard-view-shell .r146-command-card.good{background:var(--dash-surface,#fff)!important}
+.dashboard-view-shell .r146-command-card .r146-command-symbol{border:1px solid var(--dash-line,#d6e0eb);border-radius:11px!important;box-shadow:none!important}
+.dashboard-view-shell .r146-command-card small{letter-spacing:.015em}.dashboard-view-shell .r146-command-card b{letter-spacing:-.018em}
+.dashboard-view-shell .r146-data-health{padding:6px 8px!important;background:linear-gradient(135deg,var(--dash-surface,#fff),var(--dash-soft,#f6f8fb))!important}
+.dashboard-view-shell .r146-data-health>div{border-left-color:var(--dash-line,#d6e0eb)!important}
+.dashboard-view-shell .r146-health-fresh>.opsdash-live,.dashboard-view-shell .r146-health-fresh>.opsdash-stale,.dashboard-view-shell .r146-health-fresh>.opsdash-history{border-radius:999px!important;font-weight:900!important}
+
+/* appointment summary is a true compact executive band, no clipped hidden chart */
+.dashboard-view-shell .r2042-appointment-band{display:grid!important;grid-template-columns:minmax(185px,.9fr) minmax(0,3.4fr) auto auto;align-items:center;gap:12px;height:100%!important;min-height:0!important;margin:0!important;padding:7px 10px!important;border:1px solid var(--dash-line,#d6e0eb)!important;border-radius:13px!important;background:var(--dash-surface,#fff)!important;box-shadow:var(--r2042-shadow-soft)!important;overflow:hidden!important}
+.dashboard-view-shell .r2042-appointment-label{display:grid;align-content:center;min-width:0;padding-left:10px;border-left:3px solid #2563eb}
+.dashboard-view-shell .r2042-appointment-label small{font-size:6.8px!important;line-height:1;color:#2563eb!important;font-weight:950!important;letter-spacing:.11em}
+.dashboard-view-shell .r2042-appointment-label b{margin-top:3px;font-size:12px!important;line-height:1.05;color:var(--dash-text,#10243e)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dashboard-view-shell .r2042-appointment-label span{margin-top:2px;font-size:6.8px!important;color:var(--dash-muted,#6e8095)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dashboard-view-shell .r2042-appointment-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch;height:100%;min-width:0;border:1px solid var(--dash-line,#d6e0eb);border-radius:10px;background:var(--dash-soft,#f6f8fb);overflow:hidden}
+.dashboard-view-shell .r2042-appointment-metrics>span{display:grid;align-content:center;justify-items:center;min-width:0;padding:3px 7px;border-left:1px solid var(--dash-line,#d6e0eb)}
+.dashboard-view-shell .r2042-appointment-metrics>span:first-child{border-left:0}.dashboard-view-shell .r2042-appointment-metrics small{font-size:6.6px;color:var(--dash-muted,#6e8095);font-weight:850;white-space:nowrap}.dashboard-view-shell .r2042-appointment-metrics b{font-size:14px;line-height:1.05;color:var(--dash-text,#10243e);font-variant-numeric:tabular-nums}.dashboard-view-shell .r2042-appointment-metrics em{font-size:6.3px;color:var(--dash-muted,#6e8095);font-style:normal;font-weight:800}.dashboard-view-shell .r2042-appointment-metrics .good b{color:#059669}.dashboard-view-shell .r2042-appointment-metrics .bad b{color:#dc2626}.dashboard-view-shell .r2042-appointment-metrics .warn b{color:#d97706}.dashboard-view-shell .r2042-appointment-metrics .info b{color:#2563eb}
+.dashboard-view-shell .r2042-lineage-button{height:32px!important;min-height:32px!important;margin:0!important;padding:0 10px!important;border:1px solid #b9cce5!important;border-radius:9px!important;background:#f7faff!important;color:#1e5fae!important;font-size:8px!important;font-weight:900!important;white-space:nowrap;cursor:pointer}
+.dashboard-view-shell .r2042-appointment-warning{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#fff3cd;color:#a16207;border:1px solid #f1d08c;font-weight:950;cursor:help}
+.dashboard-view-shell .r2042-appointment-band.is-unavailable{grid-template-columns:1fr!important;color:var(--dash-muted,#6e8095)!important}
+
+/* KPI cards: cleaner executive style */
+.dashboard-view-shell .r146-generated-kpis{gap:9px!important}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi{position:relative;border:1px solid var(--dash-line,#d6e0eb)!important;border-top:1px solid var(--dash-line,#d6e0eb)!important;border-radius:14px!important;background:var(--dash-surface,#fff)!important;box-shadow:var(--r2042-shadow-soft)!important;overflow:hidden}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kpi-color)}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi::after{content:"";position:absolute;right:-34px;bottom:-42px;width:105px;height:105px;border-radius:50%;background:color-mix(in srgb,var(--kpi-color) 7%,transparent);pointer-events:none}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi>div{position:relative;z-index:1}.dashboard-view-shell .r146-generated-kpis .r2042-kpi small{color:var(--dash-muted,#6e8095)!important;font-weight:850!important}.dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{color:var(--dash-text,#10243e)!important;letter-spacing:-.035em}.dashboard-view-shell .r146-generated-kpis .r2042-kpi>i{position:relative;z-index:1;border-radius:10px!important;border:1px solid color-mix(in srgb,var(--kpi-color) 18%,var(--dash-line,#d6e0eb))!important;background:color-mix(in srgb,var(--kpi-color) 9%,var(--dash-surface,#fff))!important;color:var(--kpi-color)!important;box-shadow:none!important}
+
+/* professional card language for every Dashboard menu */
+.dashboard-view-shell .r2042-panel{--panel-accent:var(--dash-accent,#2563eb);border:1px solid var(--dash-line,#d6e0eb)!important;border-top:1px solid var(--dash-line,#d6e0eb)!important;border-radius:14px!important;background:var(--dash-surface,#fff)!important;box-shadow:var(--r2042-shadow-soft)!important;overflow:hidden!important}
+.dashboard-view-shell .r2042-panel[data-panel-kind="urgent"]{--panel-accent:#ef4444}.dashboard-view-shell .r2042-panel[data-panel-kind="exceptions"]{--panel-accent:#8b5cf6}.dashboard-view-shell .r2042-panel[data-panel-kind="hourly"]{--panel-accent:#0ea5e9}.dashboard-view-shell .r2042-panel[data-panel-kind="handover"]{--panel-accent:#14b8a6}.dashboard-view-shell .r2042-panel[data-panel-kind="comparison"]{--panel-accent:#6366f1}.dashboard-view-shell .r2042-panel[data-panel-kind="performance"]{--panel-accent:#10b981}.dashboard-view-shell .r2042-panel[data-panel-kind="capacity"]{--panel-accent:#f59e0b}.dashboard-view-shell .r2042-panel[data-panel-kind="stageQueue"]{--panel-accent:#2563eb}
+.dashboard-view-shell .r2042-panel>header{border-left:0!important;padding-left:0!important;padding-bottom:6px!important;border-bottom:1px solid color-mix(in srgb,var(--dash-line,#d6e0eb) 78%,transparent)!important}
+.dashboard-view-shell .r2042-panel .r2042-panel-title{display:flex;align-items:center;min-width:0;gap:7px}
+.dashboard-view-shell .r2042-panel .r2042-panel-mark{display:block;width:8px;height:8px;flex:0 0 8px;border-radius:3px;background:var(--panel-accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--panel-accent) 10%,transparent)}
+.dashboard-view-shell .r2042-panel .r2042-panel-title h3{margin:0!important;color:var(--dash-text,#10243e)!important;letter-spacing:-.01em}
+.dashboard-view-shell .r2042-panel .opsdash-panel-meta span{color:var(--dash-muted,#6e8095)!important}
+.dashboard-view-shell .r146-stage-node{box-shadow:none!important;border-radius:10px!important;background:linear-gradient(180deg,var(--dash-surface,#fff),color-mix(in srgb,var(--stage) 4%,var(--dash-surface,#fff)))!important}
+.dashboard-view-shell .r146-stage-node.is-bottleneck{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--stage) 65%,transparent)!important}
+.dashboard-view-shell .r146-stage-matrix{border-color:var(--dash-line,#d6e0eb)!important}
+.dashboard-view-shell .r146-priority-table .action-table-head{border-radius:8px 8px 0 0!important;background:var(--dash-soft,#f6f8fb)!important}
+.dashboard-view-shell .r146-priority-table .action-table-row{background:var(--dash-surface,#fff)!important}
+.dashboard-view-shell .r146-bottleneck-main{border:1px solid #f0d4aa!important;background:linear-gradient(135deg,#fff9ef,#fff)!important;border-radius:11px!important}
+.dashboard-view-shell[data-dashboard-theme="dark"] .r146-bottleneck-main{background:var(--dash-soft)!important}
+.dashboard-view-shell .r146-handover-numbers>div{border:1px solid var(--dash-line,#d6e0eb)!important;border-radius:9px!important;background:var(--dash-soft,#f6f8fb)!important}
+
+/* charts: flat corporate color, clearer baseline */
+.dashboard-view-shell .r146-hourly-chart{border-bottom-color:var(--dash-line,#d6e0eb)!important;background:linear-gradient(180deg,transparent 0 97%,color-mix(in srgb,var(--dash-line,#d6e0eb) 65%,transparent) 97% 100%)}
+.dashboard-view-shell .r146-hour-col>span>.in{background:var(--dash-chart-primary,#2563eb)!important}.dashboard-view-shell .r146-hour-col>span>.out{background:var(--dash-chart-secondary,#0f9f78)!important}
+.dashboard-view-shell .r146-bottleneck-list i,.dashboard-view-shell .r146-handover-progress>i,.dashboard-view-shell .dashboard-bars i,.dashboard-view-shell .stage-time-chart i{background:var(--dash-soft-2,#eef3f8)!important}
+
+/* compact professional navigation — keeps each menu inside one fullscreen page */
+.dashboard-view-shell .r146-bottom-tabs{height:52px!important;min-height:52px!important;border-radius:12px!important;background:var(--dash-nav,#08223e)!important;box-shadow:0 -5px 18px rgba(5,24,45,.11)!important}
+.dashboard-view-shell .r146-bottom-tabs button{gap:7px!important;font-size:9px!important;color:var(--dash-nav-text,#9db0c5)!important}.dashboard-view-shell .r146-bottom-tabs button svg{width:18px!important;height:18px!important}.dashboard-view-shell .r146-bottom-tabs button.active{background:var(--dash-nav-active,#1767dd)!important;color:#fff!important;box-shadow:inset 0 3px 0 rgba(255,255,255,.13)!important}
+
+@media(min-width:1181px){
+  .dashboard-view-shell #dashboardBody:not(.loading){grid-template-rows:76px 86px minmax(0,1fr) 52px!important;gap:8px!important;height:calc(100vh - 94px)!important}
+  .dashboard-view-shell #dashboardBody.has-appointment-plan:not(.loading){grid-template-rows:76px 58px 86px minmax(0,1fr) 52px!important;gap:8px!important;height:calc(100vh - 94px)!important}
+  .dashboard-view-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{height:58px!important;min-height:58px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi{height:86px!important;min-height:86px!important;padding:10px 12px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:27px!important}
+  .dashboard-view-shell .r146-generated-content,.dashboard-view-shell .r145-grid,.dashboard-view-shell .r146-generated-overview{min-height:0!important;height:100%!important;overflow:hidden!important}
+  .dashboard-view-shell .r145-grid{gap:9px!important}
+  .dashboard-view-shell .r145-grid>.r2042-panel,.dashboard-view-shell .r146-generated-overview>.r2042-panel{min-height:0!important;height:100%!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-head{min-height:58px!important;flex-basis:58px!important;margin-bottom:6px!important;padding:5px 8px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody:not(.loading){height:calc(100vh - 64px)!important;grid-template-rows:72px 82px minmax(0,1fr) 48px!important;gap:7px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan:not(.loading){height:calc(100vh - 64px)!important;grid-template-rows:72px 54px 82px minmax(0,1fr) 48px!important;gap:7px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{height:54px!important;min-height:54px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi{height:82px!important;min-height:82px!important;padding:8px 10px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs{height:48px!important;min-height:48px!important}
+}
+
+@media(max-width:1450px) and (min-width:1181px){
+  .dashboard-view-shell .r2042-appointment-band{grid-template-columns:minmax(150px,.75fr) minmax(0,3fr) auto auto;gap:8px!important}
+  .dashboard-view-shell .r2042-appointment-label span{display:none}.dashboard-view-shell .r2042-appointment-metrics small{font-size:6px}.dashboard-view-shell .r2042-appointment-metrics b{font-size:12px}.dashboard-view-shell .r2042-lineage-button{padding-inline:7px!important;font-size:7px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:24px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi small{font-size:8px!important}.dashboard-view-shell .r146-generated-kpis .r2042-kpi span{font-size:7px!important}
+}
+
+@media(max-width:1180px){
+  .dashboard-view-shell .r2042-dashboard-eyebrow{display:none}
+  .dashboard-view-shell .r2042-appointment-band{display:block!important;height:auto!important;padding:10px!important}.dashboard-view-shell .r2042-appointment-label{margin-bottom:8px}.dashboard-view-shell .r2042-appointment-metrics{grid-template-columns:repeat(3,minmax(0,1fr));min-height:68px}.dashboard-view-shell .r2042-lineage-button{margin-top:8px!important}.dashboard-view-shell .r2042-appointment-warning{position:absolute;right:10px;top:10px}
+}
