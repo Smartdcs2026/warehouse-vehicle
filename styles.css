@@ -9839,3 +9839,332 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   .dashboard-view-shell .r2042-dashboard-eyebrow{display:none}
   .dashboard-view-shell .r2042-appointment-band{display:block!important;height:auto!important;padding:10px!important}.dashboard-view-shell .r2042-appointment-label{margin-bottom:8px}.dashboard-view-shell .r2042-appointment-metrics{grid-template-columns:repeat(3,minmax(0,1fr));min-height:68px}.dashboard-view-shell .r2042-lineage-button{margin-top:8px!important}.dashboard-view-shell .r2042-appointment-warning{position:absolute;right:10px;top:10px}
 }
+
+/* =========================================================
+   Round 204.2.1 — Dashboard Visual Polish
+   Presentation only: no formula/API/query changes.
+   ========================================================= */
+.dashboard-view-shell{
+  --r20421-border:#d9e3ee;
+  --r20421-soft:#f6f8fb;
+  --r20421-muted:#72839a;
+  --r20421-shadow:0 4px 14px rgba(16,43,76,.055);
+  --r20421-shadow-strong:0 8px 22px rgba(16,43,76,.075);
+}
+.dashboard-view-shell .page-content{
+  background:linear-gradient(180deg,#f7f9fc 0,#f3f6fa 100%)!important;
+}
+
+/* Header: clearer hierarchy, less visual noise */
+.dashboard-view-shell .r146-generated-head{
+  border-radius:13px!important;
+  box-shadow:var(--r20421-shadow-strong)!important;
+}
+.dashboard-view-shell .r2042-dashboard-eyebrow{
+  font-size:7px!important;
+  letter-spacing:.18em!important;
+  opacity:.88;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy h2{
+  font-size:23px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:-.035em!important;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy p{
+  margin-top:3px!important;
+  font-size:8.5px!important;
+  font-weight:750!important;
+}
+.dashboard-view-shell .r146-generated-head .r2042-title-copy small{
+  margin-top:1px!important;
+  font-size:6.9px!important;
+  font-weight:700!important;
+}
+.dashboard-view-shell .r146-generated-head .opsdash-filter{
+  gap:5px!important;
+  padding:3px!important;
+  border-radius:10px!important;
+  background:#f3f6fa!important;
+}
+.dashboard-view-shell .r146-generated-head .opsdash-filter>button,
+.dashboard-view-shell .r146-generated-head .opsdash-filter select,
+.dashboard-view-shell .r146-generated-head .range-buttons{
+  min-height:34px!important;
+  border:1px solid #e3eaf2!important;
+  border-radius:9px!important;
+}
+.dashboard-view-shell .r146-generated-head .range-buttons{border:0!important}
+.dashboard-view-shell .r146-generated-head .range-buttons button{min-width:39px!important;font-size:8.8px!important;font-weight:900!important}
+
+/* Executive rail: each card reads as one decision, not four similar boxes */
+.dashboard-view-shell .r146-command-strip{gap:8px!important}
+.dashboard-view-shell .r146-command-card{
+  grid-template-columns:42px minmax(0,1fr)!important;
+  gap:10px!important;
+  padding:10px 12px!important;
+  border-radius:12px!important;
+  box-shadow:var(--r20421-shadow)!important;
+}
+.dashboard-view-shell .r146-command-card::before{height:3px!important}
+.dashboard-view-shell .r146-command-card .r146-command-symbol{
+  width:38px!important;
+  height:38px!important;
+  border:0!important;
+  border-radius:10px!important;
+  font-size:18px!important;
+}
+.dashboard-view-shell .r146-command-card.danger .r146-command-symbol{background:#fff0f0!important;color:#dc2626!important}
+.dashboard-view-shell .r146-command-card.focus .r146-command-symbol,
+.dashboard-view-shell .r146-command-card.warn .r146-command-symbol{background:#fff5df!important;color:#c66a09!important}
+.dashboard-view-shell .r146-command-card.good .r146-command-symbol{background:#eaf8f1!important;color:#078452!important}
+.dashboard-view-shell .r146-command-card.neutral .r146-command-symbol{background:#eef3f8!important;color:#526b86!important}
+.dashboard-view-shell .r146-command-card small{
+  font-size:8px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  color:var(--r20421-muted)!important;
+}
+.dashboard-view-shell .r146-command-card b{
+  margin-top:4px!important;
+  font-size:18px!important;
+  line-height:1.05!important;
+}
+.dashboard-view-shell .r146-command-card span{
+  margin-top:4px!important;
+  font-size:7.4px!important;
+  line-height:1.15!important;
+  color:#77889d!important;
+}
+.dashboard-view-shell .r146-data-health{
+  border-radius:12px!important;
+  box-shadow:var(--r20421-shadow)!important;
+  background:#fff!important;
+}
+.dashboard-view-shell .r146-data-health>div{padding:0 9px!important}
+.dashboard-view-shell .r146-data-health small{font-size:7.3px!important;color:#8392a5!important}
+.dashboard-view-shell .r146-data-health b{font-size:10.8px!important;color:#183b63!important}
+.dashboard-view-shell .r146-health-fresh .opsdash-live,
+.dashboard-view-shell .r146-health-fresh .opsdash-history,
+.dashboard-view-shell .r146-health-fresh .opsdash-stale{
+  border-radius:999px!important;
+  padding:5px 8px!important;
+  font-size:7.1px!important;
+  font-weight:900!important;
+}
+
+/* Appointment plan becomes a compact set of mini KPIs */
+.dashboard-view-shell .r2042-appointment-band{
+  grid-template-columns:minmax(185px,.9fr) minmax(0,3.8fr) auto auto!important;
+  gap:9px!important;
+  border-radius:12px!important;
+  padding:6px 9px!important;
+  box-shadow:var(--r20421-shadow)!important;
+}
+.dashboard-view-shell .r2042-appointment-label{padding-left:9px!important;border-left-width:3px!important}
+.dashboard-view-shell .r2042-appointment-label small{font-size:6.4px!important}
+.dashboard-view-shell .r2042-appointment-label b{font-size:11.5px!important}
+.dashboard-view-shell .r2042-appointment-label span{font-size:6.5px!important}
+.dashboard-view-shell .r2042-appointment-metrics{
+  gap:5px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:visible!important;
+}
+.dashboard-view-shell .r2042-appointment-metrics>span{
+  position:relative;
+  border:1px solid #e1e8f0!important;
+  border-radius:8px!important;
+  background:#f8fafc!important;
+  padding:3px 6px!important;
+}
+.dashboard-view-shell .r2042-appointment-metrics>span::before{
+  content:"";
+  position:absolute;
+  top:0;left:7px;right:7px;
+  height:2px;
+  border-radius:0 0 3px 3px;
+  background:#7c91aa;
+}
+.dashboard-view-shell .r2042-appointment-metrics>span:nth-child(1)::before{background:#64748b}
+.dashboard-view-shell .r2042-appointment-metrics>span:nth-child(2)::before{background:#2563eb}
+.dashboard-view-shell .r2042-appointment-metrics>span:nth-child(3)::before{background:#0ea5e9}
+.dashboard-view-shell .r2042-appointment-metrics>span.good::before{background:#10b981}
+.dashboard-view-shell .r2042-appointment-metrics>span.bad::before{background:#ef4444}
+.dashboard-view-shell .r2042-appointment-metrics>span.warn::before{background:#f59e0b}
+.dashboard-view-shell .r2042-appointment-metrics>span.info::before{background:#2563eb}
+.dashboard-view-shell .r2042-appointment-metrics small{font-size:6.5px!important;color:#7c8da1!important}
+.dashboard-view-shell .r2042-appointment-metrics b{font-size:14px!important;font-weight:950!important}
+.dashboard-view-shell .r2042-appointment-metrics em{font-size:6px!important}
+.dashboard-view-shell .r2042-lineage-button{
+  height:29px!important;
+  min-height:29px!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  box-shadow:0 1px 3px rgba(20,54,92,.05)!important;
+}
+
+/* KPI row: small icon tile, strong number, restrained accent */
+.dashboard-view-shell .r146-generated-kpis{gap:8px!important}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi{
+  border-radius:12px!important;
+  box-shadow:var(--r20421-shadow)!important;
+  background:linear-gradient(180deg,#fff 0%,#fbfcfe 100%)!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi::before{
+  left:0!important;right:0!important;top:0!important;bottom:auto!important;
+  width:auto!important;height:3px!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi::after{display:none!important}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi small{
+  font-size:8.2px!important;
+  line-height:1.05!important;
+  color:#74869b!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{
+  margin-top:5px!important;
+  font-size:25px!important;
+  line-height:1!important;
+  font-weight:950!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi span{
+  margin-top:5px!important;
+  font-size:7.1px!important;
+  line-height:1.12!important;
+  color:#8391a2!important;
+}
+.dashboard-view-shell .r146-generated-kpis .r2042-kpi>i{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  border:0!important;
+  border-radius:10px!important;
+  font-size:16px!important;
+  font-weight:950!important;
+}
+
+/* Main panels: consistent headers and more structured surfaces */
+.dashboard-view-shell .r2042-panel{
+  border-radius:12px!important;
+  box-shadow:var(--r20421-shadow)!important;
+}
+.dashboard-view-shell .r2042-panel>header{
+  position:relative;
+  min-height:31px!important;
+  margin-bottom:7px!important;
+  padding:0 0 7px 0!important;
+}
+.dashboard-view-shell .r2042-panel>header::after{
+  content:"";
+  position:absolute;
+  left:0;bottom:-1px;
+  width:36px;height:2px;
+  border-radius:2px;
+  background:var(--panel-accent);
+}
+.dashboard-view-shell .r2042-panel .r2042-panel-mark{
+  width:7px!important;height:7px!important;flex-basis:7px!important;border-radius:2px!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--panel-accent) 9%,transparent)!important;
+}
+.dashboard-view-shell .r2042-panel .r2042-panel-title h3{font-size:13.8px!important;font-weight:900!important}
+.dashboard-view-shell .r2042-panel .opsdash-panel-meta span{font-size:7.2px!important}
+
+/* Status pipeline */
+.dashboard-view-shell .r146-stage-pipeline{gap:5px!important}
+.dashboard-view-shell .r146-stage-node{
+  border-radius:9px!important;
+  border-color:color-mix(in srgb,var(--stage) 22%,#dce6f0)!important;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--stage) 4%,#fff),#fff 72%)!important;
+}
+.dashboard-view-shell .r146-stage-node small{font-size:8.1px!important;font-weight:900!important}
+.dashboard-view-shell .r146-stage-node b{font-size:25px!important;font-weight:950!important;color:#153b61!important}
+.dashboard-view-shell .r146-stage-node span{font-size:6.6px!important;color:#8493a6!important}
+.dashboard-view-shell .r146-stage-arrow{font-size:20px!important;color:#9aa8b8!important}
+.dashboard-view-shell .r146-stage-matrix{border-top-color:#e7edf4!important}
+.dashboard-view-shell .r146-stage-matrix span{background:#f7f9fc!important;color:#6d8097!important}
+
+/* Hourly chart: subtle analytical grid instead of empty white space */
+.dashboard-view-shell .r146-hourly-chart{
+  border-bottom:1px solid #dbe4ee!important;
+  background:
+    repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),#edf2f7 calc(25% - 1px),#edf2f7 25%),
+    linear-gradient(180deg,#fff,#fbfcfe)!important;
+  border-radius:6px 6px 0 0;
+  padding-top:3px;
+}
+.dashboard-view-shell .r146-hour-col>span>.in,
+.dashboard-view-shell .r146-hour-col>span>.out{border-radius:4px 4px 1px 1px!important;box-shadow:0 1px 2px rgba(20,55,95,.08)}
+.dashboard-view-shell .r146-hour-col>small{font-size:6.4px!important;color:#8a99aa!important}
+.dashboard-view-shell .r146-hourly-legend{font-size:7.5px!important;color:#6d7f95!important}
+
+/* Donut + legend */
+.dashboard-view-shell .r146-alert-board .alert-donut{
+  filter:drop-shadow(0 4px 8px rgba(30,57,88,.08));
+}
+.dashboard-view-shell .r146-alert-board .alert-donut-legend span{
+  padding:2px 0!important;
+  color:#60758d!important;
+  font-weight:800!important;
+}
+
+/* Tables / bottleneck / handover */
+.dashboard-view-shell .r146-priority-table .action-table-head{
+  background:#f5f8fb!important;
+  color:#6f8195!important;
+  font-weight:900!important;
+}
+.dashboard-view-shell .r146-priority-table .action-table-row{border-bottom-color:#e8eef5!important}
+.dashboard-view-shell .r146-priority-table .action-table-row:nth-child(even){background:#fcfdff!important}
+.dashboard-view-shell .r146-bottleneck-main{
+  box-shadow:inset 0 0 0 1px rgba(245,158,11,.025)!important;
+}
+.dashboard-view-shell .r146-handover-numbers>div{
+  background:linear-gradient(180deg,#f8fafc,#f4f7fb)!important;
+}
+
+/* Bottom navigation: slimmer and calmer */
+.dashboard-view-shell .r146-bottom-tabs{
+  height:46px!important;
+  min-height:46px!important;
+  border-radius:10px!important;
+  background:#0b2747!important;
+  box-shadow:0 -3px 10px rgba(5,24,45,.09)!important;
+}
+.dashboard-view-shell .r146-bottom-tabs button{
+  gap:6px!important;
+  font-size:8.4px!important;
+  font-weight:850!important;
+}
+.dashboard-view-shell .r146-bottom-tabs button svg{width:16px!important;height:16px!important}
+.dashboard-view-shell .r146-bottom-tabs button.active{
+  background:linear-gradient(135deg,#1f73e8,#0f5fcf)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.12)!important;
+}
+
+/* Fullscreen desktop: preserve the one-screen rule */
+@media(min-width:1451px){
+  .dashboard-view-shell #dashboardBody:not(.loading){grid-template-rows:74px 82px minmax(0,1fr) 46px!important;gap:7px!important}
+  .dashboard-view-shell #dashboardBody.has-appointment-plan:not(.loading){grid-template-rows:74px 56px 82px minmax(0,1fr) 46px!important;gap:7px!important}
+  .dashboard-view-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{height:56px!important;min-height:56px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi{height:82px!important;min-height:82px!important;padding:9px 11px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-head{min-height:56px!important;flex-basis:56px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody:not(.loading){grid-template-rows:68px 78px minmax(0,1fr) 44px!important;gap:6px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan:not(.loading){grid-template-rows:68px 52px 78px minmax(0,1fr) 44px!important;gap:6px!important}
+  :fullscreen .dashboard-fullscreen-shell #dashboardBody.has-appointment-plan>.r2042-appointment-band{height:52px!important;min-height:52px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-generated-kpis .r2042-kpi{height:78px!important;min-height:78px!important;padding:8px 10px!important}
+  :fullscreen .dashboard-fullscreen-shell .r146-bottom-tabs{height:44px!important;min-height:44px!important}
+}
+
+@media(max-width:1450px) and (min-width:1181px){
+  .dashboard-view-shell .r146-generated-head .r2042-title-copy h2{font-size:20px!important}
+  .dashboard-view-shell .r146-command-card{grid-template-columns:36px minmax(0,1fr)!important;gap:8px!important;padding:8px 9px!important}
+  .dashboard-view-shell .r146-command-card .r146-command-symbol{width:33px!important;height:33px!important;font-size:15px!important}
+  .dashboard-view-shell .r146-command-card b{font-size:15px!important}
+  .dashboard-view-shell .r146-command-card span{font-size:6.9px!important}
+  .dashboard-view-shell .r2042-appointment-band{grid-template-columns:minmax(145px,.72fr) minmax(0,3.4fr) auto auto!important}
+  .dashboard-view-shell .r2042-appointment-metrics{gap:3px!important}
+  .dashboard-view-shell .r2042-appointment-metrics b{font-size:12px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi>div>b{font-size:22px!important}
+  .dashboard-view-shell .r146-generated-kpis .r2042-kpi>i{width:34px!important;height:34px!important;min-width:34px!important}
+}
