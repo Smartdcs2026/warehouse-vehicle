@@ -9661,3 +9661,18 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 @media (max-width:760px){.appointment-dashboard-r204>header{padding:12px;gap:8px}.appointment-dashboard-r204>header b{font-size:16px}.appointment-dashboard-r204>header button{padding:6px 8px}.appointment-dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 12px}.appointment-dashboard-audit-warning{margin:9px 12px 0;display:grid;gap:2px}.appointment-dashboard-hourly{padding-left:12px;padding-right:12px}.appointment-lineage-swal>div{grid-template-columns:1fr;gap:2px}.appointment-dashboard-metrics b{font-size:18px}}
 .appointment-dashboard-metrics.is-compact{grid-template-columns:repeat(3,minmax(110px,1fr))}
 @media (max-width:760px){.appointment-dashboard-metrics.is-compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Round 204.1 — appointment timing policy / grace period */
+.appointment-timing-rule-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.appointment-timing-rule-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px solid #cfe0f5;border-radius:14px;background:#f7fbff;color:#334a68}
+.appointment-timing-rule-preview>b{color:#1f4f93;margin-right:2px}
+.appointment-timing-rule-preview>span{padding:6px 9px;border-radius:9px;background:#fff;border:1px solid #dde8f5;font-size:12px}
+.appointment-timing-rule-preview>span strong{color:#1557a7}
+.appointment-timing-rule-preview>small{flex-basis:100%;color:#697b92;line-height:1.45}
+.appointment-timing-migration-warning{display:flex;gap:8px;align-items:flex-start;flex-direction:column;padding:12px 14px;border:1px solid #f0c8a0;border-radius:14px;background:#fff9f2;color:#80501e}
+.appointment-timing-migration-warning span{font-size:12px;line-height:1.5}
+.appointment-recalculate-button{border-color:#d4a266!important;color:#8a5418!important;background:#fffaf4!important}
+.appointment-recalc-confirm{text-align:left;line-height:1.55;color:#3e4a5c}
+.appointment-recalc-confirm p{margin:0 0 10px}
+@media(max-width:1100px){.appointment-timing-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.appointment-timing-rule-grid{grid-template-columns:1fr}.appointment-timing-rule-preview{align-items:stretch}.appointment-timing-rule-preview>span{width:100%}}
