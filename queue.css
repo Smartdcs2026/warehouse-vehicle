@@ -1061,3 +1061,232 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{width:68px;height:50px}
   .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon .visual-truck-svg{width:62px}
 }
+
+
+/* Round 205.5.0 — Multi-vehicle rows in stage lanes + larger door status for TV */
+.queue-shell.queue-visual-mode .visual-stage-list{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  grid-auto-flow:row;
+  gap:6px;
+  align-content:start;
+}
+.queue-shell.queue-visual-mode .visual-stage-empty{
+  grid-column:1/-1;
+  grid-row:1/-1;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-card{
+  grid-template-columns:52px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  align-items:start;
+  gap:6px 8px;
+  padding:6px 7px;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-icon{
+  grid-row:1 / span 2;
+  width:48px;
+  height:36px;
+  border-radius:9px;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-icon .visual-truck-svg{
+  width:42px;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy{
+  min-width:0;
+  align-self:start;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-top{
+  gap:6px;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-top>b{
+  font-size:12.5px;
+  line-height:1.08;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-top>span{
+  font-size:10.5px;
+  line-height:1.05;
+  font-weight:950;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>strong{
+  margin-top:2px;
+  font-size:9.5px;
+  line-height:1.1;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>small{
+  margin-top:3px;
+  font-size:8px;
+  line-height:1.08;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>small i{
+  font-size:8px;
+  padding:1px 4px;
+}
+.queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-card>time{
+  grid-column:2;
+  justify-self:end;
+  align-self:end;
+  margin-top:1px;
+  font-size:10px;
+  line-height:1.05;
+}
+
+.queue-shell.queue-visual-mode .visual-door-grid{
+  align-items:stretch;
+}
+.queue-shell.queue-visual-mode .visual-garage{
+  min-height:98px;
+}
+.queue-shell.queue-visual-mode .visual-garage::before{
+  top:30px;
+}
+.queue-shell.queue-visual-mode .visual-garage-code{
+  top:4px;
+  left:6px;
+  font-size:15px;
+}
+.queue-shell.queue-visual-mode .visual-garage-status{
+  top:5px;
+  right:6px;
+  font-size:9px;
+}
+.queue-shell.queue-visual-mode .visual-garage-truck{
+  bottom:3px;
+}
+.queue-shell.queue-visual-mode .visual-garage-truck .visual-truck-svg{
+  width:72px;
+}
+.queue-shell.queue-visual-mode .visual-garage-truck small{
+  max-width:112px;
+  font-size:9px;
+  font-weight:900;
+}
+.queue-shell.queue-visual-mode .visual-door-bay-foot b,
+.queue-shell.queue-visual-mode .visual-door-bay-foot small{
+  font-size:9px;
+}
+
+.queue-shell[data-queue-theme="light"] .visual-stage-list .visual-vehicle-top>b{
+  font-size:13px;
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-list .visual-vehicle-top>span{
+  font-size:11px;
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-list .visual-vehicle-copy>strong{
+  font-size:9.5px;
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-list .visual-vehicle-copy>small{
+  font-size:8px;
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-list .visual-vehicle-card>time{
+  font-size:10.5px;
+}
+.queue-shell[data-queue-theme="light"] .visual-garage-code{
+  font-size:16px;
+  font-weight:950;
+}
+.queue-shell[data-queue-theme="light"] .visual-garage-status{
+  font-size:9px;
+  font-weight:900;
+}
+.queue-shell[data-queue-theme="light"] .visual-garage-truck .visual-truck-svg{
+  width:76px;
+}
+.queue-shell[data-queue-theme="light"] .visual-garage-truck small{
+  font-size:9.5px;
+  font-weight:900;
+  color:#0b2340;
+}
+.queue-shell[data-queue-theme="light"] .visual-door-bay-foot b,
+.queue-shell[data-queue-theme="light"] .visual-door-bay-foot small{
+  font-size:9.5px;
+}
+
+.queue-shell[data-queue-theme="dark"] .visual-stage-list .visual-vehicle-top>b{
+  font-size:13.5px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-list .visual-vehicle-top>span{
+  font-size:11.5px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-list .visual-vehicle-copy>strong{
+  font-size:10px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-list .visual-vehicle-copy>small{
+  font-size:8.5px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-list .visual-vehicle-card>time{
+  font-size:10.5px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-code{
+  font-size:14px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-status{
+  font-size:9px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{
+  width:76px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck small{
+  font-size:9.5px;
+}
+
+@media(max-height:790px){
+  .queue-shell.queue-visual-mode .visual-stage-list{
+    gap:4px;
+    padding:4px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-card{
+    grid-template-columns:44px minmax(0,1fr);
+    gap:4px 6px;
+    padding:4px 5px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-icon{
+    width:40px;
+    height:30px;
+    border-radius:8px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-icon .visual-truck-svg{
+    width:36px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-top>b{
+    font-size:11px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-top>span{
+    font-size:9px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>strong{
+    font-size:8px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>small{
+    font-size:7px;
+    margin-top:1px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-copy>small i{
+    font-size:7px;
+  }
+  .queue-shell.queue-visual-mode .visual-stage-list .visual-vehicle-card>time{
+    font-size:8.5px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage{
+    min-height:82px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage::before{
+    top:26px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage-code{
+    font-size:13px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage-status{
+    font-size:8px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage-truck .visual-truck-svg{
+    width:62px;
+  }
+  .queue-shell.queue-visual-mode .visual-garage-truck small{
+    font-size:8px;
+    max-width:92px;
+  }
+  .queue-shell.queue-visual-mode .visual-door-bay-foot b,
+  .queue-shell.queue-visual-mode .visual-door-bay-foot small{
+    font-size:8px;
+  }
+}
