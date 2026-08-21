@@ -10466,3 +10466,56 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 .queue-font-choice span{display:grid;gap:3px;min-width:0}.queue-font-choice b{font-size:16px;color:#173b68}.queue-font-choice small{font-size:11px;color:#6c7d92}
 .queue-font-choice.font-noto b{font-family:"Noto Sans Thai",sans-serif}.queue-font-choice.font-sarabun b{font-family:"Sarabun",sans-serif}.queue-font-choice.font-prompt b{font-family:"Prompt",sans-serif}.queue-font-choice.font-noto-looped b{font-family:"Noto Sans Thai Looped",sans-serif}
 @media(max-width:900px){.queue-font-choices{grid-template-columns:1fr}}
+
+
+/* Round 205.5.6 — persistent mobile session account UX */
+.topbar-title{min-width:0}
+.mobile-account{display:none;align-items:center;gap:6px;margin-left:0;min-width:0}
+.mobile-account-user{display:flex;align-items:center;gap:6px;min-width:0;max-width:150px;height:34px;padding:0 9px;border:1px solid #d9e4f1;border-radius:10px;background:#f8fbff;color:#1d416f}
+.mobile-account-user i,.inbound-user-chip i{display:grid;place-items:center;flex:0 0 auto;width:21px;height:21px;border-radius:50%;background:#e7f0ff;color:#1f63bd;font-size:9px;font-style:normal;font-weight:950}
+.mobile-account-user b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:900}
+.mobile-logout-button{display:flex;align-items:center;justify-content:center;gap:4px;height:34px;padding:0 9px;border:1px solid #d7e1ec;border-radius:10px;background:#fff;color:#3e526a;font-size:11px;font-weight:900;cursor:pointer}
+.mobile-logout-button span{font-size:15px;line-height:1}.mobile-logout-button em{font-style:normal}
+.mobile-logout-button:hover{border-color:#efb5b5;background:#fff7f7;color:#a52626}
+.inbound-user-chip{display:inline-flex;align-items:center;gap:6px;max-width:170px;min-height:36px;padding:0 10px;border:1px solid #d9e4f1;border-radius:999px;background:#f7faff;color:#23456c}
+.inbound-user-chip b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:900}
+.inbound-logout-button{white-space:nowrap}
+
+.appointment-extra-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.appointment-extra-guide{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin:10px 0 14px;padding:10px;border:1px solid #dfe8f3;border-radius:12px;background:#f8fbff}
+.appointment-extra-guide>span{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;align-items:center;min-width:0}
+.appointment-extra-guide>span>b{grid-row:1/3;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#e8f1ff;color:#2162b5;font-size:12px}
+.appointment-extra-guide>span>em{font-style:normal;font-size:12px;font-weight:900;color:#1f3f65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appointment-extra-guide>span>small{font-size:10px;color:#6d7d90;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appointment-extra-guide>i{font-style:normal;color:#8ba0bb;font-size:18px;font-weight:900}
+
+@media(max-width:980px){
+  .app-shell:not(.inbound-kiosk-shell) .topbar{gap:7px}
+  .app-shell:not(.inbound-kiosk-shell) .topbar-title{flex:1 1 auto;min-width:0}
+  .app-shell:not(.inbound-kiosk-shell) .topbar-title h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-shell:not(.inbound-kiosk-shell) .sync-status{margin-left:0;flex:0 0 auto}
+  .app-shell:not(.inbound-kiosk-shell) .mobile-account{display:flex;flex:0 0 auto}
+  .appointment-extra-head-actions{width:100%;justify-content:flex-start}
+  .appointment-extra-guide{grid-template-columns:1fr;gap:5px}
+  .appointment-extra-guide>i{display:none}
+  .appointment-extra-guide>span{min-height:38px}
+}
+@media(max-width:640px){
+  .app-shell:not(.inbound-kiosk-shell) .topbar{padding:5px 8px}
+  .app-shell:not(.inbound-kiosk-shell) .menu-button{font-size:20px;padding:0 3px}
+  .app-shell:not(.inbound-kiosk-shell) .sync-status{display:none}
+  .mobile-account-user{max-width:112px;height:32px;padding:0 7px}
+  .mobile-account-user b{font-size:10px}
+  .mobile-logout-button{width:34px;height:32px;padding:0}
+  .mobile-logout-button em{display:none}
+  .inbound-user-chip{max-width:135px;min-height:34px;padding:0 8px}
+  .inbound-user-chip b{font-size:11px}
+  .inbound-logout-button span{display:none}
+}
+@media(max-width:420px){
+  .mobile-account-user{max-width:90px}
+  .topbar p{display:none}
+}
+
+.appointment-extra-import-note{display:flex;align-items:flex-start;gap:8px;margin-top:10px;padding:9px 11px;border-left:3px solid #3d73c8;background:#f7faff;color:#52677f;font-size:11px;line-height:1.45}.appointment-extra-import-note b{flex:0 0 auto;color:#244d82}.appointment-extra-import-note span{min-width:0}
+@media(max-width:640px){.appointment-extra-import-note{display:grid;gap:2px}}
