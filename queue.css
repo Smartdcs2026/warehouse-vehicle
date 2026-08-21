@@ -781,3 +781,176 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   background:color-mix(in srgb,var(--tone) 10%,var(--vq-panel2));
   border-color:color-mix(in srgb,var(--tone) 34%,var(--vq-line));
 }
+
+/* Round 205.4.7 — Dark theme readability & visual pop for large TV */
+.queue-shell[data-queue-theme="dark"] .queue-visual-view{
+  --vq-bg:#061422;
+  --vq-panel:#0a1d30;
+  --vq-panel2:#0d263e;
+  --vq-line:#2a6b96;
+  --vq-text:#ffffff;
+  --vq-muted:#b3c9da;
+  --vq-blue:#18b8ff;
+  --vq-orange:#ff970f;
+  --vq-purple:#b65cff;
+  --vq-yellow:#ffd51f;
+  --vq-green:#55ef72;
+  --vq-shadow:0 5px 18px rgba(0,0,0,.28);
+}
+.queue-shell[data-queue-theme="dark"] .visual-queue-header,
+.queue-shell[data-queue-theme="dark"] .visual-call-hero,
+.queue-shell[data-queue-theme="dark"] .visual-summary-card,
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane,
+.queue-shell[data-queue-theme="dark"] .visual-door-panel,
+.queue-shell[data-queue-theme="dark"] .visual-wait-panel,
+.queue-shell[data-queue-theme="dark"] .visual-queue-footer{
+  border-color:#245b80;
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+.queue-shell[data-queue-theme="dark"] .visual-summary-card{
+  border-top-width:4px;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tone) 28%,transparent),0 4px 14px rgba(0,0,0,.22);
+}
+.queue-shell[data-queue-theme="dark"] .visual-summary-card>span{
+  width:38px;height:38px;
+  border:1px solid color-mix(in srgb,var(--tone) 68%,#17324b);
+  background:color-mix(in srgb,var(--tone) 19%,#0a1d30);
+  font-size:19px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-summary-card small{font-size:11px;color:#c4d7e6}
+.queue-shell[data-queue-theme="dark"] .visual-summary-card b{font-size:30px;text-shadow:0 0 10px color-mix(in srgb,var(--tone) 25%,transparent)}
+.queue-shell[data-queue-theme="dark"] .visual-summary-card em{font-size:11px;color:#d1deea}
+.queue-shell[data-queue-theme="dark"] .visual-call-hero::before{width:6px}
+.queue-shell[data-queue-theme="dark"] .visual-call-signal{border-right-color:#2a668e}
+.queue-shell[data-queue-theme="dark"] .visual-signal-ring{
+  width:84px;height:84px;border-width:3px;
+  border-color:color-mix(in srgb,var(--vq-green) 88%,#17324b);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--vq-green) 9%,transparent);
+}
+.queue-shell[data-queue-theme="dark"] .visual-signal-ring .visual-truck-svg{width:60px}
+.queue-shell[data-queue-theme="dark"] .visual-call-signal>b{font-size:14px}
+.queue-shell[data-queue-theme="dark"] .visual-call-main small,
+.queue-shell[data-queue-theme="dark"] .visual-call-vehicle small,
+.queue-shell[data-queue-theme="dark"] .visual-call-door small{font-size:11px;color:#bcd0df}
+.queue-shell[data-queue-theme="dark"] .visual-call-main>b{font-size:17px}
+.queue-shell[data-queue-theme="dark"] .visual-call-vehicle>b{font-size:27px}
+.queue-shell[data-queue-theme="dark"] .visual-call-vehicle>span{font-size:12px;color:#c0d3e2}
+.queue-shell[data-queue-theme="dark"] .visual-call-door>b{font-size:46px;text-shadow:0 0 12px rgba(85,239,114,.22)}
+.queue-shell[data-queue-theme="dark"] .visual-call-door>span{font-size:11px;color:#c0d3e2}
+
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane{
+  border-top-width:4px;
+  border-left-color:color-mix(in srgb,var(--tone) 42%,#244d6b);
+  border-right-color:color-mix(in srgb,var(--tone) 42%,#244d6b);
+  border-bottom-color:color-mix(in srgb,var(--tone) 42%,#244d6b);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--tone) 22%,transparent),0 4px 14px rgba(0,0,0,.2);
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane>header{
+  border-bottom-color:color-mix(in srgb,var(--tone) 52%,#224763);
+  background:#0e2942!important;
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane>header>span{
+  width:35px;height:35px;font-size:20px;
+  border:1px solid color-mix(in srgb,var(--tone) 72%,#204965);
+  background:color-mix(in srgb,var(--tone) 21%,#0a1d30);
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane>header b{font-size:15px;text-shadow:0 0 9px color-mix(in srgb,var(--tone) 18%,transparent)}
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane>header small{font-size:10px;color:#c0d2e0}
+.queue-shell[data-queue-theme="dark"] .visual-stage-lane>footer{
+  min-height:29px;font-size:10.5px;
+  border-top-width:2px;
+  border-top-color:color-mix(in srgb,var(--tone) 56%,#214963);
+  background:color-mix(in srgb,var(--tone) 15%,#0a1d30);
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-empty{
+  margin:4px;border-width:2px;
+  border-color:color-mix(in srgb,var(--tone) 58%,#214963);
+  background:color-mix(in srgb,var(--tone) 15%,#0d263e);
+  color:color-mix(in srgb,var(--tone) 82%,#fff);
+  font-size:13px;font-weight:950;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-card{
+  grid-template-columns:54px minmax(0,1fr) auto;
+  gap:9px;padding:6px 8px;
+  border-color:color-mix(in srgb,var(--tone) 48%,#24536f);
+  border-left-width:4px;
+  background:#0d2841;
+  box-shadow:0 3px 9px rgba(0,0,0,.18);
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-card.is-called{
+  border-width:2px;border-left-width:5px;border-color:var(--tone);
+  box-shadow:inset 3px 0 0 var(--tone),0 0 12px color-mix(in srgb,var(--tone) 16%,transparent);
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{
+  width:50px;height:39px;
+  border:1px solid color-mix(in srgb,var(--tone) 55%,#214963);
+  background:color-mix(in srgb,var(--tone) 16%,#0a1d30);
+}
+.queue-shell[data-queue-theme="dark"] .visual-truck-svg{width:45px}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{font-size:12.5px}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{font-size:10.5px;color:#fff}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{font-size:10.5px;color:#f7fbff}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{font-size:9px;color:#b7cddd}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{font-size:10.5px}
+
+.queue-shell[data-queue-theme="dark"] .visual-door-panel>header,
+.queue-shell[data-queue-theme="dark"] .visual-wait-panel>header{border-bottom-color:#2a6388}
+.queue-shell[data-queue-theme="dark"] .visual-door-panel>header small,
+.queue-shell[data-queue-theme="dark"] .visual-wait-panel>header small{font-size:9px;color:#adc4d6}
+.queue-shell[data-queue-theme="dark"] .visual-door-panel>header b,
+.queue-shell[data-queue-theme="dark"] .visual-wait-panel>header b{font-size:16px}
+.queue-shell[data-queue-theme="dark"] .visual-door-panel>header>span,
+.queue-shell[data-queue-theme="dark"] .visual-wait-panel>header>span{font-size:9px;color:#b6c9d8}
+.queue-shell[data-queue-theme="dark"] .visual-door-bay{
+  border-width:2px;
+  border-color:color-mix(in srgb,var(--door-tone,#5f86a4) 58%,#1e4865);
+  background:#0d263e;
+  box-shadow:0 3px 10px rgba(0,0,0,.2);
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage{
+  border-width:2px;border-bottom-width:5px;
+  border-color:color-mix(in srgb,var(--door-tone,#7791aa) 88%,#1f4c69);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--door-tone,#7791aa) 18%,transparent);
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-code{font-size:12px}
+.queue-shell[data-queue-theme="dark"] .visual-garage-status{font-size:8px;font-weight:950}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{width:64px}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck small{font-size:8px}
+.queue-shell[data-queue-theme="dark"] .visual-door-bay-foot b,
+.queue-shell[data-queue-theme="dark"] .visual-door-bay-foot small{font-size:9px}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item{
+  border-width:2px;border-left-width:5px;
+  border-color:color-mix(in srgb,var(--wait-tone) 62%,#214963);
+  background:#0d2841;
+  box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item>span{width:27px;height:27px;font-size:11px;border:1px solid color-mix(in srgb,var(--wait-tone) 60%,#214963)}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item b{font-size:11.5px}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item small{font-size:9px;color:#b7cddd}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item em{font-size:9.5px}
+.queue-shell[data-queue-theme="dark"] .visual-wait-item time{font-size:11.5px}
+.queue-shell[data-queue-theme="dark"] .visual-queue-footer{font-size:10px;color:#afc5d6;border-top-color:#2b6489}
+
+@media(max-height:790px){
+  .queue-shell[data-queue-theme="dark"] .visual-summary-card small{font-size:10px}
+  .queue-shell[data-queue-theme="dark"] .visual-summary-card b{font-size:24px}
+  .queue-shell[data-queue-theme="dark"] .visual-stage-lane>header b{font-size:12.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-stage-lane>header small{font-size:8.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-stage-lane>header>span{width:29px;height:29px;font-size:16px}
+  .queue-shell[data-queue-theme="dark"] .visual-stage-lane>footer{font-size:9px;min-height:23px}
+  .queue-shell[data-queue-theme="dark"] .visual-stage-empty{font-size:11px;margin:3px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-card{grid-template-columns:38px minmax(0,1fr) auto;gap:5px;padding:4px 5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{width:36px;height:29px}
+  .queue-shell[data-queue-theme="dark"] .visual-truck-svg{width:34px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{font-size:10px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span,.queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{font-size:8.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{font-size:8.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{font-size:7.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-code{font-size:11px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-status{font-size:7px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{width:43px}
+  .queue-shell[data-queue-theme="dark"] .visual-door-bay-foot b,.queue-shell[data-queue-theme="dark"] .visual-door-bay-foot small{font-size:7.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-wait-item b,.queue-shell[data-queue-theme="dark"] .visual-wait-item time{font-size:9px}
+  .queue-shell[data-queue-theme="dark"] .visual-wait-item small,.queue-shell[data-queue-theme="dark"] .visual-wait-item em{font-size:7.5px}
+}
