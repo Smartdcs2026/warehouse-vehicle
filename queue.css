@@ -746,3 +746,38 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   background:#f8fafc!important;
   color:#435a73;
 }
+
+/* Round 205.4.6 — Status-area color separation for TV readability */
+.queue-shell.queue-visual-mode .visual-stage-lane>footer{
+  color:var(--tone);
+  background:color-mix(in srgb,var(--tone) 10%,var(--vq-panel));
+  border-top-color:color-mix(in srgb,var(--tone) 28%,var(--vq-line));
+}
+.queue-shell.queue-visual-mode .visual-stage-lane>footer.is-clear{
+  color:var(--tone);
+  background:color-mix(in srgb,var(--tone) 7%,var(--vq-panel));
+}
+.queue-shell.queue-visual-mode .visual-stage-empty{
+  margin:2px;
+  border:1px solid color-mix(in srgb,var(--tone) 24%,var(--vq-line));
+  border-radius:10px;
+  background:color-mix(in srgb,var(--tone) 6%,var(--vq-panel2));
+  color:color-mix(in srgb,var(--tone) 72%,var(--vq-text));
+  font-weight:850;
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-lane>footer,
+.queue-shell[data-queue-theme="light"] .visual-stage-lane>footer.is-clear{
+  color:var(--tone);
+  background:color-mix(in srgb,var(--tone) 13%,#fff);
+  border-top-color:color-mix(in srgb,var(--tone) 38%,#aebfd2);
+}
+.queue-shell[data-queue-theme="light"] .visual-stage-empty{
+  background:color-mix(in srgb,var(--tone) 9%,#fff);
+  border-color:color-mix(in srgb,var(--tone) 34%,#aebfd2);
+  color:color-mix(in srgb,var(--tone) 82%,#0b2340);
+}
+.queue-shell[data-queue-theme="dark"] .visual-stage-empty,
+.queue-shell[data-queue-theme="neon"] .visual-stage-empty{
+  background:color-mix(in srgb,var(--tone) 10%,var(--vq-panel2));
+  border-color:color-mix(in srgb,var(--tone) 34%,var(--vq-line));
+}
