@@ -677,8 +677,8 @@ function renderCall(item) {
 
   if (!item || !item.appointmentNo) {
     panel.classList.add("idle");
-    num.textContent = "รอเรียกคิว";
-    fitAppointmentNumber(num, "รอเรียกคิว");
+    num.textContent = "รอการเรียกคิว";
+    fitAppointmentNumber(num, "รอการเรียกคิว");
     $("callCompany").textContent = "–";
     $("callCompany").removeAttribute("title");
     if ($("callCompanySource")) { $("callCompanySource").hidden = true; $("callCompanySource").textContent = ""; }
@@ -690,7 +690,7 @@ function renderCall(item) {
     $("callDoorWrap")?.classList.add("is-empty");
     $("callStateText").textContent = "ยังไม่เรียก";
     $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
-    $("callInstruction").textContent = "รอเรียกคิว";
+    $("callInstruction").textContent = "รอการเรียกคิว";
     if(currentDisplayMode==="VISUAL")renderVisualCall(null);
     return;
   }
@@ -894,7 +894,7 @@ const VISUAL_STAGE_DEFS=[
 ];
 let visualStatusSnapshot=new Map();
 const VISUAL_SHELL_VERSION="20543";
-function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<700||w<1180)return 3;if(h>=980&&w>=1700)return 5;return 4}
+function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<680||w<1050)return 4;if(h>=980&&w>=1700)return 8;return 6}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
 function visualStageItems(data,status){return(data.items||[]).filter(item=>item.status===status).sort((a,b)=>(a.stageSince||0)-(b.stageSince||0))}
@@ -952,8 +952,8 @@ function visualSummaryStatic(def){return `<article class="visual-summary-card to
 function ensureVisualShell(root){
   if(root.dataset.visualShellVersion===VISUAL_SHELL_VERSION&&root.querySelector(".visual-queue-shell"))return;
   root.innerHTML=`<div class="visual-queue-shell">
-    <header class="visual-queue-header"><div class="visual-brand"><img src="./icon-192.png" alt=""><div><h1>สถานะคิว</h1><small>ระบบบริหารจัดการคิวรถขนส่ง</small></div></div><div class="visual-head-actions"><div class="visual-datetime"><b id="visualQueueClock">--:--:--</b><span id="visualQueueDate">--</span></div><span id="visualQueueHealth" class="visual-health">กำลังเชื่อมต่อ</span><button id="visualSoundButton" data-visual-action="sound" type="button">เปิดเสียง</button><button id="visualFullButton" data-visual-action="full" type="button">เต็มจอ</button></div></header>
-    <section class="visual-top"><article id="visualCallHero" class="visual-call-hero is-idle"><div class="visual-call-signal"><span class="visual-signal-ring">${visualTruckSvg()}</span><b id="visualCallState">รอเรียกคิว</b></div><div class="visual-call-main"><small>หมายเลขนัดหมาย</small><strong id="visualCallNumber">รอเรียกคิว</strong><b id="visualCallCompany">–</b><span id="visualCallPlan" class="visual-call-plan"></span></div><div class="visual-call-vehicle"><small>ทะเบียนรถ</small><b id="visualCallPlate">–</b><span id="visualCallProvince">–</span></div><div class="visual-call-door"><small>ประตู</small><b id="visualCallDoor">–</b><span id="visualCallInstruction">รอ Receiving เรียกรถ</span></div></article><div class="visual-summary-grid">${VISUAL_STAGE_DEFS.map(visualSummaryStatic).join("")}</div></section>
+    <header class="visual-queue-header"><div class="visual-brand"><img src="./icon-192.png" alt=""><div><h1>สถานะคิวรถขนส่ง</h1><small>ระบบบริหารจัดการคิวรถขนส่ง</small></div></div><div class="visual-head-actions"><div class="visual-datetime"><b id="visualQueueClock">--:--:--</b><span id="visualQueueDate">--</span></div><span id="visualQueueHealth" class="visual-health">กำลังเชื่อมต่อ</span><button id="visualSoundButton" data-visual-action="sound" type="button">เปิดเสียง</button><button id="visualFullButton" data-visual-action="full" type="button">เต็มจอ</button></div></header>
+    <section class="visual-top"><article id="visualCallHero" class="visual-call-hero is-idle"><div class="visual-call-signal"><span class="visual-signal-ring">${visualTruckSvg()}</span><b id="visualCallState">รอการเรียกคิว</b></div><div class="visual-call-main"><small>หมายเลขนัดหมาย</small><strong id="visualCallNumber">รอการเรียกคิว</strong><b id="visualCallCompany">–</b><span id="visualCallPlan" class="visual-call-plan"></span></div><div class="visual-call-vehicle"><small>ทะเบียนรถ</small><b id="visualCallPlate">–</b><span id="visualCallProvince">–</span></div><div class="visual-call-door"><small>ประตู</small><b id="visualCallDoor">–</b><span id="visualCallInstruction">รอ Receiving เรียกรถ</span></div></article><div class="visual-summary-grid">${VISUAL_STAGE_DEFS.map(visualSummaryStatic).join("")}</div></section>
     <section class="visual-stage-wrap"><div class="visual-stage-grid">${VISUAL_STAGE_DEFS.map((def,index)=>`${index?'<i class="visual-flow-arrow">›</i>':''}<section id="visualLane_${def.status}" class="visual-stage-lane tone-${def.tone}"><header><span>${def.number}</span><div><b>${esc(def.label)}</b><small id="visualLaneMeta_${def.status}">0 คัน</small></div></header><div id="visualLaneList_${def.status}" class="visual-stage-list"></div><footer id="visualLaneFooter_${def.status}" class="is-clear">ไม่มีรถในขั้นตอนนี้</footer></section>`).join("")}</div></section>
     <section class="visual-lower-grid"><aside id="visualDoorPanel" class="visual-door-panel"><header><div><small>ประตูรับสินค้า</small><b>สถานะประตู</b></div><span id="visualDoorMeta">–</span></header><div id="visualDoorGrid" class="visual-door-grid"></div><footer id="visualDoorFooter">–</footer></aside><aside class="visual-wait-panel"><header><div><small>ติดตามงาน</small><b>รถที่รอนาน</b></div><span>ตามเวลาที่อยู่ในขั้นตอน</span></header><div id="visualWaitList" class="visual-wait-list"></div></aside></section>
     <footer class="visual-queue-footer"><span>รีเฟรชข้อมูลเบื้องหลังทุก 3 วินาที</span><b id="visualUpdatedAt">อัปเดตล่าสุด –</b><span>หน้าจอจะไม่สร้างใหม่ทั้งหน้าเมื่อข้อมูลอัปเดต</span></footer>
@@ -993,7 +993,7 @@ function renderVisual(data,animate=false){
 function visualPlanText(item){const p=item?.appointmentEnrichment?.projection||item?.appointment_enrichment?.projection||null;if(!p)return"";const bits=[];if(p.plannedAtDisplay)bits.push(`นัด ${p.plannedAtDisplay}`);if(Array.isArray(p.pos)&&p.pos.length)bits.push(`PO ${p.pos.slice(0,2).join(", ")}${p.pos.length>2?"…":""}`);return bits.join(" · ")}
 function visualCallInstructionText(item){if(!item?.appointmentNo)return"รอ Receiving เรียกรถ";const type=String(item.callType||"").toUpperCase();if(type==="NOTICE_DOCUMENT_ROOM")return"กรุณาติดต่อห้องเอกสาร";if(type==="NOTICE_DOOR")return item.doorCode?`กรุณาติดต่อประตู ${item.doorCode}`:"กรุณาติดต่อที่ประตู";if(type==="NOTICE_VEHICLE")return"กรุณาติดต่อที่รถของท่าน";return item.doorCode?`กรุณาเข้าประตู ${item.doorCode}`:"กรุณาเข้าตรวจรับสินค้า"}
 function renderVisualCall(item){
-  const hero=$("visualCallHero");if(!hero)return;const company=queueCompanyView(item||{});hero.classList.toggle("is-active",Boolean(item?.appointmentNo));hero.classList.toggle("is-idle",!item?.appointmentNo);setStableText($("visualCallNumber"),item?.appointmentNo||"รอเรียกคิว");setStableText($("visualCallCompany"),company.primary||"–");setStableText($("visualCallPlan"),visualPlanText(item));setStableText($("visualCallPlate"),item?.vehiclePlate||"–");setStableText($("visualCallProvince"),item?.province||"–");setStableText($("visualCallDoor"),item?.doorCode||"–");setStableText($("visualCallInstruction"),visualCallInstructionText(item));const type=String(item?.callType||"").toUpperCase();setStableText($("visualCallState"),!item?.appointmentNo?"รอเรียกคิว":type.startsWith("NOTICE_")?"เรียกเพิ่มเติม":type==="RECALL"?"กำลังเรียกซ้ำ":type==="DOOR_CHANGED"?"เปลี่ยนประตูและเรียก":"กำลังเรียก");
+  const hero=$("visualCallHero");if(!hero)return;const company=queueCompanyView(item||{});hero.classList.toggle("is-active",Boolean(item?.appointmentNo));hero.classList.toggle("is-idle",!item?.appointmentNo);setStableText($("visualCallNumber"),item?.appointmentNo||"รอการเรียกคิว");setStableText($("visualCallCompany"),company.primary||"–");setStableText($("visualCallPlan"),visualPlanText(item));setStableText($("visualCallPlate"),item?.vehiclePlate||"–");setStableText($("visualCallProvince"),item?.province||"–");setStableText($("visualCallDoor"),item?.doorCode||"–");setStableText($("visualCallInstruction"),visualCallInstructionText(item));const type=String(item?.callType||"").toUpperCase();setStableText($("visualCallState"),!item?.appointmentNo?"รอการเรียกคิว":type.startsWith("NOTICE_")?"เรียกเพิ่มเติม":type==="RECALL"?"กำลังเรียกซ้ำ":type==="DOOR_CHANGED"?"เปลี่ยนประตูและเรียก":"กำลังเรียก");
 }
 function syncVisualControls(){
   tick();updateSoundButton();const source=$("queueHealth"),visual=$("visualQueueHealth");if(source&&visual){setStableText(visual,source.textContent);visual.dataset.state=source.dataset.state||"ok";visual.title=source.title||source.textContent}const visualFull=$("visualFullButton");if(visualFull)setStableText(visualFull,document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ");
