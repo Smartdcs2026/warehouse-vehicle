@@ -1008,26 +1008,56 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   font-weight:900;
 }
 
-/* Keep vehicle identity readable on shorter TV/browser viewports without reducing rows. */
+/* Round 205.4.9 — TV identity sizing: keep key vehicle identity large even on 768p-class TV viewports. */
 @media(max-height:790px){
   .queue-shell[data-queue-theme="dark"] .visual-vehicle-card{
-    grid-template-columns:46px minmax(0,1fr) auto;
-    gap:6px;
-    padding:4px 5px;
+    grid-template-columns:60px minmax(0,1fr) auto;
+    gap:8px;
+    padding:4px 7px;
   }
   .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{
-    width:44px;
-    height:34px;
+    width:56px;
+    height:40px;
+    border-radius:9px;
   }
   .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon .visual-truck-svg{
-    width:41px;
+    width:52px;
   }
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{font-size:11.5px}
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{font-size:9.5px}
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{font-size:9.2px}
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{font-size:8px}
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small i{font-size:7.5px;padding:1px 4px}
-  .queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{font-size:9.5px}
-  .queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{width:49px}
-  .queue-shell[data-queue-theme="dark"] .visual-garage-truck small{font-size:7.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{
+    font-size:14.5px;
+    line-height:1.02;
+    letter-spacing:.15px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{
+    font-size:12.5px;
+    line-height:1.02;
+    font-weight:950;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{
+    font-size:10.5px;
+    line-height:1.05;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{
+    font-size:8.5px;
+    line-height:1.02;
+    margin-top:1px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small i{
+    font-size:8.5px;
+    padding:1px 4px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{
+    font-size:11px;
+    line-height:1.02;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{width:60px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-truck small{font-size:8.5px}
+}
+
+/* Extra-wide TV screens: make appointment and plate unmistakable from a distance. */
+@media(min-width:1400px) and (min-height:791px){
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{font-size:17px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{font-size:14.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{width:68px;height:50px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon .visual-truck-svg{width:62px}
 }
