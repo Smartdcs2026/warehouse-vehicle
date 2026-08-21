@@ -1296,6 +1296,8 @@ function clearStoredAuthToken(){
   try{sessionStorage.removeItem(AUTH_TOKEN_KEY)}catch{}
 }
 const state = { token: readStoredAuthToken(), user: null, view: "operations", vehicles: [], activeDoors: [], trackingEnabled: true, documentCheckEnabled: false, display:{dashboardEnabled:true,datatableEnabled:true}, appointment:{moduleEnabled:false,uploadEnabled:false}, appointmentLive:null, queueRecall: {enabled:true,cooldownSeconds:10,maxCalls:0,requireReason:true,allowDoorChange:true,requireNewDoorOnChange:true,enabledReasons:["NO_SHOW","DRIVER_NOT_FOUND","WRONG_DOOR","DOOR_CHANGE","GENERAL","OTHER"]}, online: navigator.onLine };
+const USER_COMPACT_SHORT_SIDE_MAX=599;
+let userCompactModeLast=null;
 const scannerState = { active:false, stream:null, detector:null, timer:0, reading:false, canvas:null, context:null, lastValue:"", lastSeenAt:0, repeatCount:0 };
 const submitState = { busy:false };
 const receivingState = { busyIds:new Set() };
@@ -1364,7 +1366,8 @@ document.addEventListener("DOMContentLoaded", init);
 window.addEventListener("online", () => { setConnection(true); checkInboundLiveUpdates(true); if(state.view==="dashboard"){dashboardState.failures=0;dashboardState.lastLoadedAt=0;void loadDashboard(!dashboardState.data,true)}else if(state.view==="operations"){void refreshLiveData()}else if(state.view==="datatable"){void refreshDatatableAll()}else if(state.view==="admin"&&adminState.tab==="health"){void renderAdminDiagnostics(true)} });
 window.addEventListener("offline", () => setConnection(false));
 window.addEventListener("focus",()=>checkInboundLiveUpdates(true));
-window.addEventListener("resize",()=>{if(state.view!=="dashboard")return;closeDashboardMobileMenu();const popover=$("dashboardCalendarPopover");if(popover&&window.innerWidth>980)popover.hidden=true});
+window.addEventListener("resize",()=>{syncUserResponsiveAccess();if(state.view!=="dashboard")return;closeDashboardMobileMenu();const popover=$("dashboardCalendarPopover");if(popover&&window.innerWidth>980)popover.hidden=true});
+window.addEventListener("orientationchange",()=>setTimeout(()=>syncUserResponsiveAccess(),120));
 document.addEventListener("visibilitychange", () => { if (!document.hidden && scannerState.active) $("qrVideo")?.play().catch(() => undefined); if(!document.hidden){checkInboundLiveUpdates(true);if(state.view==="operations")void refreshLiveData();else if(state.view==="datatable")void refreshDatatableAll();else if(state.view==="dashboard"&&Date.now()-Number(dashboardState.lastLoadedAt||0)>15000)void loadDashboard(false,true)} });
 
 async function init() {
@@ -1377,7 +1380,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260821-r20556",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260821-r20557",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -1393,6 +1396,22 @@ async function login(event) {
 
 function normalizeDisplaySettings(value){return{dashboardEnabled:value?.dashboardEnabled!==false&&value?.dashboardEnabled!==0,datatableEnabled:value?.datatableEnabled!==false&&value?.datatableEnabled!==0}}
 function normalizeAppointmentAccess(value){return{moduleEnabled:value?.moduleEnabled===true||value?.moduleEnabled===1,uploadEnabled:value?.uploadEnabled===true||value?.uploadEnabled===1}}
+function userCompactScreen(){
+  if(state.user?.accessRights!=="USER")return false;
+  const vw=Math.max(0,Number(window.innerWidth||document.documentElement?.clientWidth||0));
+  const sw=Math.max(0,Number(window.screen?.width||0)),sh=Math.max(0,Number(window.screen?.height||0));
+  const deviceShort=sw&&sh?Math.min(sw,sh):0;
+  return (vw>0&&vw<=USER_COMPACT_SHORT_SIDE_MAX)||(deviceShort>0&&deviceShort<=USER_COMPACT_SHORT_SIDE_MAX);
+}
+function userCompactViewAllowed(view){return !userCompactScreen()||view==="operations"}
+function syncUserResponsiveAccess(){
+  if(!state.user)return;
+  const compact=userCompactScreen();
+  if(userCompactModeLast===compact)return;
+  userCompactModeLast=compact;
+  renderNavigation();
+  if(compact&&state.view!=="operations")void navigate("operations",{responsiveRedirect:true});
+}
 function viewEnabled(view){if(view==="dashboard")return state.display?.dashboardEnabled!==false;if(view==="datatable")return state.display?.datatableEnabled!==false;if(view==="appointmentUpload")return ["ADMIN","USER"].includes(state.user?.accessRights)&&state.appointment?.moduleEnabled===true;return true}
 function activeVehiclesApiPath(){return `/api/vehicles/active?page=${state.view==="inbound"?"inbound":"receiving"}`}
 
@@ -1400,24 +1419,33 @@ function openApp() {
   $("loginView").hidden = true; $("appView").hidden = false; $("accountName").textContent = state.user.name; $("accountRole").textContent = roleLabel(state.user.accessRights); if($("mobileAccountName")) $("mobileAccountName").textContent=state.user.name||"ผู้ใช้งาน";
   $("appView").classList.toggle("inbound-kiosk-shell",state.user.accessRights==="INBOUND");
   window.scrollTo(0, 0);
-  state.view = state.user.accessRights === "INBOUND" ? "inbound" : "operations"; renderNavigation(); navigate(state.view);
+  state.view = state.user.accessRights === "INBOUND" ? "inbound" : "operations"; userCompactModeLast=userCompactScreen(); renderNavigation(); navigate(state.view);
 }
 
 function renderNavigation() {
   const role = state.user.accessRights;
   const items = [];
-  if (role !== "INBOUND") items.push(["operations","▣","งานรับสินค้า"]);
-  if (role !== "INBOUND" && viewEnabled("appointmentUpload")) items.push(["appointmentUpload","↑","ข้อมูลนัดหมาย"]);
-  if (role === "ADMIN" || role === "INBOUND") items.push(["inbound","▦","แผนก Inbound"]);
-  if (role !== "INBOUND" && viewEnabled("dashboard")) items.push(["dashboard","▥","Dashboard"]);
-  if (role !== "INBOUND" && viewEnabled("datatable")) items.push(["datatable","▤","Datatable"]);
-  if (role === "ADMIN") items.push(["admin","⚙","ตั้งค่าระบบ"]);
+  const compactUser=role==="USER"&&userCompactScreen();
+  if(compactUser){
+    items.push(["operations","▣","งานรับสินค้า"]);
+  }else{
+    if (role !== "INBOUND") items.push(["operations","▣","งานรับสินค้า"]);
+    if (role !== "INBOUND" && viewEnabled("appointmentUpload")) items.push(["appointmentUpload","↑","ข้อมูลนัดหมาย"]);
+    if (role === "ADMIN" || role === "INBOUND") items.push(["inbound","▦","แผนก Inbound"]);
+    if (role !== "INBOUND" && viewEnabled("dashboard")) items.push(["dashboard","▥","Dashboard"]);
+    if (role !== "INBOUND" && viewEnabled("datatable")) items.push(["datatable","▤","Datatable"]);
+    if (role === "ADMIN") items.push(["admin","⚙","ตั้งค่าระบบ"]);
+  }
   $("sideNav").innerHTML = items.map(i => `<button class="nav-button" data-view="${i[0]}">${i[1]} ${i[2]}</button>`).join("");
   $("mobileNav").innerHTML = items.map(i => `<button data-view="${i[0]}">${i[1]}<small>${i[2]}</small></button>`).join("");
   document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.view)));
 }
 
-async function navigate(view) {
+async function navigate(view,options={}) {
+  if(!userCompactViewAllowed(view)){
+    if(!options.responsiveRedirect)await showNotice("info","บนหน้าจอขนาดเล็ก สิทธิ์ USER เปิดใช้งานเฉพาะงานรับสินค้า เพื่อป้องกันการกดเมนูผิด");
+    view="operations";
+  }
   if(scannerState.active&&state.view==="inbound"){if(view!=="inbound")showNotice("info","กรุณาปิดกล้องก่อนเปลี่ยนหน้า");return}
   if(state.view==="dashboard"&&view!=="dashboard")cancelDashboardRequest();
   if(state.view==="appointmentUpload"&&view!=="appointmentUpload")appointmentStopWorker();
