@@ -1441,3 +1441,78 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
     grid-template-rows:repeat(4,minmax(0,1fr));
   }
 }
+
+/* Round 205.5.2 — Classic queue: clearly separate each active work stage */
+.queue-shell:not(.queue-visual-mode) .work-panel{
+  background:#fff;
+}
+.queue-shell:not(.queue-visual-mode) .work-groups{
+  gap:8px;
+  padding:8px 1px 1px;
+  background:#f7f9fc;
+  border-radius:12px;
+}
+.queue-shell:not(.queue-visual-mode) .work-group{
+  position:relative;
+  border:2px solid color-mix(in srgb,var(--tone) 58%,#d7e2ef);
+  border-left:5px solid var(--tone);
+  border-top-width:3px;
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 2px 7px rgba(19,50,87,.07);
+  overflow:hidden;
+}
+.queue-shell:not(.queue-visual-mode) .work-group>header{
+  min-height:34px;
+  padding:5px 12px 5px 10px;
+  background:color-mix(in srgb,var(--tone) 11%,#fff);
+  border-bottom:1px solid color-mix(in srgb,var(--tone) 42%,#d9e3ee);
+}
+.queue-shell:not(.queue-visual-mode) .work-group>header h3{
+  font-weight:950;
+  color:color-mix(in srgb,var(--tone) 88%,#173a62);
+}
+.queue-shell:not(.queue-visual-mode) .work-group>header b{
+  min-width:42px;
+  padding:2px 7px;
+  border-radius:999px;
+  text-align:center;
+  background:#fff;
+  border:1px solid color-mix(in srgb,var(--tone) 46%,#d7e2ef);
+  color:var(--tone);
+  font-weight:950;
+}
+.queue-shell:not(.queue-visual-mode) .work-body{
+  background:#fff;
+}
+.queue-shell:not(.queue-visual-mode) .work-item{
+  position:relative;
+  border-left:1px solid color-mix(in srgb,var(--tone) 22%,#dbe4ee);
+}
+.queue-shell:not(.queue-visual-mode) .work-item:first-child{
+  border-left:0;
+}
+.queue-shell:not(.queue-visual-mode) .work-empty{
+  color:#788ba3;
+  font-weight:800;
+  background:color-mix(in srgb,var(--tone) 3%,#fff);
+}
+
+@media(max-height:780px){
+  .queue-shell:not(.queue-visual-mode) .work-groups{
+    gap:6px;
+    padding-top:5px;
+  }
+  .queue-shell:not(.queue-visual-mode) .work-group{
+    border-left-width:4px;
+    border-top-width:2px;
+    border-radius:9px;
+  }
+  .queue-shell:not(.queue-visual-mode) .work-group>header{
+    min-height:27px;
+    padding:3px 9px 3px 8px;
+  }
+  .queue-shell:not(.queue-visual-mode) .work-group>header b{
+    padding:1px 6px;
+  }
+}
