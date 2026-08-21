@@ -10456,3 +10456,13 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
 #queueVisualThemeCard.is-muted .queue-theme-choice{pointer-events:none}
 .queue-visual-guide{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.queue-display-mode-options,.queue-theme-choices,.queue-visual-guide{grid-template-columns:1fr}}
+
+
+/* Round 205.4.3 — Queue font selector */
+.queue-font-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.queue-font-choice{position:relative;display:flex;align-items:center;gap:11px;min-height:74px;padding:12px 14px;border:1px solid #dbe4ef;border-radius:14px;background:#fff;cursor:pointer;transition:border-color .18s ease,box-shadow .18s ease}
+.queue-font-choice.is-selected{border-color:#2e78df;box-shadow:0 0 0 3px rgba(46,120,223,.10)}
+.queue-font-choice input{width:18px;height:18px;accent-color:#2e78df;flex:0 0 auto}
+.queue-font-choice span{display:grid;gap:3px;min-width:0}.queue-font-choice b{font-size:16px;color:#173b68}.queue-font-choice small{font-size:11px;color:#6c7d92}
+.queue-font-choice.font-noto b{font-family:"Noto Sans Thai",sans-serif}.queue-font-choice.font-sarabun b{font-family:"Sarabun",sans-serif}.queue-font-choice.font-prompt b{font-family:"Prompt",sans-serif}.queue-font-choice.font-noto-looped b{font-family:"Noto Sans Thai Looped",sans-serif}
+@media(max-width:900px){.queue-font-choices{grid-template-columns:1fr}}

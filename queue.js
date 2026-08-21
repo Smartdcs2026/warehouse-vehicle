@@ -444,8 +444,8 @@ function normalizeDoorLive(item){
   return{doorCode:normalizeQueueDoorCode(item.doorCode),status:cleanText(item.status),activityStatus:cleanText(item.activityStatus),isActive:item.isActive!==false,occupancyCount:Math.max(0,Number(item.occupancyCount)||0),appointmentNo:cleanText(item.appointmentNo),vehiclePlate:cleanText(item.vehiclePlate),province:cleanText(item.province),companyName:cleanText(item.companyName),items:Array.isArray(item.items)?item.items:[]};
 }
 function normalizeQueueDisplaySettings(value){
-  const raw=value&&typeof value==="object"?value:{},mode=cleanText(raw.displayMode).toUpperCase(),theme=cleanText(raw.visualTheme).toUpperCase();
-  return{showDoorPanel:raw.showDoorPanel!==false,doorPanelEnabled:raw.doorPanelEnabled===true,displayMode:mode==="VISUAL"?"VISUAL":"CLASSIC",visualTheme:["LIGHT","DARK","NEON"].includes(theme)?theme:"DARK"};
+  const raw=value&&typeof value==="object"?value:{},mode=cleanText(raw.displayMode).toUpperCase(),theme=cleanText(raw.visualTheme).toUpperCase(),font=cleanText(raw.fontFamily).toUpperCase();
+  return{showDoorPanel:raw.showDoorPanel!==false,doorPanelEnabled:raw.doorPanelEnabled===true,displayMode:mode==="VISUAL"?"VISUAL":"CLASSIC",visualTheme:["LIGHT","DARK","NEON"].includes(theme)?theme:"DARK",fontFamily:["NOTO_SANS_THAI","SARABUN","PROMPT","NOTO_SANS_THAI_LOOPED"].includes(font)?font:"NOTO_SANS_THAI"};
 }
 function cleanText(value) {
   return String(value ?? "").trim();
@@ -486,10 +486,12 @@ function render(data) {
   setStableText($("visualUpdatedAt"), "อัปเดตล่าสุด " + formatTime(data.generatedAt));
 }
 function renderClassic(data){renderSummary(data);renderNext(data);renderWork(data);renderDoorRail(data)}
+function queueFontStack(value){return({NOTO_SANS_THAI:'"Noto Sans Thai","Tahoma",system-ui,sans-serif',SARABUN:'"Sarabun","Noto Sans Thai","Tahoma",system-ui,sans-serif',PROMPT:'"Prompt","Noto Sans Thai","Tahoma",system-ui,sans-serif',NOTO_SANS_THAI_LOOPED:'"Noto Sans Thai Looped","Noto Sans Thai","Tahoma",system-ui,sans-serif'})[value]||'"Noto Sans Thai","Tahoma",system-ui,sans-serif'}
 function applyQueueDisplayMode(settings){
   const normalized=normalizeQueueDisplaySettings(settings),app=$("queueApp"),visual=$("queueVisualView");
   currentDisplayMode=normalized.displayMode==="VISUAL"&&visualRuntimeFailed?"CLASSIC":normalized.displayMode;currentVisualTheme=normalized.visualTheme;
-  if(app){app.classList.toggle("queue-visual-mode",currentDisplayMode==="VISUAL");app.dataset.queueTheme=currentVisualTheme.toLowerCase()}
+  document.documentElement.style.setProperty("--queue-font-family",queueFontStack(normalized.fontFamily));document.documentElement.dataset.queueFont=normalized.fontFamily.toLowerCase();
+  if(app){app.classList.toggle("queue-visual-mode",currentDisplayMode==="VISUAL");app.dataset.queueTheme=currentVisualTheme.toLowerCase();app.dataset.queueFont=normalized.fontFamily.toLowerCase()}
   if(visual)visual.hidden=currentDisplayMode!=="VISUAL";
 }
 
@@ -891,7 +893,7 @@ const VISUAL_STAGE_DEFS=[
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
 ];
 let visualStatusSnapshot=new Map();
-const VISUAL_SHELL_VERSION="20541";
+const VISUAL_SHELL_VERSION="20543";
 function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<700||w<1180)return 3;if(h>=980&&w>=1700)return 5;return 4}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
@@ -901,9 +903,49 @@ function visualRearTruckSvg(){return `<svg class="visual-rear-truck-svg" viewBox
 function visualWaitText(item){const sec=Math.max(0,Number(item?.elapsedSeconds)||0);return sec<60?"< 1 นาที":shortDuration(sec)}
 function visualStatusLabel(status){return({READY_FOR_RECEIVING:"รอเข้าตรวจรับ",RECEIVING_IN_PROGRESS:"กำลังตรวจรับ",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",WAITING_GATE_OUT:"รอออกจากพื้นที่"})[status]||status||"–"}
 function visualChangedAutos(data){const changed=new Set(),next=new Map();for(const item of data.items||[]){if(item.autoId){next.set(item.autoId,item.status);if(visualStatusSnapshot.has(item.autoId)&&visualStatusSnapshot.get(item.autoId)!==item.status)changed.add(item.autoId)}}visualStatusSnapshot=next;return changed}
+let visualDoorPrioritySignature="";
+function visualDoorHasVehicle(door){
+  if(!door||typeof door!=="object")return false;
+  if(Math.max(0,Number(door.occupancyCount)||0)>0)return true;
+  if(Array.isArray(door.items)&&door.items.length>0)return true;
+  return Boolean(cleanText(door.appointmentNo)||cleanText(door.vehiclePlate));
+}
+function compareVisualQueueDoors(a,b){
+  const occupied=Number(visualDoorHasVehicle(b))-Number(visualDoorHasVehicle(a));
+  if(occupied)return occupied;
+  const status=doorStatusRank(a.status)-doorStatusRank(b.status);if(status)return status;
+  const [ag,an]=queueDoorNaturalParts(a.doorCode),[bg,bn]=queueDoorNaturalParts(b.doorCode);return ag.localeCompare(bg,"en")||an-bn;
+}
 function visualDoorSelection(data){
-  const raw=Array.isArray(data?.doors)?data.doors:[],seen=new Map();for(const door of raw){const code=normalizeQueueDoorCode(door.doorCode);if(!code)continue;const prev=seen.get(code);if(!prev||doorStatusRank(door.status)<doorStatusRank(prev.status))seen.set(code,{...door,doorCode:code})}
-  const doors=[...seen.values()].sort(compareQueueDoors),limit=(window.innerWidth||1280)>=1450?6:4,pages=Math.max(1,Math.ceil(doors.length/limit));if(doorPage>=pages)doorPage=0;return{all:doors,shown:doors.slice(doorPage*limit,doorPage*limit+limit),pages};
+  const raw=Array.isArray(data?.doors)?data.doors:[],seen=new Map();
+  for(const door of raw){
+    const code=normalizeQueueDoorCode(door.doorCode);if(!code)continue;
+    const prev=seen.get(code);
+    if(!prev){seen.set(code,{...door,doorCode:code});continue}
+    const merged={...prev,...door,doorCode:code};
+    merged.isActive=prev.isActive!==false||door.isActive!==false;
+    merged.occupancyCount=Math.max(Number(prev.occupancyCount||0),Number(door.occupancyCount||0));
+    merged.items=[...(Array.isArray(prev.items)?prev.items:[]),...(Array.isArray(door.items)?door.items:[])];
+    if(doorStatusRank(prev.status)<doorStatusRank(door.status))merged.status=prev.status;
+    if(!merged.appointmentNo)merged.appointmentNo=prev.appointmentNo||door.appointmentNo;
+    if(!merged.vehiclePlate)merged.vehiclePlate=prev.vehiclePlate||door.vehiclePlate;
+    seen.set(code,merged);
+  }
+  const doors=[...seen.values()].sort(compareVisualQueueDoors),limit=(window.innerWidth||1280)>=1450?6:4;
+  const occupiedDoors=doors.filter(visualDoorHasVehicle),otherDoors=doors.filter(door=>!visualDoorHasVehicle(door));
+  const prioritySignature=occupiedDoors.map(door=>door.doorCode).join("|");
+  if(prioritySignature!==visualDoorPrioritySignature){visualDoorPrioritySignature=prioritySignature;doorPage=0}
+  let pages=1,shown=[],showingOccupied=false,filledEmpty=0;
+  if(occupiedDoors.length){
+    pages=Math.max(1,Math.ceil(occupiedDoors.length/limit));if(doorPage>=pages)doorPage=0;
+    const occupiedShown=occupiedDoors.slice(doorPage*limit,doorPage*limit+limit),remaining=Math.max(0,limit-occupiedShown.length);
+    const fillers=remaining?otherDoors.slice(0,remaining):[];
+    shown=[...occupiedShown,...fillers];showingOccupied=true;filledEmpty=fillers.length;
+  }else{
+    pages=Math.max(1,Math.ceil(otherDoors.length/limit));if(doorPage>=pages)doorPage=0;
+    shown=otherDoors.slice(doorPage*limit,doorPage*limit+limit);
+  }
+  return{all:doors,shown,pages,occupiedPages:occupiedDoors.length?pages:0,showingOccupied,occupiedCount:occupiedDoors.length,filledEmpty};
 }
 function visualDoorBay(door){const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังตรวจรับ",DRAINING:"ปิดหลังจบงาน"},occupied=Math.max(0,Number(door.occupancyCount)||0),primary=door.items?.[0]||door;return `<article class="visual-door-bay door-${esc(status.toLowerCase())}"><div class="visual-garage"><span class="visual-garage-code">${esc(door.doorCode||"–")}</span><span class="visual-garage-status">${esc(labels[status]||status)}</span>${occupied?`<span class="visual-garage-truck">${visualRearTruckSvg()}<small>${esc(primary.appointmentNo||"")} ${esc(primary.vehiclePlate||"")}</small></span>`:""}</div><div class="visual-door-bay-foot"><b>${esc(labels[status]||status)}</b><small>${status==="DRAINING"?"ปิดหลังจบงาน":`${occupied} คัน`}</small></div></article>`}
 function visualSummaryStatic(def){return `<article class="visual-summary-card tone-${def.tone}"><span class="visual-summary-icon">${def.number}</span><div><small>${esc(def.label)}</small><b id="visualSummary_${def.status}">0</b><em>คัน</em></div></article>`}
@@ -937,7 +979,10 @@ function syncVisualStage(data,def,changedAutos){
 }
 function syncVisualDoors(data){
   const panel=$("visualDoorPanel"),grid=$("visualDoorGrid"),meta=$("visualDoorMeta"),footer=$("visualDoorFooter"),doorInfo=visualDoorSelection(data),show=Boolean(data?.queueDisplay?.doorPanelEnabled)&&doorInfo.all.length>0;if(panel)panel.hidden=!show;if(!show)return;
-  setStableText(meta,`${doorInfo.all.length.toLocaleString("th-TH")} ประตู`);setStableHTML(grid,doorInfo.shown.map(visualDoorBay).join(""));setStableText(footer,doorInfo.pages>1?`หมุนแสดงประตูอัตโนมัติ · ${doorPage+1}/${doorInfo.pages}`:"แสดงประตูที่ใช้งานและพร้อมใช้งาน");
+  setStableText(meta,doorInfo.occupiedCount?`มีรถ ${doorInfo.occupiedCount.toLocaleString("th-TH")} · รวม ${doorInfo.all.length.toLocaleString("th-TH")} ประตู`:`${doorInfo.all.length.toLocaleString("th-TH")} ประตู`);
+  setStableHTML(grid,doorInfo.shown.map(visualDoorBay).join(""));
+  const priorityText=doorInfo.showingOccupied?`ประตูที่มีรถ · ${doorPage+1}/${Math.max(1,doorInfo.pages)}${doorInfo.filledEmpty?` · เติมประตูว่าง ${doorInfo.filledEmpty}`:""}`:`ประตูว่าง/พร้อมใช้งาน${doorInfo.pages>1?` · ${doorPage+1}/${doorInfo.pages}`:""}`;
+  setStableText(footer,doorInfo.pages>1?`${priorityText} · หมุนอัตโนมัติ`:priorityText);
 }
 function syncVisualWaitPanel(data){
   const list=$("visualWaitList");if(!list)return;const defByStatus=new Map(VISUAL_STAGE_DEFS.map(def=>[def.status,def]));const items=[...(data.items||[])].sort((a,b)=>Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)).slice(0,3);const html=items.length?items.map((item,index)=>{const def=defByStatus.get(item.status)||{tone:"ready"},company=queueCompanyView(item);return `<article class="visual-wait-item tone-${def.tone}"><span>${index+1}</span><div><b>${esc(item.appointmentNo||"–")}</b><small>${esc(company.primary||"ไม่ระบุบริษัท")}${item.doorCode?` · ${esc(item.doorCode)}`:""}</small></div><em>${esc(visualStatusLabel(item.status))}</em><time>${esc(visualWaitText(item))}</time></article>`}).join(""):'<div class="visual-wait-empty">ไม่มีรถค้างในขั้นตอนปัจจุบัน</div>';setStableHTML(list,html);
