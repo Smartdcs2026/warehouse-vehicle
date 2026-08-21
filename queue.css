@@ -954,3 +954,80 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-shell[data-queue-theme="dark"] .visual-wait-item b,.queue-shell[data-queue-theme="dark"] .visual-wait-item time{font-size:9px}
   .queue-shell[data-queue-theme="dark"] .visual-wait-item small,.queue-shell[data-queue-theme="dark"] .visual-wait-item em{font-size:7.5px}
 }
+
+/* Round 205.4.8 — Vehicle identity emphasis for large-screen dark queue */
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-card{
+  grid-template-columns:68px minmax(0,1fr) auto;
+  gap:10px;
+  padding:6px 9px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{
+  width:64px;
+  height:48px;
+  border-radius:10px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-icon .visual-truck-svg{
+  width:58px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-top{
+  gap:8px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{
+  font-size:15.5px;
+  line-height:1.08;
+  letter-spacing:.15px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{
+  font-size:13.5px;
+  line-height:1.08;
+  font-weight:950;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{
+  margin-top:2px;
+  font-size:11.5px;
+  line-height:1.12;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{
+  margin-top:3px;
+  font-size:9.5px;
+  line-height:1.1;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small i{
+  padding:2px 5px;
+  font-size:9px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{
+  font-size:12px;
+  line-height:1.08;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{
+  width:70px;
+}
+.queue-shell[data-queue-theme="dark"] .visual-garage-truck small{
+  font-size:9px;
+  font-weight:900;
+}
+
+/* Keep vehicle identity readable on shorter TV/browser viewports without reducing rows. */
+@media(max-height:790px){
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-card{
+    grid-template-columns:46px minmax(0,1fr) auto;
+    gap:6px;
+    padding:4px 5px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon{
+    width:44px;
+    height:34px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-icon .visual-truck-svg{
+    width:41px;
+  }
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>b{font-size:11.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-top>span{font-size:9.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>strong{font-size:9.2px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small{font-size:8px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-copy>small i{font-size:7.5px;padding:1px 4px}
+  .queue-shell[data-queue-theme="dark"] .visual-vehicle-card>time{font-size:9.5px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-truck .visual-truck-svg{width:49px}
+  .queue-shell[data-queue-theme="dark"] .visual-garage-truck small{font-size:7.5px}
+}
