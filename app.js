@@ -3706,35 +3706,80 @@ async function loadQueueMediaLibrary(force=false){
     if(!queueMediaAdminState.loaded)queueMediaAdminState.items=[];
   }finally{queueMediaAdminState.busy=false;renderQueueMediaLibrary()}
 }
-function uploadQueueVideoFile(file,onProgress=()=>{}){
+const QUEUE_MEDIA_CLIENT_PART_BYTES=5*1024*1024;
+function queueMediaXhrData(xhr){if(xhr?.response&&typeof xhr.response==="object")return xhr.response;try{return JSON.parse(xhr?.responseText||"{}")}catch{return{}}}
+function queueMediaDirectUpload(file,onProgress=()=>{},onStatus=()=>{}){
   return new Promise((resolve,reject)=>{
-    if(!file)return reject(new Error("กรุณาเลือกไฟล์วิดีโอ"));
-    if(!/\.mp4$/i.test(file.name)||file.type&&file.type!=="video/mp4")return reject(new Error("รองรับไฟล์ MP4 เท่านั้น"));
-    if(file.size<=0)return reject(new Error("ไฟล์วิดีโอว่างเปล่า"));
     const xhr=new XMLHttpRequest(),base=String(cfg.apiBaseUrl||"").replace(/\/$/,""),url=`${base}/api/admin/queue-media/upload?name=${encodeURIComponent(file.name)}`;
-    xhr.open("PUT",url,true);xhr.responseType="json";xhr.timeout=120000;
+    xhr.open("PUT",url,true);xhr.responseType="json";xhr.timeout=0;
     xhr.setRequestHeader("content-type","video/mp4");if(state.token)xhr.setRequestHeader("authorization",`Bearer ${state.token}`);
-    xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress(Math.max(0,Math.min(100,Math.round(event.loaded*100/event.total))))};
-    xhr.onload=()=>{const data=xhr.response&&typeof xhr.response==="object"?xhr.response:(()=>{try{return JSON.parse(xhr.responseText||"{}")}catch{return{}}})();if(xhr.status>=200&&xhr.status<300&&data.success!==false)resolve(data);else reject(new Error(data.message||`อัปโหลดไม่สำเร็จ (${xhr.status})`))};
-    xhr.onerror=()=>reject(new Error("เชื่อมต่อระหว่างอัปโหลดไม่สำเร็จ"));xhr.ontimeout=()=>reject(new Error("อัปโหลดใช้เวลานานเกินไป กรุณาลองใหม่"));
+    xhr.upload.onprogress=event=>{if(event.lengthComputable){const loaded=Math.max(0,Math.min(file.size,event.loaded));onProgress({percent:Math.round(loaded*100/file.size),loaded,total:file.size,partNumber:1,totalParts:1});onStatus(`กำลังอัปโหลด ${Math.round(loaded*100/file.size)}%`)}};
+    xhr.onload=()=>{const data=queueMediaXhrData(xhr);if(xhr.status>=200&&xhr.status<300&&data.success!==false)resolve(data);else{const error=new Error(data.message||`อัปโหลดไม่สำเร็จ (${xhr.status})`);error.status=xhr.status;reject(error)}};
+    xhr.onerror=()=>reject(new Error("การเชื่อมต่อขาดระหว่างอัปโหลด กรุณาลองใหม่"));
+    xhr.onabort=()=>reject(new Error("การอัปโหลดถูกยกเลิก"));
     xhr.send(file);
   });
 }
+function queueMediaUploadPart(blob,session,partNumber,onPartProgress=()=>{},timeoutMs=300000){
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest(),base=String(cfg.apiBaseUrl||"").replace(/\/$/,""),params=new URLSearchParams({key:session.key,uploadId:session.uploadId,partNumber:String(partNumber)}),url=`${base}/api/admin/queue-media/multipart/part?${params}`;
+    xhr.open("PUT",url,true);xhr.responseType="json";xhr.timeout=timeoutMs;
+    xhr.setRequestHeader("content-type","application/octet-stream");if(state.token)xhr.setRequestHeader("authorization",`Bearer ${state.token}`);
+    xhr.upload.onprogress=event=>{if(event.lengthComputable)onPartProgress(Math.max(0,Math.min(blob.size,event.loaded)))};
+    xhr.onload=()=>{const data=queueMediaXhrData(xhr);if(xhr.status>=200&&xhr.status<300&&data.success!==false&&data.part?.etag)resolve(data.part);else{const error=new Error(data.message||`อัปโหลดส่วนที่ ${partNumber} ไม่สำเร็จ`);error.status=xhr.status;reject(error)}};
+    xhr.onerror=()=>reject(new Error(`การเชื่อมต่อขาดระหว่างอัปโหลดส่วนที่ ${partNumber}`));
+    xhr.ontimeout=()=>reject(new Error(`ส่วนที่ ${partNumber} ใช้เวลานานเกินไป`));
+    xhr.onabort=()=>reject(new Error(`การอัปโหลดส่วนที่ ${partNumber} ถูกยกเลิก`));
+    xhr.send(blob);
+  });
+}
+async function queueMediaUploadPartWithRetry(blob,session,partNumber,baseLoaded,total,onProgress,onStatus){
+  let lastError=null,maxSeen=0;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      if(attempt>0)onStatus(`กำลังส่งส่วนที่ ${partNumber}/${session.totalParts} ใหม่ · ครั้งที่ ${attempt+1}`);
+      return await queueMediaUploadPart(blob,session,partNumber,loaded=>{maxSeen=Math.max(maxSeen,loaded);const aggregate=Math.min(total,baseLoaded+maxSeen),percent=Math.max(0,Math.min(100,Math.round(aggregate*100/total)));onProgress({percent,loaded:aggregate,total,partNumber,totalParts:session.totalParts});onStatus(`กำลังอัปโหลด ${percent}% · ส่วนที่ ${partNumber}/${session.totalParts}`)});
+    }catch(error){lastError=error;if(attempt<2)await apiSleep(700*Math.pow(2,attempt))}
+  }
+  throw lastError||new Error(`อัปโหลดส่วนที่ ${partNumber} ไม่สำเร็จ`);
+}
+async function queueMediaAbortMultipart(session){if(!session?.key||!session?.uploadId)return;try{await api("/api/admin/queue-media/multipart/abort",{method:"POST",body:{key:session.key,uploadId:session.uploadId},timeoutMs:15000})}catch{}}
+async function uploadQueueVideoFile(file,onProgress=()=>{},onStatus=()=>{}){
+  if(!file)throw new Error("กรุณาเลือกไฟล์วิดีโอ");
+  if(!/\.mp4$/i.test(file.name)||file.type&&file.type!=="video/mp4")throw new Error("รองรับไฟล์ MP4 เท่านั้น");
+  if(file.size<=0)throw new Error("ไฟล์วิดีโอว่างเปล่า");
+  if(file.size>100*1024*1024)throw new Error("ไฟล์วิดีโอมีขนาดใหญ่เกิน 100 MB");
+  let session=null;
+  try{
+    onStatus("กำลังเตรียมการอัปโหลด");
+    try{session=await api("/api/admin/queue-media/multipart/start",{method:"POST",body:{fileName:file.name,size:file.size,contentType:file.type||"video/mp4"},timeoutMs:30000})}catch(error){if([404,501].includes(Number(error?.status||0))){onStatus("กำลังอัปโหลด");return await queueMediaDirectUpload(file,onProgress,onStatus)}throw error}
+    const partSize=Math.max(5*1024*1024,Math.floor(Number(session.partSize)||QUEUE_MEDIA_CLIENT_PART_BYTES)),totalParts=Math.max(1,Math.ceil(file.size/partSize));session={...session,totalParts};const parts=[];
+    for(let index=0;index<totalParts;index++){
+      const partNumber=index+1,start=index*partSize,end=Math.min(file.size,start+partSize),blob=file.slice(start,end,"application/octet-stream");
+      const part=await queueMediaUploadPartWithRetry(blob,session,partNumber,start,file.size,onProgress,onStatus);parts.push({partNumber:Number(part.partNumber||partNumber),etag:String(part.etag||"")});
+      const loaded=end,percent=Math.max(0,Math.min(100,Math.round(loaded*100/file.size)));onProgress({percent,loaded,total:file.size,partNumber,totalParts});
+    }
+    onStatus("กำลังตรวจสอบไฟล์ที่อัปโหลด");
+    const result=await api("/api/admin/queue-media/multipart/complete",{method:"POST",body:{key:session.key,uploadId:session.uploadId,fileName:file.name,size:file.size,parts},timeoutMs:45000});
+    onProgress({percent:100,loaded:file.size,total:file.size,partNumber:totalParts,totalParts});onStatus("อัปโหลดครบ 100%");return result;
+  }catch(error){if(session?.key&&session?.uploadId)await queueMediaAbortMultipart(session);throw error}
+}
 function bindQueueMediaUpload(){
-  const input=$("queueMediaFile"),pick=$("queueMediaPick"),upload=$("queueMediaUpload"),name=$("queueMediaSelectedName"),progress=$("queueMediaUploadProgress"),bar=$("queueMediaUploadBar");
+  const input=$("queueMediaFile"),pick=$("queueMediaPick"),upload=$("queueMediaUpload"),name=$("queueMediaSelectedName"),progress=$("queueMediaUploadProgress"),bar=$("queueMediaUploadBar"),status=$("queueMediaUploadStatus");
   if(!input||!pick||!upload)return;
+  const setStatus=text=>{if(!status)return;status.textContent=String(text||"");status.hidden=!text};
   pick.addEventListener("click",()=>input.click());
-  input.addEventListener("change",()=>{const file=input.files?.[0]||null;if(name)name.textContent=file?`${file.name} · ${queueMediaFormatBytes(file.size)}`:"ยังไม่ได้เลือกไฟล์";upload.disabled=!file});
+  input.addEventListener("change",()=>{const file=input.files?.[0]||null;if(name)name.textContent=file?`${file.name} · ${queueMediaFormatBytes(file.size)}`:"ยังไม่ได้เลือกไฟล์";upload.disabled=!file;setStatus("")});
   upload.addEventListener("click",async()=>{
     const file=input.files?.[0]||null;if(!file||queueMediaAdminState.busy)return;
-    queueMediaAdminState.busy=true;upload.disabled=true;pick.disabled=true;const original=upload.textContent;upload.textContent="กำลังอัปโหลด";if(progress)progress.hidden=false;if(bar)bar.style.width="0%";
+    queueMediaAdminState.busy=true;upload.disabled=true;pick.disabled=true;const original=upload.textContent;upload.textContent="กำลังอัปโหลด";if(progress)progress.hidden=false;if(bar)bar.style.width="0%";if(progress)progress.setAttribute("aria-valuenow","0");let succeeded=false;
     try{
-      const result=await uploadQueueVideoFile(file,percent=>{if(bar)bar.style.width=`${percent}%`;if(progress)progress.setAttribute("aria-valuenow",String(percent))});
-      input.value="";if(name)name.textContent="ยังไม่ได้เลือกไฟล์";if(bar)bar.style.width="100%";
+      const result=await uploadQueueVideoFile(file,info=>{const percent=Math.max(0,Math.min(100,Number(info?.percent)||0));if(bar)bar.style.width=`${percent}%`;if(progress)progress.setAttribute("aria-valuenow",String(percent))},setStatus);
+      succeeded=true;input.value="";if(name)name.textContent="ยังไม่ได้เลือกไฟล์";if(bar)bar.style.width="100%";setStatus("อัปโหลดเรียบร้อย");
       await loadQueueMediaLibrary(true);
       await showNotice("success",result.message||"อัปโหลดวิดีโอแล้ว");
-    }catch(error){await showNotice("error",error.message||"อัปโหลดวิดีโอไม่สำเร็จ")}
-    finally{queueMediaAdminState.busy=false;upload.textContent=original;upload.disabled=true;pick.disabled=false;setTimeout(()=>{if(progress)progress.hidden=true;if(bar)bar.style.width="0%"},500)}
+    }catch(error){setStatus("อัปโหลดไม่สำเร็จ · สามารถกดลองใหม่ได้");await showNotice("error",error.message||"อัปโหลดวิดีโอไม่สำเร็จ")}
+    finally{queueMediaAdminState.busy=false;upload.textContent=original;upload.disabled=succeeded||!input.files?.[0];pick.disabled=false;setTimeout(()=>{if(progress)progress.hidden=true;if(bar)bar.style.width="0%";if(succeeded)setStatus("")},900)}
   });
 }
 function syncQueueVideoAdminControls(){
@@ -3795,6 +3840,7 @@ function renderAdminQueue(){
       <button id="queueMediaUpload" class="primary" type="button" disabled>อัปโหลดไปยัง R2</button>
     </div>
     <div id="queueMediaUploadProgress" class="queue-media-upload-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><i id="queueMediaUploadBar"></i></div>
+    <div id="queueMediaUploadStatus" class="queue-media-upload-status" aria-live="polite" hidden></div>
     <div id="queueMediaLibrary">${queueMediaLibraryHtml()}</div>
   </section>
 
