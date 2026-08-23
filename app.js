@@ -1380,7 +1380,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260823-r20601",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260823-r20702",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -2344,84 +2344,36 @@ async function showDatatableDetail(autoId,sourceButton=null){
   datatableState.detailBusy=true;uiState.detailsOpen=true;
   try{
     if(window.Swal)Swal.fire({title:"กำลังเปิดข้อมูล",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:380});
-    const data=await api(`/api/datatable/detail?autoId=${encodeURIComponent(autoId)}`),v=data.vehicle||{},events=data.events||[],calls=data.calls||[],d=data.durations||{},rej=data.rejection,shiftMeta=datatableDetailShiftMeta(v),projection=appointmentProjectionOf(v);
+    const data=await api(`/api/datatable/detail?autoId=${encodeURIComponent(autoId)}`),v=data.vehicle||{},events=data.events||[],d=data.durations||{},rej=data.rejection,shiftMeta=datatableDetailShiftMeta(v);
+    const stages=[
+      ["gate_to_document","รถเข้า → ยื่นเอกสาร",d.gateToDocumentSeconds],
+      ["document_review","ตรวจเอกสาร",d.documentReviewSeconds],
+      ["ready","รอตรวจรับ",d.readyToReceivingSeconds],
+      ["queue","เรียก → เริ่มตรวจรับ",d.calledToReceivingSeconds],
+      ["receiving","ตรวจรับสินค้า",d.receivingSeconds],
+      ["document_return","คืนเอกสาร",d.receivingToReturnSeconds],
+      ["gate_out","ออกจากพื้นที่",d.returnToGateOutSeconds],
+      ["total","เวลารวม",d.totalInSiteSeconds]
+    ];
     const businessDate=formatDatatableBusinessDate(v.shiftBusinessDate),statusText=statusLabel(v.currentStatus),plate=joinText(v.vehiclePlate,v.province),company=v.companyName||"ไม่ระบุบริษัท",appointment=v.appointmentNo||v.autoId||autoId;
-    const eventByType={};for(const e of events)eventByType[e.event_type]=e;
-    const operationalCalls=calls.filter(c=>["FIRST","RECALL","DOOR_CHANGED"].includes(String(c.call_type||"").toUpperCase())),firstCall=operationalCalls[0]||null,lastCall=operationalCalls[operationalCalls.length-1]||null;
-    const milestones=[
-      ["Gate In",v.gateInAt,"รถเข้าพื้นที่"],
-      ["ยื่นเอกสาร",eventByType.DOCUMENT_SUBMITTED?.occurred_at,"Inbound"],
-      ["ตรวจเอกสารเสร็จ",eventByType.DOCUMENT_CHECKED?.occurred_at,"Inbound"],
-      ["เรียกรถครั้งแรก",firstCall?.called_at,"Queue"],
-      ["เรียกรถล่าสุด",lastCall?.called_at,"Queue"],
-      ["เริ่มตรวจรับสินค้า",eventByType.RECEIVING_STARTED?.occurred_at,"Receiving"],
-      ["รับสินค้าเสร็จ",eventByType.RECEIVING_COMPLETED?.occurred_at,"Receiving"],
-      ["คืนเอกสาร",eventByType.DOCUMENT_RETURNED?.occurred_at,"Inbound"],
-      ["Gate Out",v.gateOutAt,"ปิดงาน"]
-    ];
-    const durations=[
-      ["รถเข้า → ยื่นเอกสาร",d.gateToDocumentSeconds],
-      ["ตรวจเอกสาร",d.documentReviewSeconds],
-      ["พร้อมตรวจรับ → เริ่มตรวจรับ",d.readyToReceivingSeconds],
-      ["เรียก → เริ่มตรวจรับ",d.calledToReceivingSeconds],
-      ["ตรวจรับสินค้า",d.receivingSeconds],
-      ["รับเสร็จ → คืนเอกสาร",d.receivingToReturnSeconds],
-      ["คืนเอกสาร → Gate Out",d.returnToGateOutSeconds]
-    ];
     const metaItems=[
-      ["กะ",v.shiftName?`${v.shiftName}${shiftMeta.range?` · ${shiftMeta.range}${shiftMeta.cross?" ข้ามวัน":""}`:""}`:"-"],
-      ["วันที่เริ่มกะ",v.shiftBusinessDate?businessDate:"-"],
-      ["ประตู",v.doorCode||"-"],
-      ["ประเภทรถ",v.vehicleType||"-"],
-      ["คนขับ",v.driverName||"-"],
-      ["โทรศัพท์",v.phone||"-"]
-    ];
-    const planRows=projection?appointmentProjectionBits(projection,v):[];
-    const eventRows=events.map((e,index)=>`<div class="dt-detail-history-row-r206${index===events.length-1?" is-latest":""}"><time>${escapeHtml(formatDate(e.occurred_at)||"-")}</time><b>${escapeHtml(datatableEventLabel(e.event_type))}</b><span>${escapeHtml(e.actor||"ระบบ")}</span>${e.note?`<em>${escapeHtml(e.note)}</em>`:""}</div>`).join("");
-    const html=`<div class="dt-detail-modal-r206">
-      <section class="dt-detail-head-r206">
-        <div class="dt-detail-head-main-r206">
-          <small>เลขนัดหมาย</small>
-          <div><b>${escapeHtml(appointment)}</b>${datatableAppointmentBadge(v)}<span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
-          ${v.appointmentValidation?.enabled&&!v.appointmentValidation.valid?`<em class="dt-detail-appointment-warning">${escapeHtml(v.appointmentValidation.message||"เลขนัดหมายไม่ถูกต้อง")}</em>`:""}
-          <p>${escapeHtml(company)}</p>
-        </div>
-        <dl class="dt-detail-vehicle-r206">
-          <div><dt>ทะเบียนรถ</dt><dd>${escapeHtml(plate||"-")}</dd></div>
-          <div><dt>Auto ID</dt><dd>${escapeHtml(v.autoId||autoId)}</dd></div>
-        </dl>
+      v.shiftName?`<div><small>กะ</small><b>${escapeHtml(v.shiftName)}</b>${shiftMeta.range?`<span>${escapeHtml(shiftMeta.range)}${shiftMeta.cross?" · ข้ามวัน":""}</span>`:""}</div>`:"",
+      v.shiftBusinessDate?`<div><small>วันที่เริ่มกะ</small><b>${escapeHtml(businessDate)}</b></div>`:"",
+      v.doorCode?`<div><small>ประตู</small><b>${escapeHtml(v.doorCode)}</b></div>`:"",
+      v.driverName?`<div><small>คนขับ</small><b>${escapeHtml(v.driverName)}</b></div>`:""
+    ].filter(Boolean).join("");
+    const eventRows=events.map((e,index)=>`<div class="dt-detail-history-row${index===events.length-1?" is-latest":""}"><time>${formatDate(e.occurred_at)}</time><b>${datatableEventLabel(e.event_type)}</b><span>${escapeHtml(e.actor||"ระบบ")}</span></div>`).join("");
+    const html=`<div class="dt-detail-modal dt-detail-modal-r116">
+      <section class="dt-detail-summary-r116">
+        <div class="dt-detail-key"><small>เลขนัดหมาย</small><b>${escapeHtml(appointment)}${datatableAppointmentBadge(v)}</b>${v.appointmentValidation?.enabled&&!v.appointmentValidation.valid?`<em class="dt-detail-appointment-warning">${escapeHtml(v.appointmentValidation.message||"เลขนัดหมายไม่ถูกต้อง")}</em>`:""}<span>${escapeHtml(company)}</span></div>
+        <div class="dt-detail-key"><small>ทะเบียนรถ</small><b>${escapeHtml(plate||"-")}</b><span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
       </section>
-
-      <section class="dt-detail-meta-r206">${metaItems.map(([label,value])=>`<div><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}</section>
-
-      ${planRows.length?`<section class="dt-detail-plan-r206"><b>ข้อมูลตามแผนนัดหมาย</b><span>${planRows.map(escapeHtml).join(" · ")}</span></section>`:""}
-
-      <section class="dt-detail-work-r206">
-        <div class="dt-detail-panel-r206">
-          <header><b>เวลาที่บันทึกจริง</b><span>${operationalCalls.length?`เรียกรถ ${operationalCalls.length.toLocaleString("th-TH")} ครั้ง`:"ลำดับการปฏิบัติงาน"}</span></header>
-          <div class="dt-detail-table-r206 dt-detail-milestone-r206">
-            <div class="is-head"><span>ขั้นตอน</span><span>วัน-เวลา</span><span>ส่วนงาน</span></div>
-            ${milestones.map(([label,value,section])=>`<div class="${value?"is-done":"is-pending"}"><span>${escapeHtml(label)}</span><b>${value?escapeHtml(formatDate(value)):"—"}</b><em>${escapeHtml(section)}</em></div>`).join("")}
-          </div>
-        </div>
-        <div class="dt-detail-panel-r206">
-          <header><b>ระยะเวลาการทำงาน</b><strong>${d.totalInSiteSeconds==null?"—":formatDuration(d.totalInSiteSeconds)}</strong></header>
-          <div class="dt-detail-table-r206 dt-detail-duration-r206">
-            <div class="is-head"><span>ช่วงงาน</span><span>ระยะเวลา</span></div>
-            ${durations.map(([label,value])=>`<div class="${value==null?"is-pending":""}"><span>${escapeHtml(label)}</span><b>${value==null?"—":formatDuration(value)}</b></div>`).join("")}
-            <div class="is-total"><span>เวลารวมในพื้นที่</span><b>${d.totalInSiteSeconds==null?"—":formatDuration(d.totalInSiteSeconds)}</b></div>
-          </div>
-        </div>
-      </section>
-
-      ${rej?`<section class="dt-rejection-r206"><b>ปฏิเสธรับสินค้า</b><div><span><small>เหตุผล</small>${escapeHtml(rej.reason||"-")}</span><span><small>ผู้รับทราบ</small>${escapeHtml(rej.supervisor||"-")}</span><span><small>เอกสารคืน</small>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</span>${rej.detail?`<span><small>รายละเอียด</small>${escapeHtml(rej.detail)}</span>`:""}</div></section>`:""}
-
-      <section class="dt-detail-history-r206">
-        <header><b>ประวัติการทำงาน</b><span>${events.length.toLocaleString("th-TH")} รายการ</span></header>
-        <div class="dt-detail-history-grid-r206">${eventRows||`<div class="dt-detail-no-history-r206">ยังไม่มีประวัติการทำงาน</div>`}</div>
-      </section>
+      ${metaItems?`<section class="dt-detail-meta-r116">${metaItems}</section>`:""}
+      <section class="dt-detail-time-r116"><header><b>เวลาของแต่ละช่วงงาน</b></header><div>${stages.map(([key,label,value])=>`<article class="stage-${escapeHtml(key)} ${value==null?"is-empty":""}"><small>${escapeHtml(label)}</small><b>${value==null?"—":formatDuration(value)}</b></article>`).join("")}</div></section>
+      ${rej?`<section class="dt-rejection-r116"><b>ปฏิเสธรับสินค้า</b><span>เหตุผล ${escapeHtml(rej.reason||"-")}</span><span>ผู้รับทราบ ${escapeHtml(rej.supervisor||"-")}</span><span>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</span></section>`:""}
+      <section class="dt-detail-history-r116"><header><b>ประวัติการทำงาน</b><span>${events.length.toLocaleString("th-TH")} รายการ</span></header><div class="dt-detail-history-grid">${eventRows||`<div class="dt-detail-no-history">ยังไม่มีประวัติการทำงาน</div>`}</div></section>
     </div>`;
-    if(window.Swal){const canExclude=datatableCanRequestExclusion(v,v.currentStatus),detailResult=await Swal.fire({title:"รายละเอียดการปฏิบัติงาน",html,confirmButtonText:"ปิด",showDenyButton:canExclude,denyButtonText:"นำรายการออก",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r206",confirmButton:"wfv-swal-confirm dt-detail-close-r206",denyButton:"dt-detail-exclude-button"},buttonsStyling:false,width:1120,allowOutsideClick:false,heightAuto:false});if(detailResult.isDenied)return await showExcludeVehicle(datatableInternalVehicle(v))}
+    if(window.Swal){const canExclude=datatableCanRequestExclusion(v,v.currentStatus),detailResult=await Swal.fire({title:"ข้อมูลนัดหมาย",html,confirmButtonText:"ปิด",showDenyButton:canExclude,denyButtonText:"นำรายการออก",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r116",confirmButton:"wfv-swal-confirm dt-detail-close-r116",denyButton:"dt-detail-exclude-button"},buttonsStyling:false,width:1040,allowOutsideClick:false});if(detailResult.isDenied)return await showExcludeVehicle(datatableInternalVehicle(v))}
   }catch(error){if(window.Swal)Swal.close();await showNotice("error",error.message||"เปิดข้อมูลไม่สำเร็จ")}
   finally{datatableState.detailBusy=false;uiState.detailsOpen=false;if(sourceButton?.isConnected){sourceButton.disabled=false;sourceButton.textContent=original}}
 }
@@ -2560,7 +2512,7 @@ function renderDashboard() {
   $("dashboardMenuButton").addEventListener("click",toggleDashboardMenu);$("dashboardQueueButton")?.addEventListener("click",openPublicQueue);$("dashboardMobileQueue")?.addEventListener("click",()=>{closeDashboardMobileMenu();openPublicQueue()});$("dashboardFullscreen").addEventListener("click",toggleFullscreen);$("dashboardCalendarButton").addEventListener("click",()=>{closeDashboardMobileMenu();toggleDashboardCalendar()});$("dashboardRefresh")?.addEventListener("click",()=>{dashboardState.lastLoadedAt=0;dashboardState.analyticsLastLoadedAt=0;void loadDashboard(false,true)});$("dashboardThemeButton")?.addEventListener("click",event=>{event.stopPropagation();toggleDashboardThemeMenu()});document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.addEventListener("click",event=>{event.stopPropagation();setDashboardTheme(button.dataset.dashboardTheme)}));$("dashboardMoreButton").addEventListener("click",toggleDashboardMobileMenu);$("dashboardMobileTheme")?.addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardThemeDialog()});$("dashboardMobileRefresh")?.addEventListener("click",()=>{closeDashboardMobileMenu();dashboardState.lastLoadedAt=0;dashboardState.analyticsLastLoadedAt=0;void loadDashboard(false,true)});$("dashboardMobileFullscreen").addEventListener("click",()=>{closeDashboardMobileMenu();toggleFullscreen()});$("dashboardMobileExport")?.addEventListener("click",()=>{closeDashboardMobileMenu();openProductionExportPage()});$("dashboardMobileInfo").addEventListener("click",()=>{closeDashboardMobileMenu();showDashboardInfo()});applyDashboardTheme();updateFullscreenButton();const restored=restoreDashboardSnapshot();loadDashboard(!restored);
 }
 
-function openPublicQueue(){window.open(new URL("./queue.html?v=20260811-r88",location.href).href,"_blank","noopener")}
+function openPublicQueue(){window.open(new URL("./queue.html?v=20260823-r20701",location.href).href,"_blank","noopener")}
 async function showDashboardThemeDialog(){const result=await Swal.fire({title:"เลือกสีหน้าจอ",html:`<div class="dashboard-theme-dialog">${DASHBOARD_THEME_OPTIONS.map(item=>`<button type="button" data-dialog-theme="${item.id}" class="${normalizeDashboardTheme(dashboardState.theme)===item.id?"active":""}"><i class="theme-${item.id}"></i><span>${item.label}</span></button>`).join("")}</div>`,showConfirmButton:false,showCloseButton:true,customClass:swalClasses(),width:420,didOpen:()=>document.querySelectorAll("[data-dialog-theme]").forEach(button=>button.addEventListener("click",()=>{setDashboardTheme(button.dataset.dialogTheme);Swal.close()}))});return result}
 function applyDashboardTheme(){const theme=normalizeDashboardTheme(dashboardState.theme),shell=$("appView");dashboardState.theme=theme;if(shell)shell.dataset.dashboardTheme=theme;document.querySelectorAll("[data-dashboard-theme]").forEach(button=>button.classList.toggle("active",button.dataset.dashboardTheme===theme));const button=$("dashboardThemeButton");if(button){button.dataset.activeTheme=theme;const label=button.querySelector("span");if(label)label.textContent="สี"}const mobileButton=$("dashboardMobileTheme");if(mobileButton){const span=mobileButton.querySelector("span");if(span)span.textContent="สีหน้าจอ"}}
 function setDashboardTheme(theme){dashboardState.theme=normalizeDashboardTheme(theme);localStorage.setItem("wvf_dashboard_theme",dashboardState.theme);applyDashboardTheme();closeDashboardThemeMenu()}
@@ -3656,48 +3608,208 @@ async function ensureQueueVoiceEngine(){if(window.SmartQueueVoice)return window.
 async function testAdminQueueVoice(settings,item={appointmentNo:"2006988",vehiclePlate:"3ฒส3718",province:"กทม",doorCode:"R07",useDoor:true,callType:"FIRST"},buttonId="voiceTestFirst"){const button=$(buttonId),original=button?.textContent||"ทดลองเสียง";if(button){button.disabled=true;button.textContent="กำลังเตรียมเสียง"}try{const engine=await ensureQueueVoiceEngine();engine.configure({...settings,enabled:true,apiBaseUrl:cfg.apiBaseUrl,repeatCount:1});await engine.unlockAndPrepare();await engine.announceNow(item);await showNotice("success","ทดลองประกาศแล้ว")}catch(error){await showNotice("error",error.message||"ทดลองเสียงไม่สำเร็จ")}finally{if(button){button.disabled=false;button.textContent=original}}}
 
 function ensureQueueFontPreviewStyles(){if(document.getElementById("queueGoogleFontPreview"))return;const link=document.createElement("link");link.id="queueGoogleFontPreview";link.rel="stylesheet";link.href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Noto+Sans+Thai+Looped:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700;800&display=swap";document.head.appendChild(link)}
+const queueMediaAdminState={items:[],busy:false,error:"",loaded:false};
+function queueMediaFormatBytes(value){const n=Math.max(0,Number(value)||0);if(n<1024)return`${Math.round(n)} B`;if(n<1024*1024)return`${(n/1024).toFixed(n<10240?1:0)} KB`;return`${(n/(1024*1024)).toFixed(n<10*1024*1024?1:0)} MB`}
+function queueMediaFormatUploaded(value){if(!value)return"-";const date=new Date(value);if(Number.isNaN(date.getTime()))return"-";return new Intl.DateTimeFormat("th-TH",{timeZone:cfg.timezone||"Asia/Bangkok",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(date)}
+function currentQueueDisplayBody(overrides={}){
+  const current=adminState.data?.queueDisplay||{};
+  const displayMode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||String(current.displayMode||"CLASSIC").toUpperCase();
+  const visualTheme=document.querySelector('input[name="queueVisualTheme"]:checked')?.value||String(current.visualTheme||"DARK").toUpperCase();
+  const fontFamily=document.querySelector('input[name="queueFontFamily"]:checked')?.value||String(current.fontFamily||"NOTO_SANS_THAI").toUpperCase();
+  const videoSize=document.querySelector('input[name="queueVideoSize"]:checked')?.value||String(current.videoSize||"STANDARD").toUpperCase();
+  const volumeInput=$("queueVideoVolume");
+  return{
+    showDoorPanel:$("queueDoorPanelEnabled")?.checked??current.showDoorPanel!==false,
+    displayMode,visualTheme,fontFamily,
+    videoEnabled:$("queueVideoEnabled")?.checked??current.videoEnabled===true,
+    videoUrl:String($("queueVideoSelectedUrl")?.value??current.videoUrl??"").trim(),
+    videoSize,
+    videoSoundEnabled:$("queueVideoSoundEnabled")?.checked??current.videoSoundEnabled!==false,
+    videoVolume:volumeInput?Number(volumeInput.value):Number(current.videoVolume??70),
+    videoLoop:$("queueVideoLoop")?.checked??current.videoLoop!==false,
+    videoAutoplay:$("queueVideoAutoplay")?.checked??current.videoAutoplay!==false,
+    videoClassicEnabled:$("queueVideoClassicEnabled")?.checked??current.videoClassicEnabled!==false,
+    videoVisualEnabled:$("queueVideoVisualEnabled")?.checked??current.videoVisualEnabled!==false,
+    ...overrides
+  };
+}
+async function saveQueueDisplayFromAdmin(overrides={},options={}){
+  if(adminState.busy)return null;
+  const body=currentQueueDisplayBody(overrides);
+  if(body.videoEnabled&&!body.videoUrl){await showNotice("warning","กรุณาเลือกวิดีโอก่อนเปิดการแสดงผล");return null}
+  if(body.videoEnabled&&!body.videoClassicEnabled&&!body.videoVisualEnabled){await showNotice("warning","กรุณาเลือกหน้าจอที่จะแสดงวิดีโออย่างน้อย 1 แบบ");return null}
+  adminState.busy=true;
+  const button=$("queueDisplaySaveButton"),original=button?.textContent||"บันทึกการแสดงผล";
+  if(button){button.disabled=true;button.textContent="กำลังบันทึก"}
+  try{
+    const result=await api("/api/admin/queue-display",{method:"POST",body});
+    adminState.data=await api("/api/admin/settings");
+    renderAdminShell();
+    if(options.notice!==false)await showNotice("success",options.successMessage||result.message||"บันทึกการแสดงผลจอคิวแล้ว");
+    return result;
+  }catch(error){
+    await showNotice("error",error.message||"บันทึกไม่สำเร็จ กรุณาลองใหม่");
+    return null;
+  }finally{
+    adminState.busy=false;
+    if(button){button.disabled=false;button.textContent=original}
+  }
+}
+function queueMediaLibraryHtml(){
+  const currentUrl=String(adminState.data?.queueDisplay?.videoUrl||"").trim();
+  if(queueMediaAdminState.busy&&!queueMediaAdminState.loaded)return`<div class="queue-media-empty"><b>กำลังโหลดคลังวิดีโอ</b><span>รอสักครู่</span></div>`;
+  if(queueMediaAdminState.error&&!queueMediaAdminState.loaded)return`<div class="queue-media-empty is-error"><b>ยังเปิดคลังวิดีโอไม่ได้</b><span>${escapeHtml(queueMediaAdminState.error)}</span><button id="queueMediaRetry" class="outline-button" type="button">ลองใหม่</button></div>`;
+  if(!queueMediaAdminState.items.length)return`<div class="queue-media-empty"><b>ยังไม่มีวิดีโอ</b><span>เลือกไฟล์ MP4 แล้วอัปโหลดเพื่อใช้งานบนจอคิว</span></div>`;
+  return`<div class="queue-media-list">${queueMediaAdminState.items.map((item,index)=>{
+    const selected=currentUrl&&currentUrl===String(item.url||"");
+    return`<article class="queue-media-row ${selected?"is-selected":""}" data-media-key="${escapeHtml(item.key||"")}">
+      <div class="queue-media-thumb"><video src="${escapeHtml(item.url||"")}" muted preload="metadata" playsinline></video><span>${String(index+1).padStart(2,"0")}</span></div>
+      <div class="queue-media-info"><b title="${escapeHtml(item.fileName||"")}">${escapeHtml(item.fileName||"วิดีโอ")}</b><span>${escapeHtml(queueMediaFormatBytes(item.size))} · ${escapeHtml(queueMediaFormatUploaded(item.uploadedAt))}</span>${selected?`<em>กำลังเลือกใช้</em>`:""}</div>
+      <div class="queue-media-actions"><button class="outline-button" type="button" data-media-use="${escapeHtml(item.url||"")}" ${selected?"disabled":""}>${selected?"กำลังใช้":"ใช้ไฟล์นี้"}</button><button class="danger-outline" type="button" data-media-delete="${escapeHtml(item.key||"")}" data-media-name="${escapeHtml(item.fileName||"วิดีโอ")}">ลบ</button></div>
+    </article>`}).join("")}</div>`;
+}
+function renderQueueMediaLibrary(){
+  const box=$("queueMediaLibrary");if(!box)return;
+  box.innerHTML=queueMediaLibraryHtml();
+  $("queueMediaRetry")?.addEventListener("click",()=>loadQueueMediaLibrary(true));
+  box.querySelectorAll("[data-media-use]").forEach(button=>button.addEventListener("click",async()=>{
+    const url=String(button.dataset.mediaUse||"").trim();if(!url)return;
+    button.disabled=true;const original=button.textContent;button.textContent="กำลังเลือก";
+    const result=await saveQueueDisplayFromAdmin({videoUrl:url,videoEnabled:true},{successMessage:"เลือกวิดีโอสำหรับหน้าจอคิวแล้ว"});
+    if(!result){button.disabled=false;button.textContent=original}
+  }));
+  box.querySelectorAll("[data-media-delete]").forEach(button=>button.addEventListener("click",async()=>{
+    if(queueMediaAdminState.busy||adminState.busy)return;
+    const key=String(button.dataset.mediaDelete||""),name=String(button.dataset.mediaName||"วิดีโอ");
+    const ok=await Swal.fire({icon:"warning",title:"ลบวิดีโอนี้?",html:`<b>${escapeHtml(name)}</b><br><span class="swal-subtext">ไฟล์จะถูกนำออกจากคลังวิดีโอทันที</span>`,showCancelButton:true,confirmButtonText:"ลบไฟล์",cancelButtonText:"ยกเลิก",confirmButtonColor:"#b42318"});
+    if(!ok.isConfirmed)return;
+    queueMediaAdminState.busy=true;button.disabled=true;const original=button.textContent;button.textContent="กำลังลบ";
+    try{
+      const result=await api("/api/admin/queue-media/delete",{method:"POST",body:{key}});
+      if(result.queueDisplay){adminState.data.queueDisplay=result.queueDisplay}
+      await loadQueueMediaLibrary(true);
+      if(result.activeVideoCleared){adminState.data=await api("/api/admin/settings");renderAdminShell()}
+      await showNotice("success",result.message||"ลบวิดีโอแล้ว");
+    }catch(error){await showNotice("error",error.message||"ลบวิดีโอไม่สำเร็จ")}
+    finally{queueMediaAdminState.busy=false;if(button.isConnected){button.disabled=false;button.textContent=original}}
+  }));
+}
+async function loadQueueMediaLibrary(force=false){
+  if(queueMediaAdminState.busy&&!force)return;
+  queueMediaAdminState.busy=true;queueMediaAdminState.error="";renderQueueMediaLibrary();
+  try{
+    const result=await api("/api/admin/queue-media",{retry:false,timeoutMs:20000});
+    queueMediaAdminState.items=Array.isArray(result.items)?result.items:[];
+    queueMediaAdminState.loaded=true;
+  }catch(error){
+    queueMediaAdminState.error=error.message||"โหลดคลังวิดีโอไม่สำเร็จ";
+    if(!queueMediaAdminState.loaded)queueMediaAdminState.items=[];
+  }finally{queueMediaAdminState.busy=false;renderQueueMediaLibrary()}
+}
+function uploadQueueVideoFile(file,onProgress=()=>{}){
+  return new Promise((resolve,reject)=>{
+    if(!file)return reject(new Error("กรุณาเลือกไฟล์วิดีโอ"));
+    if(!/\.mp4$/i.test(file.name)||file.type&&file.type!=="video/mp4")return reject(new Error("รองรับไฟล์ MP4 เท่านั้น"));
+    if(file.size<=0)return reject(new Error("ไฟล์วิดีโอว่างเปล่า"));
+    const xhr=new XMLHttpRequest(),base=String(cfg.apiBaseUrl||"").replace(/\/$/,""),url=`${base}/api/admin/queue-media/upload?name=${encodeURIComponent(file.name)}`;
+    xhr.open("PUT",url,true);xhr.responseType="json";xhr.timeout=120000;
+    xhr.setRequestHeader("content-type","video/mp4");if(state.token)xhr.setRequestHeader("authorization",`Bearer ${state.token}`);
+    xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress(Math.max(0,Math.min(100,Math.round(event.loaded*100/event.total))))};
+    xhr.onload=()=>{const data=xhr.response&&typeof xhr.response==="object"?xhr.response:(()=>{try{return JSON.parse(xhr.responseText||"{}")}catch{return{}}})();if(xhr.status>=200&&xhr.status<300&&data.success!==false)resolve(data);else reject(new Error(data.message||`อัปโหลดไม่สำเร็จ (${xhr.status})`))};
+    xhr.onerror=()=>reject(new Error("เชื่อมต่อระหว่างอัปโหลดไม่สำเร็จ"));xhr.ontimeout=()=>reject(new Error("อัปโหลดใช้เวลานานเกินไป กรุณาลองใหม่"));
+    xhr.send(file);
+  });
+}
+function bindQueueMediaUpload(){
+  const input=$("queueMediaFile"),pick=$("queueMediaPick"),upload=$("queueMediaUpload"),name=$("queueMediaSelectedName"),progress=$("queueMediaUploadProgress"),bar=$("queueMediaUploadBar");
+  if(!input||!pick||!upload)return;
+  pick.addEventListener("click",()=>input.click());
+  input.addEventListener("change",()=>{const file=input.files?.[0]||null;if(name)name.textContent=file?`${file.name} · ${queueMediaFormatBytes(file.size)}`:"ยังไม่ได้เลือกไฟล์";upload.disabled=!file});
+  upload.addEventListener("click",async()=>{
+    const file=input.files?.[0]||null;if(!file||queueMediaAdminState.busy)return;
+    queueMediaAdminState.busy=true;upload.disabled=true;pick.disabled=true;const original=upload.textContent;upload.textContent="กำลังอัปโหลด";if(progress)progress.hidden=false;if(bar)bar.style.width="0%";
+    try{
+      const result=await uploadQueueVideoFile(file,percent=>{if(bar)bar.style.width=`${percent}%`;if(progress)progress.setAttribute("aria-valuenow",String(percent))});
+      input.value="";if(name)name.textContent="ยังไม่ได้เลือกไฟล์";if(bar)bar.style.width="100%";
+      await loadQueueMediaLibrary(true);
+      await showNotice("success",result.message||"อัปโหลดวิดีโอแล้ว");
+    }catch(error){await showNotice("error",error.message||"อัปโหลดวิดีโอไม่สำเร็จ")}
+    finally{queueMediaAdminState.busy=false;upload.textContent=original;upload.disabled=true;pick.disabled=false;setTimeout(()=>{if(progress)progress.hidden=true;if(bar)bar.style.width="0%"},500)}
+  });
+}
+function syncQueueVideoAdminControls(){
+  const enabled=$("queueVideoEnabled")?.checked===true;
+  $("queueVideoOptions")?.classList.toggle("is-muted",!enabled);
+  document.querySelectorAll(".queue-video-size-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));
+  const volume=$("queueVideoVolume"),value=$("queueVideoVolumeValue");if(volume&&value)value.textContent=`${Math.round(Number(volume.value)||0)}%`;
+}
 function renderAdminQueue(){
   const panel=$("adminPanel");if(!panel)return;ensureQueueFontPreviewStyles();
-  const queueUrl=new URL("./queue.html?v=20260821-r20543",location.href).href;
-  const queueDisplay=adminState.data?.queueDisplay||{showDoorPanel:true,displayMode:"CLASSIC",visualTheme:"DARK",fontFamily:"NOTO_SANS_THAI"};
-  const showDoorPanel=queueDisplay.showDoorPanel!==false,displayMode=String(queueDisplay.displayMode||"CLASSIC").toUpperCase()==="VISUAL"?"VISUAL":"CLASSIC",visualTheme=["LIGHT","DARK","NEON"].includes(String(queueDisplay.visualTheme||"").toUpperCase())?String(queueDisplay.visualTheme).toUpperCase():"DARK",fontFamily=["NOTO_SANS_THAI","SARABUN","PROMPT","NOTO_SANS_THAI_LOOPED"].includes(String(queueDisplay.fontFamily||"").toUpperCase())?String(queueDisplay.fontFamily).toUpperCase():"NOTO_SANS_THAI";
-  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>เลือกจอแบบเดิมหรือแบบ Visual โดยทั้งสองแบบใช้ข้อมูลคิว เสียง ประตู และเงื่อนไขชุดเดียวกัน</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260821-r20543" target="_blank" rel="noopener">เปิดจอคิว</a></div>
-  <section class="admin-form-card admin-queue-display-card queue-display-mode-card"><header><div><b>รูปแบบจอคิว</b><small>จอเดิมยังเก็บไว้ครบ หาก Visual มีปัญหาสามารถกลับมาใช้แบบเดิมได้ทันทีโดยไม่ Deploy ใหม่</small></div></header><div class="queue-display-mode-options">
-    <label class="queue-display-choice ${displayMode==="CLASSIC"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="CLASSIC" ${displayMode==="CLASSIC"?"checked":""}><span><b>แบบเดิม</b><small>รูปแบบที่ใช้งานอยู่ปัจจุบัน เน้นตารางและสถานะงาน</small></span></label>
-    <label class="queue-display-choice ${displayMode==="VISUAL"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="VISUAL" ${displayMode==="VISUAL"?"checked":""}><span><b>แบบ Visual</b><small>การ์ดรถหลายคันต่อขั้นตอน พร้อมภาพประตูและการเคลื่อนไหวเบา ๆ เมื่อสถานะเปลี่ยน</small></span></label>
+  const queueUrl=new URL("./queue.html?v=20260823-r20701",location.href).href;
+  const queueDisplay=adminState.data?.queueDisplay||{showDoorPanel:true,displayMode:"CLASSIC",visualTheme:"DARK",fontFamily:"NOTO_SANS_THAI",videoEnabled:false,videoUrl:"",videoSize:"STANDARD",videoSoundEnabled:true,videoVolume:70,videoLoop:true,videoAutoplay:true,videoClassicEnabled:true,videoVisualEnabled:true};
+  const showDoorPanel=queueDisplay.showDoorPanel!==false,displayMode=String(queueDisplay.displayMode||"CLASSIC").toUpperCase()==="VISUAL"?"VISUAL":"CLASSIC",visualTheme=["LIGHT","DARK","NEON"].includes(String(queueDisplay.visualTheme||"").toUpperCase())?String(queueDisplay.visualTheme).toUpperCase():"DARK",fontFamily=["NOTO_SANS_THAI","SARABUN","PROMPT","NOTO_SANS_THAI_LOOPED"].includes(String(queueDisplay.fontFamily||"").toUpperCase())?String(queueDisplay.fontFamily).toUpperCase():"NOTO_SANS_THAI",videoEnabled=queueDisplay.videoEnabled===true,videoUrl=String(queueDisplay.videoUrl||""),videoSize=String(queueDisplay.videoSize||"STANDARD").toUpperCase()==="LARGE"?"LARGE":"STANDARD",videoSoundEnabled=queueDisplay.videoSoundEnabled!==false,videoVolume=Math.max(0,Math.min(100,Number(queueDisplay.videoVolume??70))),videoLoop=queueDisplay.videoLoop!==false,videoAutoplay=queueDisplay.videoAutoplay!==false,videoClassicEnabled=queueDisplay.videoClassicEnabled!==false,videoVisualEnabled=queueDisplay.videoVisualEnabled!==false;
+  panel.innerHTML=`<div class="admin-section-head clean-admin-head"><div><h3>จอแสดงสถานะคิว</h3><p>กำหนดรูปแบบหน้าจอ สถานะประตู และวิดีโอที่ใช้บนจอคิว</p></div><a class="primary admin-queue-open" href="./queue.html?v=20260823-r20701" target="_blank" rel="noopener">เปิดจอคิว</a></div>
+  <section class="admin-form-card admin-queue-display-card queue-display-mode-card"><header><div><b>รูปแบบจอคิว</b><small>เลือกแบบที่เหมาะกับพื้นที่ใช้งาน และสลับกลับได้ทุกเวลา</small></div></header><div class="queue-display-mode-options">
+    <label class="queue-display-choice ${displayMode==="CLASSIC"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="CLASSIC" ${displayMode==="CLASSIC"?"checked":""}><span><b>แบบเดิม</b><small>เน้นรายละเอียดรายการและสถานะงาน</small></span></label>
+    <label class="queue-display-choice ${displayMode==="VISUAL"?"is-selected":""}"><input type="radio" name="queueDisplayMode" value="VISUAL" ${displayMode==="VISUAL"?"checked":""}><span><b>แบบ Visual</b><small>เน้นภาพรวมรถ ประตู และสถานะที่อ่านได้จากระยะไกล</small></span></label>
   </div></section>
-  <section id="queueVisualThemeCard" class="admin-form-card admin-queue-display-card ${displayMode==="VISUAL"?"":"is-muted"}"><header><div><b>ธีมจอ Visual</b><small>เลือกให้เหมาะกับทีวีและแสงของพื้นที่ โดยไม่เปลี่ยนข้อมูลหรือเสียงประกาศ</small></div></header><div class="queue-theme-choices">
+  <section id="queueVisualThemeCard" class="admin-form-card admin-queue-display-card ${displayMode==="VISUAL"?"":"is-muted"}"><header><div><b>ธีมจอ Visual</b><small>เลือกให้เหมาะกับทีวีและแสงของพื้นที่</small></div></header><div class="queue-theme-choices">
     <label class="queue-theme-choice theme-light ${visualTheme==="LIGHT"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="LIGHT" ${visualTheme==="LIGHT"?"checked":""}><i></i><span><b>สว่าง</b><small>เหมาะกับพื้นที่สว่าง</small></span></label>
     <label class="queue-theme-choice theme-dark ${visualTheme==="DARK"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="DARK" ${visualTheme==="DARK"?"checked":""}><i></i><span><b>เข้ม</b><small>สบายตาบนทีวี</small></span></label>
     <label class="queue-theme-choice theme-neon ${visualTheme==="NEON"?"is-selected":""}"><input type="radio" name="queueVisualTheme" value="NEON" ${visualTheme==="NEON"?"checked":""}><i></i><span><b>นีออน</b><small>สีเด่น เหมาะกับจอใหญ่</small></span></label>
   </div></section>
-  <section class="admin-form-card admin-queue-display-card"><header><div><b>ฟอนต์จอคิว</b><small>ฟอนต์ภาษาไทยจาก Google Fonts ภายใต้ SIL Open Font License เลือกได้โดยไม่เปลี่ยนข้อมูลของจอ</small></div></header><div class="queue-font-choices">
+  <section class="admin-form-card admin-queue-display-card"><header><div><b>ฟอนต์จอคิว</b><small>เลือกแบบตัวอักษรที่อ่านง่ายจากระยะใช้งานจริง</small></div></header><div class="queue-font-choices">
     <label class="queue-font-choice font-noto ${fontFamily==="NOTO_SANS_THAI"?"is-selected":""}"><input type="radio" name="queueFontFamily" value="NOTO_SANS_THAI" ${fontFamily==="NOTO_SANS_THAI"?"checked":""}><span><b>ก ข 123 · Noto Sans Thai</b><small>อ่านง่ายบนจอทีวี · ค่าแนะนำ</small></span></label>
     <label class="queue-font-choice font-sarabun ${fontFamily==="SARABUN"?"is-selected":""}"><input type="radio" name="queueFontFamily" value="SARABUN" ${fontFamily==="SARABUN"?"checked":""}><span><b>ก ข 123 · Sarabun</b><small>สุภาพ เป็นทางการ อ่านง่าย</small></span></label>
     <label class="queue-font-choice font-prompt ${fontFamily==="PROMPT"?"is-selected":""}"><input type="radio" name="queueFontFamily" value="PROMPT" ${fontFamily==="PROMPT"?"checked":""}><span><b>ก ข 123 · Prompt</b><small>ทันสมัย เหมาะกับ Dashboard</small></span></label>
     <label class="queue-font-choice font-noto-looped ${fontFamily==="NOTO_SANS_THAI_LOOPED"?"is-selected":""}"><input type="radio" name="queueFontFamily" value="NOTO_SANS_THAI_LOOPED" ${fontFamily==="NOTO_SANS_THAI_LOOPED"?"checked":""}><span><b>ก ข 123 · Noto Sans Thai Looped</b><small>รูปอักษรไทยมีหัว อ่านชัดจากระยะไกล</small></span></label>
   </div></section>
-  <section class="admin-form-card admin-queue-display-card"><header><div><b>การแสดงสถานะประตู</b><small>ใช้ได้กับทั้งจอเดิมและจอ Visual</small></div></header><label class="admin-toggle-row"><span><b>แสดงสถานะประตูในจอคิว</b><small>ปิดได้เมื่อต้องการพื้นที่แสดงรถมากขึ้น โดยไม่กระทบการใช้ประตูของงาน</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label></section>
-  <section class="admin-queue-guide queue-visual-guide"><article><b>ข้อมูลและเสียงชุดเดียวกัน</b><p>จอเดิมและ Visual ใช้ API คิวเดียวกัน เสียงเดิม และกฎเรียกรถ/เรียกซ้ำ/เปลี่ยนประตูชุดเดียวกัน จึงไม่เกิดสถานะคนละชุด</p></article><article><b>Visual รองรับรถหลายคัน</b><p>แต่ละขั้นตอนแสดงรถหลายคันพร้อมจำนวนรวม คันที่เกินพื้นที่จอจะหมุนหน้าอัตโนมัติ ไม่สร้าง Query เพิ่ม</p></article><article><b>ลูกเล่นไม่ขวางงานหลัก</b><p>การ์ดรถเคลื่อนไหวเฉพาะตอนข้อมูลเปลี่ยน หาก Browser ลดการเคลื่อนไหว ระบบยังแสดงข้อมูลครบโดยไม่พึ่ง Animation</p></article></section>
+  <section class="admin-form-card admin-queue-display-card"><header><div><b>การแสดงสถานะประตู</b><small>ใช้ได้กับทั้งจอเดิมและจอ Visual</small></div></header><label class="admin-toggle-row"><span><b>แสดงสถานะประตูในจอคิว</b><small>ปิดได้เมื่อต้องการพื้นที่แสดงรถมากขึ้น</small></span><input id="queueDoorPanelEnabled" type="checkbox" ${showDoorPanel?"checked":""}></label></section>
+
+  <section class="admin-form-card queue-video-admin-card">
+    <header class="queue-video-admin-head"><div><b>วิดีโอหน้าจอคิว</b><small>เมื่อปิดวิดีโอ หน้าจอจะกลับไปใช้รูปแบบเดิมโดยอัตโนมัติ</small></div><label class="queue-video-master-switch"><span>${videoEnabled?"เปิด":"ปิด"}</span><input id="queueVideoEnabled" type="checkbox" ${videoEnabled?"checked":""}></label></header>
+    <input id="queueVideoSelectedUrl" type="hidden" value="${escapeHtml(videoUrl)}">
+    <div id="queueVideoOptions" class="queue-video-options ${videoEnabled?"":"is-muted"}">
+      <div class="queue-video-current">
+        <div class="queue-video-preview">${videoUrl?`<video src="${escapeHtml(videoUrl)}" muted controls playsinline preload="metadata"></video>`:`<div class="queue-video-preview-empty"><b>ยังไม่ได้เลือกวิดีโอ</b><span>เลือกจากคลัง R2 ด้านล่าง</span></div>`}</div>
+        <div class="queue-video-current-copy"><small>ไฟล์ที่เลือก</small><b>${videoUrl?"พร้อมใช้งาน":"ยังไม่มีไฟล์"}</b><span>${videoUrl?"สามารถเปลี่ยนไฟล์ได้จากคลังวิดีโอ":"อัปโหลดหรือเลือกไฟล์ก่อนเปิดการแสดงผล"}</span></div>
+      </div>
+      <div class="queue-video-setting-grid">
+        <fieldset class="queue-video-size-field"><legend>ขนาดวิดีโอ</legend><div class="queue-video-size-choices">
+          <label class="queue-video-size-choice ${videoSize==="STANDARD"?"is-selected":""}"><input type="radio" name="queueVideoSize" value="STANDARD" ${videoSize==="STANDARD"?"checked":""}><span><i class="video-size-icon standard"></i><b>มาตรฐาน</b><small>รักษาพื้นที่ข้อมูลคิวมากกว่า</small></span></label>
+          <label class="queue-video-size-choice ${videoSize==="LARGE"?"is-selected":""}"><input type="radio" name="queueVideoSize" value="LARGE" ${videoSize==="LARGE"?"checked":""}><span><i class="video-size-icon large"></i><b>ใหญ่</b><small>เพิ่มพื้นที่วิดีโอให้เด่นขึ้น</small></span></label>
+        </div></fieldset>
+        <fieldset><legend>แสดงบนหน้าจอ</legend><div class="queue-video-checks"><label class="clean-check"><input id="queueVideoClassicEnabled" type="checkbox" ${videoClassicEnabled?"checked":""}><span>จอแบบเดิม</span></label><label class="clean-check"><input id="queueVideoVisualEnabled" type="checkbox" ${videoVisualEnabled?"checked":""}><span>จอ Visual</span></label></div></fieldset>
+        <fieldset><legend>การเล่น</legend><div class="queue-video-checks"><label class="clean-check"><input id="queueVideoAutoplay" type="checkbox" ${videoAutoplay?"checked":""}><span>เล่นอัตโนมัติ</span></label><label class="clean-check"><input id="queueVideoLoop" type="checkbox" ${videoLoop?"checked":""}><span>เล่นวนซ้ำ</span></label><label class="clean-check"><input id="queueVideoSoundEnabled" type="checkbox" ${videoSoundEnabled?"checked":""}><span>เปิดเสียงวิดีโอ</span></label></div></fieldset>
+        <fieldset class="queue-video-volume-field"><legend>ระดับเสียงวิดีโอ</legend><div class="queue-video-volume"><input id="queueVideoVolume" type="range" min="0" max="100" step="5" value="${videoVolume}"><b id="queueVideoVolumeValue">${videoVolume}%</b></div><small>เมื่อมีการประกาศเรียกคิว เสียงวิดีโอจะหยุดชั่วคราวและกลับมาเองหลังประกาศจบ</small></fieldset>
+      </div>
+    </div>
+  </section>
+
+  <section class="admin-form-card queue-media-library-card">
+    <header><div><b>คลังวิดีโอ R2</b><small>อัปโหลด เลือกใช้ หรือลบไฟล์วิดีโอได้จากหน้านี้</small></div><button id="queueMediaRefresh" class="outline-button" type="button">รีเฟรชรายการ</button></header>
+    <div class="queue-media-uploader">
+      <input id="queueMediaFile" type="file" accept="video/mp4,.mp4" hidden>
+      <button id="queueMediaPick" class="outline-button" type="button">เลือกไฟล์ MP4</button>
+      <div class="queue-media-selected"><b id="queueMediaSelectedName">ยังไม่ได้เลือกไฟล์</b><span>วิดีโอควรมีอัตราส่วนที่เหมาะกับพื้นที่จอ</span></div>
+      <button id="queueMediaUpload" class="primary" type="button" disabled>อัปโหลดไปยัง R2</button>
+    </div>
+    <div id="queueMediaUploadProgress" class="queue-media-upload-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><i id="queueMediaUploadBar"></i></div>
+    <div id="queueMediaLibrary">${queueMediaLibraryHtml()}</div>
+  </section>
+
+  <section class="admin-queue-guide queue-video-guide"><article><b>เสียงเรียกคิวสำคัญที่สุด</b><p>เมื่อมีการเรียกรถ เสียงวิดีโอจะหยุดชั่วคราว แล้วกลับมาเล่นต่อหลังประกาศทั้งหมดจบ</p></article><article><b>เลือกได้สองขนาด</b><p>ขนาดมาตรฐานรักษาพื้นที่ข้อมูล ส่วนขนาดใหญ่เพิ่มพื้นที่วิดีโอให้เห็นชัดขึ้น</p></article><article><b>ปิดแล้วคืนหน้าจอเดิม</b><p>เมื่อปิดการแสดงวิดีโอ พื้นที่ของหน้าจอคิวจะกลับไปใช้รูปแบบเดิมทันที</p></article></section>
   <div class="admin-form-actions clean-sticky-actions"><button id="queueDisplaySaveButton" class="primary" type="button">บันทึกการแสดงผล</button></div>
   <div class="admin-queue-url"><small>ลิงก์จอส่วนกลาง</small><code>${escapeHtml(queueUrl)}</code></div>`;
-  const syncQueueDisplayControls=()=>{const mode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||"CLASSIC",card=$("queueVisualThemeCard");card?.classList.toggle("is-muted",mode!=="VISUAL");document.querySelectorAll(".queue-display-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));document.querySelectorAll(".queue-theme-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));document.querySelectorAll(".queue-font-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked))};
-  document.querySelectorAll('input[name="queueDisplayMode"],input[name="queueVisualTheme"],input[name="queueFontFamily"]').forEach(input=>input.addEventListener("change",syncQueueDisplayControls));syncQueueDisplayControls();
-  $("queueDisplaySaveButton")?.addEventListener("click",async()=>{
-    if(adminState.busy)return;
-    const button=$("queueDisplaySaveButton"),showDoorPanel=$("queueDoorPanelEnabled")?.checked!==false,displayMode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||"CLASSIC",visualTheme=document.querySelector('input[name="queueVisualTheme"]:checked')?.value||"DARK",fontFamily=document.querySelector('input[name="queueFontFamily"]:checked')?.value||"NOTO_SANS_THAI";
-    adminState.busy=true;if(button){button.disabled=true;button.textContent="กำลังบันทึก"}
-    try{
-      const result=await api("/api/admin/queue-display",{method:"POST",body:{showDoorPanel,displayMode,visualTheme,fontFamily}});
-      adminState.data=await api("/api/admin/settings");
-      renderAdminShell();
-      await showNotice("success",result.message||"บันทึกการแสดงผลจอคิวแล้ว");
-    }catch(error){
-      await showNotice("error",error.message||"บันทึกไม่สำเร็จ กรุณาลองใหม่");
-    }finally{adminState.busy=false}
-  });
-}
 
+  const syncQueueDisplayControls=()=>{const mode=document.querySelector('input[name="queueDisplayMode"]:checked')?.value||"CLASSIC",card=$("queueVisualThemeCard");card?.classList.toggle("is-muted",mode!=="VISUAL");document.querySelectorAll(".queue-display-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));document.querySelectorAll(".queue-theme-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));document.querySelectorAll(".queue-font-choice").forEach(label=>label.classList.toggle("is-selected",label.querySelector("input")?.checked));syncQueueVideoAdminControls()};
+  document.querySelectorAll('input[name="queueDisplayMode"],input[name="queueVisualTheme"],input[name="queueFontFamily"],input[name="queueVideoSize"]').forEach(input=>input.addEventListener("change",syncQueueDisplayControls));
+  $("queueVideoEnabled")?.addEventListener("change",()=>{const label=document.querySelector(".queue-video-master-switch span");if(label)label.textContent=$("queueVideoEnabled").checked?"เปิด":"ปิด";syncQueueVideoAdminControls()});
+  $("queueVideoVolume")?.addEventListener("input",syncQueueVideoAdminControls);
+  $("queueDisplaySaveButton")?.addEventListener("click",()=>saveQueueDisplayFromAdmin());
+  $("queueMediaRefresh")?.addEventListener("click",()=>loadQueueMediaLibrary(true));
+  syncQueueDisplayControls();bindQueueMediaUpload();renderQueueMediaLibrary();loadQueueMediaLibrary();
+}
 
 function adminHealthTone(status){return status==="FAIL"?"fail":status==="WARN"?"warn":"pass"}
 function updateAdminHealthBadge(){const badge=$("adminHealthBadge"),label=$("adminHealthBadgeLabel"),time=$("adminHealthBadgeTime"),data=adminHealthState.data;if(!badge)return;badge.classList.remove("health-pass","health-warn","health-fail","health-unknown");const status=data?.status||"UNKNOWN";badge.classList.add(`health-${status.toLowerCase()}`);if(label)label.textContent=status==="PASS"?"พร้อมใช้งาน":status==="WARN"?"ควรตรวจสอบ":status==="FAIL"?"มีปัญหา":adminHealthState.error?"ตรวจไม่สำเร็จ":"กำลังตรวจ";if(time)time.textContent=data?`ตรวจ ${formatDate(data.generatedAt)}`:adminHealthState.error?adminHealthState.error:"กำลังตรวจสอบ"}
