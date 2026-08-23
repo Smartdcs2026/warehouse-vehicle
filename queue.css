@@ -2395,3 +2395,415 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-visual-view.has-queue-video .visual-queue-video-panel{max-width:430px}
   .queue-visual-view.has-queue-video.queue-video-large .visual-queue-video-panel{max-width:530px}
 }
+
+/* Round 207.10 — integrated VDO layout.
+   VDO uses the right side of the call + status area. The four status cards contract into the remaining area,
+   while closing VDO restores the original queue layout. */
+
+/* The wrapper reproduces the original CLASSIC layout when VDO is off. */
+.queue-shell:not(.queue-visual-mode){
+  grid-template-rows:82px 301px minmax(0,1fr) 36px;
+}
+.queue-top-zone{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:205px 88px;
+  gap:8px;
+  min-width:0;
+  min-height:0;
+}
+.queue-top-zone>.call-panel{grid-column:1;grid-row:1;min-width:0;min-height:0}
+.queue-top-zone>.queue-summary{grid-column:1;grid-row:2;min-width:0;min-height:0}
+.queue-top-zone>.queue-video-panel{grid-column:1;grid-row:1/3}
+.queue-shell.queue-visual-mode>.queue-top-zone{display:none!important}
+
+/* CLASSIC + VDO: VDO occupies the right side through the status-card row.
+   Standard is about 37.5% of the screen; Large about 43%. */
+.queue-shell.queue-video-on:not(.queue-visual-mode){
+  grid-template-rows:82px auto minmax(0,1fr) 34px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone{
+  height:clamp(338px,21.2vw,382px);
+  grid-template-columns:minmax(0,1fr) clamp(560px,37.5%,650px);
+  grid-template-rows:minmax(0,1fr) 88px;
+  gap:8px;
+}
+.queue-shell.queue-video-on.queue-video-large:not(.queue-visual-mode) .queue-top-zone{
+  height:clamp(386px,24.3vw,438px);
+  grid-template-columns:minmax(0,1fr) clamp(650px,43%,760px);
+  grid-template-rows:minmax(0,1fr) 98px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone>.call-panel{
+  grid-column:1;
+  grid-row:1;
+  grid-template-columns:clamp(88px,6.2vw,112px) minmax(0,1fr)!important;
+  border-radius:18px;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone>.call-panel.queue-video-large{
+  grid-template-columns:clamp(84px,5.8vw,104px) minmax(0,1fr)!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-center{
+  padding:12px 20px;
+  grid-template-rows:minmax(0,1fr) 54px;
+  border-right:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-grid{
+  grid-template-columns:minmax(210px,.82fr) minmax(0,1.18fr);
+  gap:16px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-grid>div+div{padding-left:16px}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-number-block strong{
+  font-size:clamp(34px,3vw,52px);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-company-block strong{
+  font-size:clamp(19px,1.75vw,29px);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-vehicle-meta{
+  width:min(100%,590px);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-tag{
+  padding:8px 5px;
+  gap:7px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-icon{
+  width:44px;
+  height:44px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-tag b{
+  font-size:13px;
+  text-align:center;
+}
+
+/* The four status cards shrink only while VDO is on. */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone>.queue-summary{
+  grid-column:1;
+  grid-row:2;
+  gap:7px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary article{
+  padding:6px 9px;
+  grid-template-columns:38px minmax(0,1fr) auto auto;
+  min-width:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary .summary-icon{
+  width:34px;
+  height:34px;
+  font-size:16px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary small{font-size:11px}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary b{font-size:26px}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary em{font-size:10px}
+
+/* VDO is a sibling of the call panel now, so it can span the call + status rows without enlarging "รอเรียกคิว". */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone>.queue-video-panel{
+  display:block;
+  grid-column:2;
+  grid-row:1/3;
+  width:100%;
+  height:100%;
+  margin:0;
+  align-self:stretch;
+  justify-self:stretch;
+  border-radius:16px;
+  overflow:hidden;
+  background:#02070d;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone>.queue-video-panel video{
+  width:100%;
+  height:100%;
+  object-fit:contain!important;
+  object-position:center;
+}
+
+/* CLASSIC waiting list: fixed compact cards stop a single vehicle from stretching and stop text overlap. */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel{
+  grid-template-rows:46px minmax(0,1fr);
+  padding:8px 10px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-table-head{display:none}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:none;
+  grid-auto-rows:76px;
+  align-content:start;
+  gap:7px;
+  padding-top:7px;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 72px;
+  grid-template-rows:auto auto auto;
+  column-gap:8px;
+  row-gap:2px;
+  min-width:0;
+  min-height:0;
+  height:76px;
+  padding:7px 9px;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-appt{
+  grid-column:1;
+  grid-row:1;
+  font-size:14px;
+  line-height:1.05;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle{
+  grid-column:1;
+  grid-row:2;
+  min-width:0;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line{
+  min-width:0;
+  max-width:100%;
+  flex-wrap:nowrap;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line b{
+  min-width:0;
+  font-size:10px;
+  line-height:1.05;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>small,
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-province{
+  font-size:8px;
+  line-height:1.05;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-province{
+  grid-column:1;
+  grid-row:3;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status{
+  grid-column:2;
+  grid-row:1/4;
+  min-width:0;
+  justify-self:stretch;
+  align-self:center;
+  align-items:flex-end;
+  justify-content:center;
+  gap:4px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status small{
+  max-width:68px;
+  font-size:7.5px;
+  line-height:1.1;
+  text-align:right;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-door-badge{
+  min-width:42px;
+  padding:4px 6px;
+  font-size:11px;
+}
+
+/* VISUAL + VDO: VDO spans both the call row and the four workflow cards.
+   The call area no longer grows to match video height; cards 1-4 contract inside the remaining left column. */
+.queue-visual-view.has-queue-video .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) clamp(560px,37.5%,650px);
+  grid-template-rows:66px 146px minmax(182px,1fr) 168px 30px;
+  column-gap:8px;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) clamp(650px,43%,760px);
+  grid-template-rows:66px 154px minmax(224px,1fr) 158px 30px;
+}
+.queue-visual-view.has-queue-video .visual-queue-header{grid-column:1/-1;grid-row:1}
+.queue-visual-view.has-queue-video .visual-top{
+  grid-column:1;
+  grid-row:2;
+  grid-template-columns:minmax(0,1fr) minmax(260px,.55fr);
+  min-height:0;
+  height:100%;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-top{
+  grid-template-columns:minmax(0,1fr) minmax(240px,.50fr);
+}
+.queue-visual-view.has-queue-video .visual-stage-wrap{
+  grid-column:1;
+  grid-row:3;
+  min-width:0;
+  min-height:0;
+}
+.queue-visual-view.has-queue-video .visual-queue-video-panel{
+  display:block;
+  grid-column:2;
+  grid-row:2/4;
+  width:100%;
+  height:100%;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  align-self:stretch;
+  justify-self:stretch;
+  border-radius:14px;
+  overflow:hidden;
+}
+.queue-visual-view.has-queue-video .visual-queue-video-panel video{
+  width:100%;
+  height:100%;
+  object-fit:contain!important;
+  object-position:center;
+}
+.queue-visual-view.has-queue-video .visual-lower-grid{grid-column:1/-1;grid-row:4}
+.queue-visual-view.has-queue-video .visual-queue-footer{grid-column:1/-1;grid-row:5}
+
+/* Keep the left "รอเรียกคิว" area fixed and compact regardless of VDO size. */
+.queue-visual-view.has-queue-video .visual-call-hero{
+  grid-template-columns:66px minmax(150px,1fr) minmax(92px,.34fr) minmax(82px,.28fr);
+  height:100%;
+  min-height:0;
+}
+.queue-visual-view.has-queue-video .visual-signal-ring{width:50px;height:50px}
+.queue-visual-view.has-queue-video .visual-signal-ring .visual-truck-svg{width:34px}
+.queue-visual-view.has-queue-video .visual-call-signal>b{font-size:9.5px}
+.queue-visual-view.has-queue-video .visual-call-main,
+.queue-visual-view.has-queue-video .visual-call-vehicle,
+.queue-visual-view.has-queue-video .visual-call-door{padding-inline:9px;min-width:0}
+.queue-visual-view.has-queue-video .visual-call-main strong{font-size:clamp(23px,2vw,35px)}
+.queue-visual-view.has-queue-video .visual-call-main>b{font-size:10.5px}
+.queue-visual-view.has-queue-video .visual-call-vehicle>b{font-size:15px}
+.queue-visual-view.has-queue-video .visual-call-door>b{font-size:27px}
+
+/* Four summary cards remain readable but do not force the call hero wider. */
+.queue-visual-view.has-queue-video .visual-summary-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:6px;
+  min-width:0;
+}
+.queue-visual-view.has-queue-video .visual-summary-card{
+  grid-template-columns:28px minmax(0,1fr);
+  padding:4px 6px;
+  min-width:0;
+}
+.queue-visual-view.has-queue-video .visual-summary-card>span{width:24px;height:24px;font-size:12px}
+.queue-visual-view.has-queue-video .visual-summary-card small{font-size:8.5px;line-height:1.08}
+.queue-visual-view.has-queue-video .visual-summary-card b{font-size:19px}
+
+/* The four workflow lanes contract into the left area. */
+.queue-visual-view.has-queue-video .visual-stage-grid{
+  grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr) 8px minmax(0,1fr);
+  gap:4px;
+  min-width:0;
+}
+.queue-visual-view.has-queue-video .visual-flow-arrow{font-size:24px}
+.queue-visual-view.has-queue-video .visual-stage-lane{
+  grid-template-rows:44px minmax(0,1fr) 22px;
+  min-width:0;
+}
+.queue-visual-view.has-queue-video .visual-stage-lane>header{padding:4px 6px;gap:5px;min-width:0}
+.queue-visual-view.has-queue-video .visual-stage-lane>header>span{width:26px;height:26px;font-size:14px;flex:0 0 auto}
+.queue-visual-view.has-queue-video .visual-stage-lane>header b{font-size:10.5px}
+.queue-visual-view.has-queue-video .visual-stage-lane>header small{font-size:8px}
+.queue-visual-view.has-queue-video .visual-stage-list{
+  grid-template-columns:1fr;
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  gap:4px;
+  padding:4px;
+  min-height:0;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child)>.visual-vehicle-card{
+  grid-template-columns:34px minmax(0,1fr) auto!important;
+  grid-template-rows:auto auto!important;
+  column-gap:5px!important;
+  row-gap:1px!important;
+  padding:4px 5px!important;
+  min-height:0!important;
+  height:100%!important;
+  overflow:hidden!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-icon{
+  grid-column:1!important;
+  grid-row:1/3!important;
+  width:31px!important;
+  height:25px!important;
+  align-self:center!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon .visual-truck-svg,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-icon .visual-truck-svg{width:28px!important}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy{
+  grid-column:2!important;
+  grid-row:1/3!important;
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top{gap:4px!important;min-width:0}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>b,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-top>b{
+  font-size:9.5px!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>span,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-top>span{font-size:8px!important}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>strong,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-copy>strong{
+  display:block!important;
+  margin-top:2px!important;
+  font-size:7.8px!important;
+  line-height:1.08!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-copy>small{
+  display:flex!important;
+  margin-top:1px!important;
+  font-size:6.8px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small i{font-size:6.5px!important;padding:1px 3px!important}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card>time,
+.queue-visual-view.has-queue-video .visual-stage-list:has(> .visual-vehicle-card:only-child) .visual-vehicle-card>time{
+  grid-column:3!important;
+  grid-row:1/3!important;
+  align-self:end!important;
+  font-size:7.5px!important;
+  padding:2px 3px!important;
+}
+
+@media(max-width:1450px){
+  .queue-shell:not(.queue-visual-mode){grid-template-rows:72px 266px minmax(0,1fr) 32px}
+  .queue-top-zone{grid-template-rows:182px 76px;gap:8px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:72px auto minmax(0,1fr) 30px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone{height:clamp(318px,22vw,355px);grid-template-columns:minmax(0,1fr) clamp(500px,37%,590px);grid-template-rows:minmax(0,1fr) 80px}
+  .queue-shell.queue-video-on.queue-video-large:not(.queue-visual-mode) .queue-top-zone{height:clamp(360px,25vw,405px);grid-template-columns:minmax(0,1fr) clamp(585px,42%,680px);grid-template-rows:minmax(0,1fr) 88px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary small{font-size:10px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary b{font-size:23px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) clamp(500px,37%,590px);grid-template-rows:58px 132px minmax(174px,1fr) 150px 27px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) clamp(585px,42%,680px);grid-template-rows:58px 142px minmax(204px,1fr) 142px 27px}
+  .queue-visual-view.has-queue-video .visual-top{grid-template-columns:minmax(0,1fr) minmax(220px,.48fr)}
+  .queue-visual-view.has-queue-video .visual-call-hero{grid-template-columns:58px minmax(130px,1fr) minmax(78px,.32fr) minmax(70px,.26fr)}
+}
+@media(max-height:790px){
+  .queue-shell:not(.queue-visual-mode){grid-template-rows:64px 232px minmax(0,1fr) 28px}
+  .queue-top-zone{grid-template-rows:160px 66px;gap:6px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:64px auto minmax(0,1fr) 26px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-top-zone{height:292px;grid-template-columns:minmax(0,1fr) clamp(440px,35%,520px);grid-template-rows:minmax(0,1fr) 68px;gap:6px}
+  .queue-shell.queue-video-on.queue-video-large:not(.queue-visual-mode) .queue-top-zone{height:332px;grid-template-columns:minmax(0,1fr) clamp(510px,40%,600px);grid-template-rows:minmax(0,1fr) 74px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-center{padding:7px 11px;grid-template-rows:minmax(0,1fr) 42px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-number-block strong{font-size:clamp(28px,2.4vw,40px)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary article{padding:4px 6px;grid-template-columns:30px minmax(0,1fr) auto auto}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary .summary-icon{width:28px;height:28px;font-size:13px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary small{font-size:9px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-summary b{font-size:20px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{grid-auto-rows:62px;gap:5px;padding-top:5px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{height:62px;padding:5px 7px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) clamp(440px,35%,520px);grid-template-rows:52px 112px minmax(162px,1fr) 126px 24px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) clamp(510px,40%,600px);grid-template-rows:52px 120px minmax(190px,1fr) 120px 24px}
+  .queue-visual-view.has-queue-video .visual-top{grid-template-columns:minmax(0,1fr) minmax(190px,.44fr)}
+  .queue-visual-view.has-queue-video .visual-call-hero{grid-template-columns:50px minmax(115px,1fr) minmax(70px,.30fr) minmax(62px,.24fr)}
+  .queue-visual-view.has-queue-video .visual-stage-lane{grid-template-rows:38px minmax(0,1fr) 20px}
+  .queue-visual-view.has-queue-video .visual-stage-list{grid-template-rows:repeat(3,minmax(0,1fr));gap:3px;padding:3px}
+}
