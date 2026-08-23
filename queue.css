@@ -1753,3 +1753,191 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-visual-view.has-queue-video .visual-wait-panel{display:none}
   .queue-visual-view.has-queue-video .visual-door-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
 }
+
+/* Round 207.4 — fix overlaps after VDO, simplify call icon, tighten waiting layouts */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel{
+  grid-template-rows:46px 34px minmax(0,1fr);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{
+  grid-template-rows:repeat(5,minmax(0,1fr));
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{
+  grid-template-columns:104px minmax(0,1fr) 92px 122px;
+  gap:8px;
+  padding:5px 6px;
+  min-height:54px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle{
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:4px;
+  margin-bottom:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line b{
+  font-size:11px;
+  line-height:1.12;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>small{
+  font-size:10px;
+  line-height:1.1;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-appt{
+  font-size:14px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-province,
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status,
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status small{
+  font-size:10px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status{
+  justify-content:center;
+  align-items:flex-end;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-door-badge{
+  min-width:42px;
+  font-size:11px;
+  padding:3px 7px;
+}
+
+/* Simplify classic call icon proportions so the sound-wave mark does not warp in VDO mode. */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-tag{
+  padding:8px 6px;
+  gap:7px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-icon{
+  position:relative;
+  overflow:visible;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-icon::before{
+  left:50%;
+  top:50%;
+  width:48%;
+  height:42%;
+  transform:translate(-46%,-50%);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-icon::after{
+  left:50%;
+  top:50%;
+  width:20%;
+  height:46%;
+  border-width:3px;
+  transform:translate(48%,-50%);
+}
+
+/* Visual mode with VDO: 1 card per row inside each stage lane to stop overlaps. */
+.queue-visual-view.has-queue-video .visual-stage-list{
+  grid-template-columns:1fr;
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  grid-auto-flow:row;
+  gap:5px;
+  padding:5px;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card{
+  grid-template-columns:44px minmax(0,1fr) auto;
+  grid-template-rows:auto auto;
+  column-gap:6px;
+  row-gap:2px;
+  align-items:center;
+  padding:5px 6px;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon{
+  grid-column:1;
+  grid-row:1 / span 2;
+  width:40px;
+  height:31px;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon .visual-truck-svg{width:35px}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy{
+  grid-column:2;
+  grid-row:1 / span 2;
+  display:block;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top{
+  gap:6px;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>b{
+  font-size:12px;
+  line-height:1.05;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>span{
+  font-size:10px;
+  line-height:1.05;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>strong{
+  margin-top:2px;
+  font-size:9px;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small{
+  margin-top:2px;
+  font-size:8px;
+  line-height:1.05;
+  display:flex;
+  gap:4px;
+  flex-wrap:nowrap;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small i{
+  font-size:7.5px;
+  padding:1px 4px;
+}
+.queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card>time{
+  grid-column:3;
+  grid-row:1 / span 2;
+  align-self:end;
+  justify-self:end;
+  font-size:9px;
+  padding:2px 4px;
+}
+
+/* Large VDO leaves less room: compress stage cards a little more. */
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-card{
+  grid-template-columns:40px minmax(0,1fr) auto;
+  padding:4px 5px;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-icon{
+  width:36px;
+  height:28px;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-icon .visual-truck-svg{width:31px}
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-top>b{font-size:11px}
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-top>span,
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-copy>strong,
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-copy>small,
+.queue-visual-view.has-queue-video.queue-video-large .visual-stage-list .visual-vehicle-card>time{font-size:8px}
+
+@media (max-height:790px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{grid-template-rows:repeat(4,minmax(0,1fr))}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{
+    grid-template-columns:92px minmax(0,1fr) 84px 110px;
+    min-height:48px;
+    padding:4px 5px;
+  }
+  .queue-visual-view.has-queue-video .visual-stage-list{
+    grid-template-rows:repeat(2,minmax(0,1fr));
+    gap:4px;
+    padding:4px;
+  }
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card{
+    grid-template-columns:36px minmax(0,1fr) auto;
+    padding:3px 4px;
+  }
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon{
+    width:32px;
+    height:24px;
+  }
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-icon .visual-truck-svg{width:28px}
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>b{font-size:10px}
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-top>span,
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>strong,
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small,
+  .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card>time{font-size:7px}
+}
