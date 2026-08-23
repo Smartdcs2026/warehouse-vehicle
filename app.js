@@ -1380,7 +1380,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260821-r20557",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260823-r20601",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -2344,36 +2344,84 @@ async function showDatatableDetail(autoId,sourceButton=null){
   datatableState.detailBusy=true;uiState.detailsOpen=true;
   try{
     if(window.Swal)Swal.fire({title:"กำลังเปิดข้อมูล",allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading(),showConfirmButton:false,customClass:swalClasses(),width:380});
-    const data=await api(`/api/datatable/detail?autoId=${encodeURIComponent(autoId)}`),v=data.vehicle||{},events=data.events||[],d=data.durations||{},rej=data.rejection,shiftMeta=datatableDetailShiftMeta(v);
-    const stages=[
-      ["gate_to_document","รถเข้า → ยื่นเอกสาร",d.gateToDocumentSeconds],
-      ["document_review","ตรวจเอกสาร",d.documentReviewSeconds],
-      ["ready","รอตรวจรับ",d.readyToReceivingSeconds],
-      ["queue","เรียก → เริ่มตรวจรับ",d.calledToReceivingSeconds],
-      ["receiving","ตรวจรับสินค้า",d.receivingSeconds],
-      ["document_return","คืนเอกสาร",d.receivingToReturnSeconds],
-      ["gate_out","ออกจากพื้นที่",d.returnToGateOutSeconds],
-      ["total","เวลารวม",d.totalInSiteSeconds]
-    ];
+    const data=await api(`/api/datatable/detail?autoId=${encodeURIComponent(autoId)}`),v=data.vehicle||{},events=data.events||[],calls=data.calls||[],d=data.durations||{},rej=data.rejection,shiftMeta=datatableDetailShiftMeta(v),projection=appointmentProjectionOf(v);
     const businessDate=formatDatatableBusinessDate(v.shiftBusinessDate),statusText=statusLabel(v.currentStatus),plate=joinText(v.vehiclePlate,v.province),company=v.companyName||"ไม่ระบุบริษัท",appointment=v.appointmentNo||v.autoId||autoId;
+    const eventByType={};for(const e of events)eventByType[e.event_type]=e;
+    const operationalCalls=calls.filter(c=>["FIRST","RECALL","DOOR_CHANGED"].includes(String(c.call_type||"").toUpperCase())),firstCall=operationalCalls[0]||null,lastCall=operationalCalls[operationalCalls.length-1]||null;
+    const milestones=[
+      ["Gate In",v.gateInAt,"รถเข้าพื้นที่"],
+      ["ยื่นเอกสาร",eventByType.DOCUMENT_SUBMITTED?.occurred_at,"Inbound"],
+      ["ตรวจเอกสารเสร็จ",eventByType.DOCUMENT_CHECKED?.occurred_at,"Inbound"],
+      ["เรียกรถครั้งแรก",firstCall?.called_at,"Queue"],
+      ["เรียกรถล่าสุด",lastCall?.called_at,"Queue"],
+      ["เริ่มตรวจรับสินค้า",eventByType.RECEIVING_STARTED?.occurred_at,"Receiving"],
+      ["รับสินค้าเสร็จ",eventByType.RECEIVING_COMPLETED?.occurred_at,"Receiving"],
+      ["คืนเอกสาร",eventByType.DOCUMENT_RETURNED?.occurred_at,"Inbound"],
+      ["Gate Out",v.gateOutAt,"ปิดงาน"]
+    ];
+    const durations=[
+      ["รถเข้า → ยื่นเอกสาร",d.gateToDocumentSeconds],
+      ["ตรวจเอกสาร",d.documentReviewSeconds],
+      ["พร้อมตรวจรับ → เริ่มตรวจรับ",d.readyToReceivingSeconds],
+      ["เรียก → เริ่มตรวจรับ",d.calledToReceivingSeconds],
+      ["ตรวจรับสินค้า",d.receivingSeconds],
+      ["รับเสร็จ → คืนเอกสาร",d.receivingToReturnSeconds],
+      ["คืนเอกสาร → Gate Out",d.returnToGateOutSeconds]
+    ];
     const metaItems=[
-      v.shiftName?`<div><small>กะ</small><b>${escapeHtml(v.shiftName)}</b>${shiftMeta.range?`<span>${escapeHtml(shiftMeta.range)}${shiftMeta.cross?" · ข้ามวัน":""}</span>`:""}</div>`:"",
-      v.shiftBusinessDate?`<div><small>วันที่เริ่มกะ</small><b>${escapeHtml(businessDate)}</b></div>`:"",
-      v.doorCode?`<div><small>ประตู</small><b>${escapeHtml(v.doorCode)}</b></div>`:"",
-      v.driverName?`<div><small>คนขับ</small><b>${escapeHtml(v.driverName)}</b></div>`:""
-    ].filter(Boolean).join("");
-    const eventRows=events.map((e,index)=>`<div class="dt-detail-history-row${index===events.length-1?" is-latest":""}"><time>${formatDate(e.occurred_at)}</time><b>${datatableEventLabel(e.event_type)}</b><span>${escapeHtml(e.actor||"ระบบ")}</span></div>`).join("");
-    const html=`<div class="dt-detail-modal dt-detail-modal-r116">
-      <section class="dt-detail-summary-r116">
-        <div class="dt-detail-key"><small>เลขนัดหมาย</small><b>${escapeHtml(appointment)}${datatableAppointmentBadge(v)}</b>${v.appointmentValidation?.enabled&&!v.appointmentValidation.valid?`<em class="dt-detail-appointment-warning">${escapeHtml(v.appointmentValidation.message||"เลขนัดหมายไม่ถูกต้อง")}</em>`:""}<span>${escapeHtml(company)}</span></div>
-        <div class="dt-detail-key"><small>ทะเบียนรถ</small><b>${escapeHtml(plate||"-")}</b><span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
+      ["กะ",v.shiftName?`${v.shiftName}${shiftMeta.range?` · ${shiftMeta.range}${shiftMeta.cross?" ข้ามวัน":""}`:""}`:"-"],
+      ["วันที่เริ่มกะ",v.shiftBusinessDate?businessDate:"-"],
+      ["ประตู",v.doorCode||"-"],
+      ["ประเภทรถ",v.vehicleType||"-"],
+      ["คนขับ",v.driverName||"-"],
+      ["โทรศัพท์",v.phone||"-"]
+    ];
+    const planRows=projection?appointmentProjectionBits(projection,v):[];
+    const eventRows=events.map((e,index)=>`<div class="dt-detail-history-row-r206${index===events.length-1?" is-latest":""}"><time>${escapeHtml(formatDate(e.occurred_at)||"-")}</time><b>${escapeHtml(datatableEventLabel(e.event_type))}</b><span>${escapeHtml(e.actor||"ระบบ")}</span>${e.note?`<em>${escapeHtml(e.note)}</em>`:""}</div>`).join("");
+    const html=`<div class="dt-detail-modal-r206">
+      <section class="dt-detail-head-r206">
+        <div class="dt-detail-head-main-r206">
+          <small>เลขนัดหมาย</small>
+          <div><b>${escapeHtml(appointment)}</b>${datatableAppointmentBadge(v)}<span class="dt-detail-status ${statusTone(v.currentStatus)}">${escapeHtml(statusText)}</span></div>
+          ${v.appointmentValidation?.enabled&&!v.appointmentValidation.valid?`<em class="dt-detail-appointment-warning">${escapeHtml(v.appointmentValidation.message||"เลขนัดหมายไม่ถูกต้อง")}</em>`:""}
+          <p>${escapeHtml(company)}</p>
+        </div>
+        <dl class="dt-detail-vehicle-r206">
+          <div><dt>ทะเบียนรถ</dt><dd>${escapeHtml(plate||"-")}</dd></div>
+          <div><dt>Auto ID</dt><dd>${escapeHtml(v.autoId||autoId)}</dd></div>
+        </dl>
       </section>
-      ${metaItems?`<section class="dt-detail-meta-r116">${metaItems}</section>`:""}
-      <section class="dt-detail-time-r116"><header><b>เวลาของแต่ละช่วงงาน</b></header><div>${stages.map(([key,label,value])=>`<article class="stage-${escapeHtml(key)} ${value==null?"is-empty":""}"><small>${escapeHtml(label)}</small><b>${value==null?"—":formatDuration(value)}</b></article>`).join("")}</div></section>
-      ${rej?`<section class="dt-rejection-r116"><b>ปฏิเสธรับสินค้า</b><span>เหตุผล ${escapeHtml(rej.reason||"-")}</span><span>ผู้รับทราบ ${escapeHtml(rej.supervisor||"-")}</span><span>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</span></section>`:""}
-      <section class="dt-detail-history-r116"><header><b>ประวัติการทำงาน</b><span>${events.length.toLocaleString("th-TH")} รายการ</span></header><div class="dt-detail-history-grid">${eventRows||`<div class="dt-detail-no-history">ยังไม่มีประวัติการทำงาน</div>`}</div></section>
+
+      <section class="dt-detail-meta-r206">${metaItems.map(([label,value])=>`<div><small>${escapeHtml(label)}</small><b>${escapeHtml(value)}</b></div>`).join("")}</section>
+
+      ${planRows.length?`<section class="dt-detail-plan-r206"><b>ข้อมูลตามแผนนัดหมาย</b><span>${planRows.map(escapeHtml).join(" · ")}</span></section>`:""}
+
+      <section class="dt-detail-work-r206">
+        <div class="dt-detail-panel-r206">
+          <header><b>เวลาที่บันทึกจริง</b><span>${operationalCalls.length?`เรียกรถ ${operationalCalls.length.toLocaleString("th-TH")} ครั้ง`:"ลำดับการปฏิบัติงาน"}</span></header>
+          <div class="dt-detail-table-r206 dt-detail-milestone-r206">
+            <div class="is-head"><span>ขั้นตอน</span><span>วัน-เวลา</span><span>ส่วนงาน</span></div>
+            ${milestones.map(([label,value,section])=>`<div class="${value?"is-done":"is-pending"}"><span>${escapeHtml(label)}</span><b>${value?escapeHtml(formatDate(value)):"—"}</b><em>${escapeHtml(section)}</em></div>`).join("")}
+          </div>
+        </div>
+        <div class="dt-detail-panel-r206">
+          <header><b>ระยะเวลาการทำงาน</b><strong>${d.totalInSiteSeconds==null?"—":formatDuration(d.totalInSiteSeconds)}</strong></header>
+          <div class="dt-detail-table-r206 dt-detail-duration-r206">
+            <div class="is-head"><span>ช่วงงาน</span><span>ระยะเวลา</span></div>
+            ${durations.map(([label,value])=>`<div class="${value==null?"is-pending":""}"><span>${escapeHtml(label)}</span><b>${value==null?"—":formatDuration(value)}</b></div>`).join("")}
+            <div class="is-total"><span>เวลารวมในพื้นที่</span><b>${d.totalInSiteSeconds==null?"—":formatDuration(d.totalInSiteSeconds)}</b></div>
+          </div>
+        </div>
+      </section>
+
+      ${rej?`<section class="dt-rejection-r206"><b>ปฏิเสธรับสินค้า</b><div><span><small>เหตุผล</small>${escapeHtml(rej.reason||"-")}</span><span><small>ผู้รับทราบ</small>${escapeHtml(rej.supervisor||"-")}</span><span><small>เอกสารคืน</small>${Number(rej.require_document_return)?"ต้องรับเอกสารคืน":"ไม่ต้องรับเอกสารคืน"}</span>${rej.detail?`<span><small>รายละเอียด</small>${escapeHtml(rej.detail)}</span>`:""}</div></section>`:""}
+
+      <section class="dt-detail-history-r206">
+        <header><b>ประวัติการทำงาน</b><span>${events.length.toLocaleString("th-TH")} รายการ</span></header>
+        <div class="dt-detail-history-grid-r206">${eventRows||`<div class="dt-detail-no-history-r206">ยังไม่มีประวัติการทำงาน</div>`}</div>
+      </section>
     </div>`;
-    if(window.Swal){const canExclude=datatableCanRequestExclusion(v,v.currentStatus),detailResult=await Swal.fire({title:"ข้อมูลนัดหมาย",html,confirmButtonText:"ปิด",showDenyButton:canExclude,denyButtonText:"นำรายการออก",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r116",confirmButton:"wfv-swal-confirm dt-detail-close-r116",denyButton:"dt-detail-exclude-button"},buttonsStyling:false,width:1040,allowOutsideClick:false});if(detailResult.isDenied)return await showExcludeVehicle(datatableInternalVehicle(v))}
+    if(window.Swal){const canExclude=datatableCanRequestExclusion(v,v.currentStatus),detailResult=await Swal.fire({title:"รายละเอียดการปฏิบัติงาน",html,confirmButtonText:"ปิด",showDenyButton:canExclude,denyButtonText:"นำรายการออก",customClass:{...swalClasses(),popup:"wfv-swal dt-detail-swal dt-detail-swal-r206",confirmButton:"wfv-swal-confirm dt-detail-close-r206",denyButton:"dt-detail-exclude-button"},buttonsStyling:false,width:1120,allowOutsideClick:false,heightAuto:false});if(detailResult.isDenied)return await showExcludeVehicle(datatableInternalVehicle(v))}
   }catch(error){if(window.Swal)Swal.close();await showNotice("error",error.message||"เปิดข้อมูลไม่สำเร็จ")}
   finally{datatableState.detailBusy=false;uiState.detailsOpen=false;if(sourceButton?.isConnected){sourceButton.disabled=false;sourceButton.textContent=original}}
 }
