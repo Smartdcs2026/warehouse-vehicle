@@ -775,11 +775,9 @@ function readyItems(data) {
 function queuePageSize() {
   const h = window.innerHeight || 800;
   const w = window.innerWidth || 1280;
-  const videoOn = $("queueApp")?.classList.contains("queue-video-on");
+  const videoOn = queueVideoAllowed(queueVideoSettings,currentDisplayMode);
   if (videoOn) {
     if (h < 700 || w < 1050) return 3;
-    if (h < 820 || w < 1350) return 4;
-    if (h >= 1000 && w >= 1600) return 5;
     return 4;
   }
   if (h < 700 || w < 1050) return 4;
@@ -932,7 +930,7 @@ const VISUAL_STAGE_DEFS=[
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
 ];
 let visualStatusSnapshot=new Map();
-const VISUAL_SHELL_VERSION="2074";
+const VISUAL_SHELL_VERSION="2075";
 function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280,videoOn=$("queueVisualView")?.classList.contains("has-queue-video");if(videoOn){if(h<680||w<1050)return 2;if(h>=980&&w>=1700)return 4;return 3}if(h<680||w<1050)return 4;if(h>=980&&w>=1700)return 8;return 6}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}

@@ -1941,3 +1941,181 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-copy>small,
   .queue-visual-view.has-queue-video .visual-stage-list .visual-vehicle-card>time{font-size:7px}
 }
+
+/* Round 207.5 — VDO-aware waiting area redesign */
+/* CLASSIC: when VDO is visible, convert waiting rows into spacious queue cards. */
+.queue-shell.queue-video-on:not(.queue-visual-mode) .queue-board.has-door-rail{
+  grid-template-columns:minmax(560px,1.02fr) minmax(0,1.18fr) minmax(270px,.52fr);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel{
+  grid-template-rows:48px minmax(0,1fr);
+  padding:10px 12px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-table-head{
+  display:none;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding-top:8px;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  column-gap:8px;
+  row-gap:3px;
+  align-items:center;
+  min-width:0;
+  min-height:0;
+  padding:9px 10px;
+  border:1px solid #d9e6f4;
+  border-radius:12px;
+  background:linear-gradient(180deg,#fbfdff,#f5f9fe);
+  box-shadow:none;
+  overflow:hidden;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-item:last-child{border-bottom:1px solid #d9e6f4}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-item.is-called{
+  border-color:#a9c9ee;
+  box-shadow:inset 4px 0 0 #1769d7;
+  background:linear-gradient(180deg,#f8fbff,#eef6ff);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-appt{
+  grid-column:1;
+  grid-row:1;
+  font-size:16px;
+  line-height:1.05;
+  font-weight:950;
+  color:#123f7d;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle{
+  grid-column:1;
+  grid-row:2;
+  min-width:0;
+  align-self:center;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line b{
+  font-size:11px;
+  line-height:1.15;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>small{
+  display:block;
+  margin-top:3px;
+  font-size:10px;
+  line-height:1.1;
+  color:#5a718e;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-province{
+  grid-column:1;
+  grid-row:3;
+  font-size:9px;
+  color:#6b7f97;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status{
+  grid-column:2;
+  grid-row:1 / span 3;
+  align-self:center;
+  justify-self:end;
+  display:grid;
+  justify-items:end;
+  align-content:center;
+  gap:5px;
+  min-width:62px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-status small{
+  max-width:82px;
+  text-align:right;
+  font-size:8px;
+  line-height:1.2;
+  color:#55708f;
+  white-space:normal;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-door-badge{
+  min-width:46px;
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:12px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel .panel-title{
+  border-bottom:1px solid #e2eaf4;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel .title-with-icon small{
+  display:none;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel .page-label{
+  padding:5px 9px;
+  font-size:10px;
+}
+
+/* VISUAL: give the waiting lane extra width and keep three readable rows. */
+.queue-visual-view.has-queue-video .visual-stage-grid{
+  grid-template-columns:minmax(0,1.22fr) 14px minmax(0,.92fr) 14px minmax(0,.92fr) 14px minmax(0,.92fr);
+  gap:5px;
+}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-stage-list{
+  grid-template-columns:1fr;
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  gap:6px;
+  padding:6px;
+}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-card{
+  grid-template-columns:42px minmax(0,1fr) auto;
+  padding:6px 7px;
+  border-radius:9px;
+}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-icon{
+  width:38px;
+  height:29px;
+}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-icon .visual-truck-svg{width:33px}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-top>b{font-size:12px}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-top>span{font-size:10px}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-copy>strong{font-size:9px}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-copy>small{font-size:8px}
+.queue-visual-view.has-queue-video .visual-stage-lane:first-of-type .visual-vehicle-card>time{font-size:9px}
+
+@media(max-width:1380px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .queue-board.has-door-rail{
+    grid-template-columns:minmax(500px,.98fr) minmax(0,1.12fr) minmax(245px,.50fr);
+  }
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{padding:7px 8px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-appt{font-size:14px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line b{font-size:10px}
+}
+@media(max-height:790px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-panel{grid-template-rows:40px minmax(0,1fr);padding:6px 8px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{gap:5px;padding-top:5px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-item{padding:5px 7px;row-gap:2px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-appt{font-size:13px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>.queue-company-line b{font-size:9px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-vehicle>small,
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-province{font-size:8px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-door-badge{font-size:10px;min-width:40px;padding:3px 6px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-status small{font-size:7px;max-width:68px}
+  .queue-visual-view.has-queue-video .visual-stage-grid{
+    grid-template-columns:minmax(0,1.18fr) 12px minmax(0,.94fr) 12px minmax(0,.94fr) 12px minmax(0,.94fr);
+  }
+}
+@media(max-width:1100px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .next-list{
+    grid-template-columns:1fr;
+    grid-template-rows:repeat(3,minmax(0,1fr));
+  }
+  .queue-visual-view.has-queue-video .visual-stage-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:repeat(2,minmax(0,1fr));
+  }
+  .queue-visual-view.has-queue-video .visual-flow-arrow{display:none}
+}
