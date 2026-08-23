@@ -1550,3 +1550,206 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-visual-view.has-queue-video .visual-queue-shell,.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) 300px}
   .queue-visual-view.has-queue-video .visual-door-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
 }
+
+/* Round 207.3 — Video is a real 16:9 layout region, never a cropped overlay.
+   When VDO is off, all rules below are inactive and the approved queue layout is restored. */
+.queue-video-panel,
+.visual-queue-video-panel{
+  aspect-ratio:16/9;
+  background:#02070d;
+}
+.queue-video-panel video,
+.visual-queue-video-panel video{
+  width:100%;
+  height:100%;
+  object-fit:contain!important;
+  object-position:center center;
+  background:#02070d;
+}
+
+/* CLASSIC: let the selected video width determine the hero height.
+   The remaining board automatically receives the unused screen height. */
+.queue-shell.queue-video-on:not(.queue-visual-mode){
+  grid-template-rows:82px auto 82px minmax(0,1fr) 34px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{
+  min-height:0;
+  align-items:stretch;
+  grid-template-columns:clamp(132px,9.5vw,178px) minmax(0,1fr) minmax(400px,31%);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{
+  grid-template-columns:clamp(118px,8vw,154px) minmax(320px,1fr) minmax(520px,40%);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .queue-video-panel{
+  display:block;
+  width:calc(100% - 10px);
+  height:auto;
+  align-self:center;
+  justify-self:end;
+  margin:7px 9px 7px 0;
+  border-radius:13px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-center{
+  align-content:center;
+  padding-block:12px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-tag{
+  min-height:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-icon{
+  width:46px;
+  height:46px;
+  box-shadow:0 0 0 5px rgba(54,180,255,.09),0 0 14px rgba(53,191,255,.24);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-tag b{
+  font-size:14px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large .call-icon{
+  width:42px;
+  height:42px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large .call-tag b{
+  font-size:13px;
+}
+
+/* VISUAL: VDO stays at the upper-right only.  Queue stages and doors use the full width below it. */
+.queue-visual-view.has-queue-video .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) minmax(390px,30%);
+  grid-template-rows:66px auto minmax(170px,1fr) 190px 30px;
+  column-gap:8px;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) minmax(500px,39%);
+  grid-template-rows:66px auto minmax(155px,1fr) 170px 30px;
+}
+.queue-visual-view.has-queue-video .visual-queue-header{
+  grid-column:1/-1;
+  grid-row:1;
+}
+.queue-visual-view.has-queue-video .visual-top{
+  grid-column:1;
+  grid-row:2;
+  min-height:0;
+  align-self:stretch;
+}
+.queue-visual-view.has-queue-video .visual-queue-video-panel{
+  display:block;
+  grid-column:2;
+  grid-row:2;
+  width:100%;
+  height:auto;
+  align-self:start;
+  justify-self:stretch;
+  margin:0;
+  border-color:var(--vq-line);
+  border-radius:14px;
+  box-shadow:var(--vq-shadow);
+}
+.queue-visual-view.has-queue-video .visual-stage-wrap{
+  grid-column:1/-1;
+  grid-row:3;
+}
+.queue-visual-view.has-queue-video .visual-lower-grid{
+  grid-column:1/-1;
+  grid-row:4;
+  grid-template-columns:minmax(0,2.15fr) minmax(280px,.85fr);
+}
+.queue-visual-view.has-queue-video .visual-queue-footer{
+  grid-column:1/-1;
+  grid-row:5;
+}
+.queue-visual-view.has-queue-video .visual-wait-panel{
+  display:grid;
+}
+.queue-visual-view.has-queue-video .visual-door-grid{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-rows:minmax(0,1fr);
+}
+
+/* Keep the left-side top information useful when VDO consumes the upper-right area. */
+.queue-visual-view.has-queue-video .visual-top{
+  grid-template-columns:minmax(0,1fr) minmax(250px,.56fr);
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-top{
+  grid-template-columns:minmax(0,1fr) minmax(220px,.50fr);
+}
+.queue-visual-view.has-queue-video .visual-call-hero{
+  grid-template-columns:92px minmax(210px,1fr) minmax(120px,.45fr) minmax(104px,.36fr);
+}
+.queue-visual-view.has-queue-video .visual-signal-ring{
+  width:64px;
+  height:64px;
+}
+.queue-visual-view.has-queue-video .visual-signal-ring .visual-truck-svg{
+  width:45px;
+}
+.queue-visual-view.has-queue-video .visual-call-main,
+.queue-visual-view.has-queue-video .visual-call-vehicle,
+.queue-visual-view.has-queue-video .visual-call-door{
+  padding-inline:12px;
+}
+.queue-visual-view.has-queue-video .visual-call-main strong{
+  font-size:clamp(28px,2.5vw,43px);
+}
+.queue-visual-view.has-queue-video .visual-call-main>b{
+  font-size:13px;
+}
+.queue-visual-view.has-queue-video .visual-call-vehicle>b{
+  font-size:20px;
+}
+.queue-visual-view.has-queue-video .visual-call-door>b{
+  font-size:34px;
+}
+
+/* Non-16:9 source files are letterboxed automatically; no zoom, crop or stretching. */
+.queue-video-panel::after,
+.visual-queue-video-panel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035);
+  z-index:2;
+}
+.queue-video-call-overlay{z-index:4}
+
+@media(max-width:1450px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:72px auto 74px minmax(0,1fr) 30px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{grid-template-columns:125px minmax(0,1fr) minmax(350px,30%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{grid-template-columns:112px minmax(270px,1fr) minmax(440px,38%)}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(340px,29%);grid-template-rows:66px auto minmax(150px,1fr) 170px 30px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(420px,37%);grid-template-rows:66px auto minmax(140px,1fr) 155px 30px}
+  .queue-visual-view.has-queue-video .visual-top{grid-template-columns:minmax(0,1fr) minmax(220px,.52fr)}
+  .queue-visual-view.has-queue-video .visual-call-hero{grid-template-columns:78px minmax(190px,1fr) minmax(105px,.40fr) minmax(92px,.32fr)}
+}
+@media(max-height:790px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:64px auto 62px minmax(0,1fr) 26px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{grid-template-columns:108px minmax(0,1fr) minmax(310px,28%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{grid-template-columns:100px minmax(240px,1fr) minmax(390px,35%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .call-center{padding-block:7px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(300px,27%);grid-template-rows:58px auto minmax(125px,1fr) 135px 26px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(360px,33%);grid-template-rows:58px auto minmax(115px,1fr) 125px 26px}
+  .queue-visual-view.has-queue-video .visual-call-hero{grid-template-columns:70px minmax(170px,1fr) minmax(95px,.38fr) minmax(85px,.30fr)}
+  .queue-visual-view.has-queue-video .visual-summary-card{padding:5px 8px;grid-template-columns:34px minmax(0,1fr)}
+  .queue-visual-view.has-queue-video .visual-summary-card>span{width:28px;height:28px;font-size:14px}
+  .queue-visual-view.has-queue-video .visual-summary-card b{font-size:21px}
+}
+@media(max-width:1050px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video,
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{
+    grid-template-columns:98px minmax(0,1fr) minmax(300px,34%);
+  }
+  .queue-visual-view.has-queue-video .visual-queue-shell,
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{
+    grid-template-columns:minmax(0,1fr) minmax(300px,34%);
+  }
+  .queue-visual-view.has-queue-video .visual-top,
+  .queue-visual-view.has-queue-video.queue-video-large .visual-top{
+    grid-template-columns:1fr;
+  }
+  .queue-visual-view.has-queue-video .visual-summary-grid{display:none}
+  .queue-visual-view.has-queue-video .visual-lower-grid{grid-template-columns:1fr}
+  .queue-visual-view.has-queue-video .visual-wait-panel{display:none}
+  .queue-visual-view.has-queue-video .visual-door-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+}
