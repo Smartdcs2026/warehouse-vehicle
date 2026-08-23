@@ -1486,3 +1486,67 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-shell:not(.queue-visual-mode) .work-groups{gap:7px;padding-top:5px}
   .queue-shell:not(.queue-visual-mode) .work-group{border-top-width:2px;border-radius:8px}
 }
+
+
+/* Round 207.1 — Queue video display: clean public screen, two Admin-selectable sizes */
+.queue-video-panel,.visual-queue-video-panel{position:relative;min-width:0;min-height:0;overflow:hidden;background:#06111c;border:1px solid #c7d5e6;border-radius:14px;isolation:isolate}
+.queue-video-panel[hidden],.visual-queue-video-panel[hidden]{display:none!important}
+.queue-video-panel video,.visual-queue-video-panel video{width:100%;height:100%;display:block;object-fit:cover;background:#06111c}
+.queue-video-call-overlay{position:absolute;inset:0;z-index:3;display:grid;align-content:center;gap:8px;padding:18px 22px;color:#fff;background:linear-gradient(90deg,rgba(3,17,32,.94),rgba(3,17,32,.76) 58%,rgba(3,17,32,.44));text-shadow:0 2px 8px rgba(0,0,0,.36)}
+.queue-video-call-overlay[hidden]{display:none!important}
+.queue-video-call-overlay small{font-size:13px;font-weight:900;letter-spacing:.3px;color:#dbeaff}
+.queue-video-call-overlay strong{font-size:42px;line-height:1;font-weight:950;letter-spacing:.4px}
+.queue-video-call-overlay>div{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:15px;font-weight:850}
+.queue-video-call-overlay>div b{display:inline-flex;align-items:center;min-height:32px;padding:0 11px;border-radius:8px;background:#1267d4;color:#fff;font-size:18px}
+.queue-video-call-overlay em{font-style:normal;font-size:17px;font-weight:900;color:#ffe383}
+.call-panel.has-queue-video{grid-template-columns:210px minmax(0,1fr) minmax(390px,.92fr)}
+.call-panel.has-queue-video.queue-video-large{grid-template-columns:164px minmax(290px,.78fr) minmax(560px,1.22fr)}
+.call-panel.has-queue-video .call-instruction{display:none!important}
+.call-panel.has-queue-video .queue-video-panel{display:block;align-self:stretch;margin:8px 9px 8px 0}
+.call-panel.has-queue-video .call-tag{padding:10px 8px}
+.call-panel.has-queue-video .call-icon{width:58px;height:58px;box-shadow:0 0 0 6px rgba(54,180,255,.10),0 0 16px rgba(53,191,255,.30)}
+.call-panel.has-queue-video .call-tag b{font-size:17px}
+.call-panel.has-queue-video.queue-video-large .call-icon{width:48px;height:48px}
+.call-panel.has-queue-video.queue-video-large .call-tag b{font-size:15px}
+.call-panel.has-queue-video .call-center{border-right:0}
+
+/* Visual mode keeps the existing queue layout when video is off. */
+.queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(360px,28%);column-gap:8px}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(500px,36%)}
+.queue-visual-view.has-queue-video .visual-queue-header{grid-column:1/-1;grid-row:1}
+.queue-visual-view.has-queue-video .visual-top{grid-column:1;grid-row:2}
+.queue-visual-view.has-queue-video .visual-stage-wrap{grid-column:1;grid-row:3}
+.queue-visual-view.has-queue-video .visual-lower-grid{grid-column:1;grid-row:4}
+.queue-visual-view.has-queue-video .visual-queue-footer{grid-column:1/-1;grid-row:5}
+.queue-visual-view.has-queue-video .visual-queue-video-panel{display:block;grid-column:2;grid-row:2/5;margin:0;min-height:0;border-color:var(--vq-line);box-shadow:var(--vq-shadow)}
+.queue-visual-view.has-queue-video .visual-queue-video-panel video{object-fit:cover}
+.queue-visual-view.has-queue-video .visual-video-call-overlay{padding:20px 18px;background:linear-gradient(180deg,rgba(3,14,25,.88),rgba(3,14,25,.52) 55%,rgba(3,14,25,.82))}
+.queue-visual-view.has-queue-video .visual-video-call-overlay strong{font-size:38px}
+.queue-visual-view.has-queue-video.queue-video-large .visual-video-call-overlay strong{font-size:48px}
+.queue-visual-view.has-queue-video.queue-video-large .visual-video-call-overlay em{font-size:20px}
+.queue-visual-view.has-queue-video .visual-wait-panel{display:none}
+.queue-visual-view.has-queue-video .visual-lower-grid{grid-template-columns:1fr}
+.queue-visual-view.has-queue-video .visual-door-grid{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
+
+@media(max-width:1450px){
+  .call-panel.has-queue-video{grid-template-columns:170px minmax(0,1fr) minmax(330px,.9fr)}
+  .call-panel.has-queue-video.queue-video-large{grid-template-columns:145px minmax(250px,.72fr) minmax(450px,1.28fr)}
+  .call-panel.has-queue-video .call-icon{width:48px;height:48px}.call-panel.has-queue-video .call-tag b{font-size:14px}
+  .queue-video-call-overlay{padding:12px 16px;gap:5px}.queue-video-call-overlay strong{font-size:32px}.queue-video-call-overlay em{font-size:14px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(320px,27%)}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(410px,34%)}
+}
+@media(max-height:790px){
+  .call-panel.has-queue-video{grid-template-columns:135px minmax(0,1fr) minmax(300px,.9fr)}
+  .call-panel.has-queue-video.queue-video-large{grid-template-columns:120px minmax(220px,.72fr) minmax(400px,1.28fr)}
+  .call-panel.has-queue-video .queue-video-panel{margin:5px 6px 5px 0;border-radius:10px}
+  .call-panel.has-queue-video .call-icon{width:42px;height:42px}.call-panel.has-queue-video .call-tag b{font-size:12px}
+  .queue-video-call-overlay strong{font-size:28px}.queue-video-call-overlay small{font-size:10px}.queue-video-call-overlay>div{font-size:11px}.queue-video-call-overlay>div b{font-size:13px;min-height:26px}.queue-video-call-overlay em{font-size:12px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(285px,26%)}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(360px,33%)}
+}
+@media(max-width:1050px){
+  .call-panel.has-queue-video,.call-panel.has-queue-video.queue-video-large{grid-template-columns:120px minmax(0,1fr) minmax(300px,.92fr)}
+  .queue-visual-view.has-queue-video .visual-queue-shell,.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) 300px}
+  .queue-visual-view.has-queue-video .visual-door-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+}

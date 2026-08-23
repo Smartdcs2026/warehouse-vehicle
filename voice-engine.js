@@ -1,6 +1,6 @@
 "use strict";
 (function(){
-  const ENGINE_BUILD="2026.08.11-r86-extra-call-phrases";
+  const ENGINE_BUILD="2026.08.23-r2071-video-audio-priority";
   const CACHE_PREFIX="smartdc-queue-voice-";
   const DEFAULTS={
     enabled:false,volume:80,repeatCount:1,repeatDelaySeconds:7,playbackRate:1,
@@ -232,12 +232,15 @@
 
     async announceNow(item,{force=false}={}){
       if(!force&&!this.settings.enabled)return false;if(!this.unlocked)throw new Error("กรุณากดเปิดเสียงที่จอคิวก่อน");if(!this.manifest)await this.loadManifest();if(!this.ready){await this.preload();this.ready=true}
-      for(let round=0;round<this.settings.repeatCount;round++){
-        if(round>0){await this.sleep(this.settings.repeatDelaySeconds*1000);if(this.clipMap().repeat)await this.playSequence(["repeat"])}
-        const body=this.bodySequence(item,{includeCallPrefix:round===0});
-        const seq=round===0&&this.settings.playDing&&this.clipMap().ding?["ding",...body]:body;await this.playSequence(seq);
-      }
-      return true;
+      window.dispatchEvent(new CustomEvent("smartqueuevoice:start",{detail:{item}}));
+      try{
+        for(let round=0;round<this.settings.repeatCount;round++){
+          if(round>0){await this.sleep(this.settings.repeatDelaySeconds*1000);if(this.clipMap().repeat)await this.playSequence(["repeat"])}
+          const body=this.bodySequence(item,{includeCallPrefix:round===0});
+          const seq=round===0&&this.settings.playDing&&this.clipMap().ding?["ding",...body]:body;await this.playSequence(seq);
+        }
+        return true;
+      }finally{window.dispatchEvent(new CustomEvent("smartqueuevoice:end",{detail:{item}}))}
     }
 
     enqueue(item){if(!this.settings.enabled||!item)return false;const callId=String(item.callId||[item.autoId||item.appointmentNo||"",item.calledAt||item.receivingStartedAt||""].join(":"));if(callId&&this.pending.some(x=>x.callId===callId))return false;this.pending.push({callId,item:{...item}});this.processQueue();return true}
