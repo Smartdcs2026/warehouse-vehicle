@@ -2323,3 +2323,75 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .queue-shell.queue-video-on .queue-actions button{padding-inline:9px;font-size:11px}
   .queue-visual-view.has-queue-video .visual-head-actions button{padding-inline:8px;font-size:9px}
 }
+
+/* Round 207.9 — restore practical VDO display size while keeping the compact call information layout. */
+/* CLASSIC: VDO width now drives the upper row height again. Standard and Large are visibly different. */
+.queue-shell.queue-video-on:not(.queue-visual-mode){
+  grid-template-rows:82px auto 72px minmax(0,1fr) 34px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{
+  grid-template-columns:clamp(82px,5.8vw,104px) minmax(0,1fr) minmax(410px,27%);
+  min-height:0;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{
+  grid-template-columns:clamp(78px,5.4vw,98px) minmax(240px,1fr) minmax(520px,34%);
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .queue-video-panel{
+  display:block;
+  width:calc(100% - 12px);
+  height:auto;
+  aspect-ratio:16/9;
+  max-width:540px;
+  max-height:none;
+  margin:6px 8px 6px 4px;
+  align-self:center;
+  justify-self:end;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large .queue-video-panel{
+  max-width:680px;
+}
+
+/* VISUAL: restore the upper-right VDO to a useful monitoring size without changing the lower queue cards. */
+.queue-visual-view.has-queue-video .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) minmax(410px,27%);
+  grid-template-rows:66px auto minmax(150px,1fr) 168px 30px;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) minmax(520px,34%);
+  grid-template-rows:66px auto minmax(140px,1fr) 158px 30px;
+}
+.queue-visual-view.has-queue-video .visual-queue-video-panel{
+  width:100%;
+  height:auto;
+  aspect-ratio:16/9;
+  max-width:540px;
+  max-height:none;
+  justify-self:end;
+  align-self:start;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-video-panel{
+  max-width:680px;
+}
+
+@media(max-width:1450px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:72px auto 68px minmax(0,1fr) 30px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{grid-template-columns:78px minmax(0,1fr) minmax(360px,28%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{grid-template-columns:74px minmax(215px,1fr) minmax(450px,35%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .queue-video-panel{max-width:500px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large .queue-video-panel{max-width:610px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(360px,28%);grid-template-rows:66px auto minmax(140px,1fr) 158px 30px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(450px,35%);grid-template-rows:66px auto minmax(132px,1fr) 150px 30px}
+  .queue-visual-view.has-queue-video .visual-queue-video-panel{max-width:500px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-video-panel{max-width:610px}
+}
+@media(max-height:790px){
+  .queue-shell.queue-video-on:not(.queue-visual-mode){grid-template-rows:64px auto 60px minmax(0,1fr) 26px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video{grid-template-columns:70px minmax(0,1fr) minmax(330px,27%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large{grid-template-columns:66px minmax(200px,1fr) minmax(410px,34%)}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video .queue-video-panel{max-width:430px}
+  .queue-shell.queue-video-on:not(.queue-visual-mode) .call-panel.has-queue-video.queue-video-large .queue-video-panel{max-width:530px}
+  .queue-visual-view.has-queue-video .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(330px,27%);grid-template-rows:58px auto minmax(118px,1fr) 126px 26px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(410px,34%);grid-template-rows:58px auto minmax(110px,1fr) 118px 26px}
+  .queue-visual-view.has-queue-video .visual-queue-video-panel{max-width:430px}
+  .queue-visual-view.has-queue-video.queue-video-large .visual-queue-video-panel{max-width:530px}
+}
