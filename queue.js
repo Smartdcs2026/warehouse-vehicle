@@ -10,11 +10,13 @@ const ANNOUNCEMENT_POST_VOICE_HOLD_MS = 1200;
 const ANNOUNCEMENT_CURSOR_KEY = "queueAnnouncementCursorR119";
 const STALE_AFTER_MS = 20000;
 const QUEUE_TOKEN_KEY = "wvfQueueDisplayToken";
+const VIDEO_AUDIO_PREF_KEY = "wvfQueueVideoAudioEnabled";
 
 let lastCallKey = sessionStorage.getItem("queueLastCallKey") || "";
 let queueToken = sessionStorage.getItem(QUEUE_TOKEN_KEY) || "";
 let runtimeStarted = false;
 let audioEnabled = false;
+let videoAudioEnabled = loadVideoAudioPreference();
 let voiceSettings = null;
 let voiceAdminEnabled = false;
 const VOICE_SEEN_STORAGE = "queueVoiceSeenCallsR74";
@@ -71,12 +73,14 @@ document.addEventListener("DOMContentLoaded", init);
 function init() {
   $("queueLoginForm")?.addEventListener("submit", loginQueue);
   $("soundButton")?.addEventListener("click", toggleSound);
+  $("videoSoundButton")?.addEventListener("click", toggleVideoSound);
   $("fullButton")?.addEventListener("click", toggleFull);
   window.addEventListener("smartqueuevoice:start",()=>{queueVideoVoiceDepth++;syncQueueVideoAudioState()});
   window.addEventListener("smartqueuevoice:end",()=>{queueVideoVoiceDepth=Math.max(0,queueVideoVoiceDepth-1);clearTimeout(queueVideoResumeTimer);queueVideoResumeTimer=setTimeout(syncQueueVideoAudioState,380)});
   $("queueVisualView")?.addEventListener("click", event => {
     const action=event.target.closest("[data-visual-action]")?.dataset.visualAction;
     if(action==="sound")void toggleSound();
+    if(action==="video-sound")void toggleVideoSound();
     if(action==="full")void toggleFull();
   });
 
@@ -460,6 +464,12 @@ function normalizeQueueDisplaySettings(value){
 function cleanText(value) {
   return String(value ?? "").trim();
 }
+function loadVideoAudioPreference(){
+  try{return localStorage.getItem(VIDEO_AUDIO_PREF_KEY)==="1"}catch{return false}
+}
+function saveVideoAudioPreference(){
+  try{localStorage.setItem(VIDEO_AUDIO_PREF_KEY,videoAudioEnabled?"1":"0")}catch{}
+}
 function normalizeQueueDoorCode(value) {
   const text = cleanText(value).toUpperCase();
   if (!text) return "";
@@ -509,19 +519,37 @@ function applyQueueDisplayMode(settings){
 
 function queueVideoAllowed(settings=queueVideoSettings,mode=currentDisplayMode){const failed=queueVideoFailureUrl&&queueVideoFailureUrl===settings.videoUrl&&Date.now()-queueVideoFailureAt<60000;return settings.videoEnabled===true&&Boolean(settings.videoUrl)&&!failed&&(mode==="VISUAL"?settings.videoVisualEnabled!==false:settings.videoClassicEnabled!==false)}
 function queueVideoAudioAvailable(){return queueVideoAllowed()&&queueVideoSettings.videoSoundEnabled!==false&&Number(queueVideoSettings.videoVolume||0)>0}
-function queueAudioAvailable(){return voiceAdminEnabled||queueVideoAudioAvailable()}
+function queueAudioAvailable(){return voiceAdminEnabled}
 function queueVideoNodes(){return[{mode:"CLASSIC",panel:$("classicQueueVideoPanel"),video:$("classicQueueVideo")},{mode:"VISUAL",panel:$("visualQueueVideoPanel"),video:$("visualQueueVideo")}]}
 function queueVideoSetSource(video,url,resumeAt=0){if(!video||!url)return;if(video.dataset.queueVideoUrl===url)return;video.pause();video.src=url;video.dataset.queueVideoUrl=url;video.onerror=()=>{if(video.dataset.queueVideoUrl!==url)return;queueVideoFailureUrl=url;queueVideoFailureAt=Date.now();video.pause();video.removeAttribute("src");video.dataset.queueVideoUrl="";video.load();syncQueueVideo(queueVideoSettings)};video.oncanplay=()=>{if(queueVideoFailureUrl===url){queueVideoFailureUrl="";queueVideoFailureAt=0}};video.load();if(resumeAt>0)video.addEventListener("loadedmetadata",()=>{try{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=Math.min(resumeAt,Math.max(0,video.duration-.25))}catch{}},{once:true})}
-function queueVideoPlayback(video){if(!video)return;video.loop=queueVideoSettings.videoLoop!==false;video.volume=Math.max(0,Math.min(1,Number(queueVideoSettings.videoVolume||0)/100));video.muted=!(audioEnabled&&queueVideoAudioAvailable()&&queueVideoVoiceDepth===0);if(queueVideoSettings.videoAutoplay!==false){const promise=video.play();if(promise?.catch)promise.catch(()=>{video.muted=true;video.play().catch(()=>{})})}}
-function syncQueueVideoAudioState(){const video=queueVideoActiveElement;if(!video)return;video.volume=Math.max(0,Math.min(1,Number(queueVideoSettings.videoVolume||0)/100));video.muted=!(audioEnabled&&queueVideoAudioAvailable()&&queueVideoVoiceDepth===0)}
+function queueVideoPlayback(video){
+  if(!video)return;
+  video.loop=queueVideoSettings.videoLoop!==false;
+  video.volume=Math.max(0,Math.min(1,Number(queueVideoSettings.videoVolume||0)/100));
+  video.muted=!(videoAudioEnabled&&queueVideoAudioAvailable()&&queueVideoVoiceDepth===0);
+  if(queueVideoSettings.videoAutoplay!==false){
+    const promise=video.play();
+    if(promise?.catch)promise.catch(error=>{
+      video.muted=true;
+      if(error?.name==="NotAllowedError"&&videoAudioEnabled){videoAudioEnabled=false;saveVideoAudioPreference();updateVideoSoundButton()}
+      video.play().catch(()=>{});
+    });
+  }
+}
+function syncQueueVideoAudioState(){
+  const video=queueVideoActiveElement;
+  if(!video)return;
+  video.volume=Math.max(0,Math.min(1,Number(queueVideoSettings.videoVolume||0)/100));
+  video.muted=!(videoAudioEnabled&&queueVideoAudioAvailable()&&queueVideoVoiceDepth===0);
+}
 function syncQueueVideo(settings){queueVideoSettings=normalizeQueueDisplaySettings(settings);const app=$("queueApp"),classicPanel=$("callPanel"),instruction=$("callInstructionPanel"),visualRoot=$("queueVisualView"),allowed=queueVideoAllowed(queueVideoSettings,currentDisplayMode),size=queueVideoSettings.videoSize==="LARGE"?"large":"standard";
   if(app){app.classList.toggle("queue-video-on",allowed);app.classList.toggle("queue-video-large",allowed&&size==="large");app.classList.toggle("queue-video-standard",allowed&&size!=="large")}
   if(classicPanel){classicPanel.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="CLASSIC");classicPanel.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="CLASSIC"&&size==="large");classicPanel.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="CLASSIC"&&size!=="large")}
   if(instruction)instruction.hidden=allowed&&currentDisplayMode==="CLASSIC";
   if(visualRoot){visualRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="VISUAL");visualRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="VISUAL"&&size==="large");visualRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="VISUAL"&&size!=="large")}
   const nodes=queueVideoNodes();let next=null;for(const node of nodes){const use=allowed&&node.mode===currentDisplayMode;if(node.panel)node.panel.hidden=!use;if(use)next=node.video;else if(node.video){if(node.video===queueVideoActiveElement&&Number.isFinite(node.video.currentTime))queueVideoCurrentTime=node.video.currentTime;node.video.pause()}}
-  if(!next){queueVideoActiveElement=null;updateSoundButton();return}
-  if(queueVideoActiveElement&&queueVideoActiveElement!==next&&Number.isFinite(queueVideoActiveElement.currentTime))queueVideoCurrentTime=queueVideoActiveElement.currentTime;queueVideoActiveElement=next;queueVideoSetSource(next,queueVideoSettings.videoUrl,queueVideoCurrentTime);queueVideoPlayback(next);updateSoundButton();syncQueueVideoCallOverlay(currentAnnouncement||latestAnnouncement(latestData||{}));
+  if(!next){queueVideoActiveElement=null;updateSoundButton();updateVideoSoundButton();return}
+  if(queueVideoActiveElement&&queueVideoActiveElement!==next&&Number.isFinite(queueVideoActiveElement.currentTime))queueVideoCurrentTime=queueVideoActiveElement.currentTime;queueVideoActiveElement=next;queueVideoSetSource(next,queueVideoSettings.videoUrl,queueVideoCurrentTime);queueVideoPlayback(next);updateSoundButton();updateVideoSoundButton();syncQueueVideoCallOverlay(currentAnnouncement||latestAnnouncement(latestData||{}));
 }
 function syncQueueVideoCallOverlay(item){const active=Boolean(item?.appointmentNo),instruction=visualCallInstructionText(item||{}),pairs=[{overlay:$("classicQueueVideoOverlay"),number:$("classicQueueVideoNumber"),plate:$("classicQueueVideoPlate"),door:$("classicQueueVideoDoor"),text:$("classicQueueVideoInstruction")},{overlay:$("visualQueueVideoOverlay"),number:$("visualQueueVideoNumber"),plate:$("visualQueueVideoPlate"),door:$("visualQueueVideoDoor"),text:$("visualQueueVideoInstruction")}];for(const row of pairs){if(!row.overlay)continue;row.overlay.hidden=!active;setStableText(row.number,item?.appointmentNo||"–");setStableText(row.plate,item?.vehiclePlate?`${item.vehiclePlate}${item.province?` ${item.province}`:""}`:"–");setStableText(row.door,item?.doorCode?`ประตู ${item.doorCode}`:"เข้าตรวจรับสินค้า");setStableText(row.text,instruction)}}
 
@@ -930,7 +958,7 @@ const VISUAL_STAGE_DEFS=[
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
 ];
 let visualStatusSnapshot=new Map();
-const VISUAL_SHELL_VERSION="2075";
+const VISUAL_SHELL_VERSION="2078";
 function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280,videoOn=$("queueVisualView")?.classList.contains("has-queue-video");if(videoOn){if(h<680||w<1050)return 2;if(h>=980&&w>=1700)return 4;return 3}if(h<680||w<1050)return 4;if(h>=980&&w>=1700)return 8;return 6}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
@@ -989,7 +1017,7 @@ function visualSummaryStatic(def){return `<article class="visual-summary-card to
 function ensureVisualShell(root){
   if(root.dataset.visualShellVersion===VISUAL_SHELL_VERSION&&root.querySelector(".visual-queue-shell"))return;
   root.innerHTML=`<div class="visual-queue-shell">
-    <header class="visual-queue-header"><div class="visual-brand"><img src="./icon-192.png" alt=""><div><h1>สถานะคิวรถขนส่ง</h1><small>ระบบบริหารจัดการคิวรถขนส่ง</small></div></div><div class="visual-head-actions"><div class="visual-datetime"><b id="visualQueueClock">--:--:--</b><span id="visualQueueDate">--</span></div><span id="visualQueueHealth" class="visual-health">พร้อมใช้งาน</span><button id="visualSoundButton" data-visual-action="sound" type="button">เปิดเสียง</button><button id="visualFullButton" data-visual-action="full" type="button">เต็มจอ</button></div></header>
+    <header class="visual-queue-header"><div class="visual-brand"><img src="./icon-192.png" alt=""><div><h1>สถานะคิวรถขนส่ง</h1><small>ระบบบริหารจัดการคิวรถขนส่ง</small></div></div><div class="visual-head-actions"><div class="visual-datetime"><b id="visualQueueClock">--:--:--</b><span id="visualQueueDate">--</span></div><span id="visualQueueHealth" class="visual-health">พร้อมใช้งาน</span><button id="visualSoundButton" data-visual-action="sound" type="button">เปิดเสียงคิว</button><button id="visualVideoSoundButton" data-visual-action="video-sound" type="button" hidden>เปิดเสียงวิดีโอ</button><button id="visualFullButton" data-visual-action="full" type="button">เต็มจอ</button></div></header>
     <section class="visual-top"><article id="visualCallHero" class="visual-call-hero is-idle"><div class="visual-call-signal"><span class="visual-signal-ring">${visualTruckSvg()}</span><b id="visualCallState">รอเรียกคิว</b></div><div class="visual-call-main"><small>หมายเลขนัดหมาย</small><strong id="visualCallNumber">รอเรียกคิว</strong><b id="visualCallCompany">–</b><span id="visualCallPlan" class="visual-call-plan"></span></div><div class="visual-call-vehicle"><small>ทะเบียนรถ</small><b id="visualCallPlate">–</b><span id="visualCallProvince">–</span></div><div class="visual-call-door"><small>ประตู</small><b id="visualCallDoor">–</b><span id="visualCallInstruction">รอเจ้าหน้าที่เรียกคิว</span></div></article><div class="visual-summary-grid">${VISUAL_STAGE_DEFS.map(visualSummaryStatic).join("")}</div></section>
     <aside id="visualQueueVideoPanel" class="visual-queue-video-panel" hidden aria-label="สื่อประชาสัมพันธ์"><video id="visualQueueVideo" playsinline preload="metadata"></video><div id="visualQueueVideoOverlay" class="queue-video-call-overlay visual-video-call-overlay" hidden><small>กำลังเรียกคิว</small><strong id="visualQueueVideoNumber">–</strong><div><span id="visualQueueVideoPlate">–</span><b id="visualQueueVideoDoor">–</b></div><em id="visualQueueVideoInstruction">–</em></div></aside>
     <section class="visual-stage-wrap"><div class="visual-stage-grid">${VISUAL_STAGE_DEFS.map((def,index)=>`${index?'<i class="visual-flow-arrow">›</i>':''}<section id="visualLane_${def.status}" class="visual-stage-lane tone-${def.tone}"><header><span>${def.number}</span><div><b>${esc(def.label)}</b><small id="visualLaneMeta_${def.status}">0 คัน</small></div></header><div id="visualLaneList_${def.status}" class="visual-stage-list"></div><footer id="visualLaneFooter_${def.status}" class="is-clear">ไม่มีรถในขั้นตอนนี้</footer></section>`).join("")}</div></section>
@@ -1102,32 +1130,69 @@ function syncVoiceSettings(settings){
   if(window.SmartQueueVoice&&voiceSettings)window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});
   if(previous&&!voiceAdminEnabled){
     window.SmartQueueVoice?.clearPending?.();
-    if(!queueVideoAudioAvailable())audioEnabled=false;
+    audioEnabled=false;
   }
   updateSoundButton();
-  syncQueueVideoAudioState();
 }
 
 function updateSoundButton(){
   const button=$("soundButton"),visual=$("visualSoundButton"),available=queueAudioAvailable();
-  const apply=(target,compact=false)=>{if(!target)return;if(!available){target.disabled=true;target.classList.remove("sound-on");target.innerHTML=compact?"ปิดเสียง":'<span class="ui-sound-mark off" aria-hidden="true"></span> ปิดเสียง';target.title="";return}target.disabled=false;target.title="";if(audioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงพร้อม":'<span class="ui-sound-mark on" aria-hidden="true"></span> ระบบเสียงพร้อม'}else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียง":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียง'}};
+  const apply=(target,compact=false)=>{
+    if(!target)return;
+    if(!available){target.disabled=true;target.classList.remove("sound-on");target.innerHTML=compact?"เสียงคิวปิด":'<span class="ui-sound-mark off" aria-hidden="true"></span> เสียงคิวปิด';target.title="";return}
+    target.disabled=false;target.title="";
+    if(audioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงคิวพร้อม":'<span class="ui-sound-mark on" aria-hidden="true"></span> เสียงคิวพร้อม'}
+    else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียงคิว":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียงคิว'}
+  };
   apply(button,false);apply(visual,true);
+}
+
+function updateVideoSoundButton(){
+  const available=queueVideoAudioAvailable(),shown=queueVideoAllowed(queueVideoSettings,currentDisplayMode);
+  const apply=(target,compact=false)=>{
+    if(!target)return;
+    target.hidden=!shown||!available;
+    if(target.hidden)return;
+    target.disabled=false;
+    target.title=videoAudioEnabled?"ปิดเฉพาะเสียงวิดีโอ":"เปิดเฉพาะเสียงวิดีโอ";
+    if(videoAudioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงวิดีโอ":'<span class="ui-sound-mark on" aria-hidden="true"></span> เสียงวิดีโอ'}
+    else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียงวิดีโอ":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียงวิดีโอ'}
+  };
+  apply($("videoSoundButton"),false);apply($("visualVideoSoundButton"),true);
 }
 
 async function toggleSound() {
   const button=$("soundButton");if(!button||!queueAudioAvailable())return;
   if(audioEnabled){
-    audioEnabled=false;window.SmartQueueVoice?.clearPending?.();syncQueueVideoAudioState();updateSoundButton();return;
+    audioEnabled=false;window.SmartQueueVoice?.clearPending?.();updateSoundButton();return;
   }
-  button.disabled=true;button.innerHTML='<span class="ui-sound-mark" aria-hidden="true"></span> กำลังเตรียมเสียง';
+  button.disabled=true;button.innerHTML='<span class="ui-sound-mark" aria-hidden="true"></span> กำลังเตรียมเสียงคิว';
   try{
-    if(voiceAdminEnabled){if(!window.SmartQueueVoice)throw new Error("ไม่พบระบบเสียง");window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});await window.SmartQueueVoice.unlockAndPrepare();if(latestData?.announcementMode!=="CANONICAL")markCurrentCallsSeen()}
-    audioEnabled=true;syncQueueVideoAudioState();if(queueVideoActiveElement){try{await queueVideoActiveElement.play()}catch{}}updateSoundButton();
-    if(voiceAdminEnabled&&voiceSettings?.playDing!==false){queueVideoVoiceDepth++;syncQueueVideoAudioState();try{await window.SmartQueueVoice.playSequence(["ding"])}finally{queueVideoVoiceDepth=Math.max(0,queueVideoVoiceDepth-1);syncQueueVideoAudioState()}}
+    if(!window.SmartQueueVoice)throw new Error("ไม่พบระบบเสียง");
+    window.SmartQueueVoice.configure({...voiceSettings,apiBaseUrl:cfg.apiBaseUrl});
+    await window.SmartQueueVoice.unlockAndPrepare();
+    if(latestData?.announcementMode!=="CANONICAL")markCurrentCallsSeen();
+    audioEnabled=true;updateSoundButton();
+    if(voiceSettings?.playDing!==false){queueVideoVoiceDepth++;syncQueueVideoAudioState();try{await window.SmartQueueVoice.playSequence(["ding"])}finally{queueVideoVoiceDepth=Math.max(0,queueVideoVoiceDepth-1);syncQueueVideoAudioState()}}
   }catch(error){
-    audioEnabled=false;syncQueueVideoAudioState();updateSoundButton();
-    setHealth("error","เปิดเสียงไม่สำเร็จ",error?.message||"โหลดเสียงไม่สำเร็จ");
+    audioEnabled=false;updateSoundButton();
+    setHealth("error","เปิดเสียงคิวไม่สำเร็จ",error?.message||"โหลดเสียงไม่สำเร็จ");
   }finally{button.disabled=!queueAudioAvailable()}
+}
+
+async function toggleVideoSound(){
+  if(!queueVideoAudioAvailable())return;
+  if(videoAudioEnabled){
+    videoAudioEnabled=false;saveVideoAudioPreference();syncQueueVideoAudioState();updateVideoSoundButton();return;
+  }
+  videoAudioEnabled=true;saveVideoAudioPreference();syncQueueVideoAudioState();
+  try{
+    if(queueVideoActiveElement){queueVideoActiveElement.muted=queueVideoVoiceDepth>0;await queueVideoActiveElement.play()}
+    updateVideoSoundButton();
+  }catch(error){
+    videoAudioEnabled=false;saveVideoAudioPreference();syncQueueVideoAudioState();updateVideoSoundButton();
+    if(error?.name!=="NotAllowedError")setHealth("error","เปิดเสียงวิดีโอไม่สำเร็จ",error?.message||"ไม่สามารถเล่นเสียงวิดีโอได้");
+  }
 }
 
 function processVoiceCalls(data){

@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Noto+Sans+Thai+Looped:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./queue.css?v=20260823-r2075">
+  <link rel="stylesheet" href="./queue.css?v=20260823-r2078">
 </head>
-<body data-queue-build="20260823-r2075-queue-video-waiting-redesign">
+<body data-queue-build="20260823-r2078-separate-queue-video-audio">
   <section id="queueLogin" class="queue-login">
     <div class="queue-login-card">
       <img src="./icon-192.png" alt="" aria-hidden="true">
@@ -20,7 +20,7 @@
     </div>
   </section>
   <main id="queueApp" class="queue-shell" hidden>
-    <header class="queue-header"><div class="queue-brand"><img class="brand-logo" src="./icon-192.png" alt="SMART DC"><div class="brand-copy"><small>ระบบบริหารรถขนส่งคลังสินค้า</small><h1>สถานะคิวรถขนส่ง</h1></div></div><div class="queue-actions"><div class="queue-clock"><small id="queueDate">--</small><b id="queueClock">--:--:--</b></div><button id="soundButton" type="button"><span class="ui-sound-mark" aria-hidden="true"></span> เปิดเสียง</button><button id="fullButton" type="button"><span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ</button><span id="queueHealth" class="health">● พร้อมใช้งาน</span></div></header>
+    <header class="queue-header"><div class="queue-brand"><img class="brand-logo" src="./icon-192.png" alt="SMART DC"><div class="brand-copy"><small>ระบบบริหารรถขนส่งคลังสินค้า</small><h1>สถานะคิวรถขนส่ง</h1></div></div><div class="queue-actions"><div class="queue-clock"><small id="queueDate">--</small><b id="queueClock">--:--:--</b></div><button id="soundButton" type="button"><span class="ui-sound-mark" aria-hidden="true"></span> เปิดเสียงคิว</button><button id="videoSoundButton" type="button" hidden><span class="ui-sound-mark" aria-hidden="true"></span> เปิดเสียงวิดีโอ</button><button id="fullButton" type="button"><span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ</button><span id="queueHealth" class="health">● พร้อมใช้งาน</span></div></header>
     <section id="callPanel" class="call-panel idle"><div class="call-tag"><div class="call-icon">เรียก</div><b>กำลังเรียกคิว</b></div><div class="call-center"><div class="call-grid"><div class="call-number-block"><small>หมายเลขนัดหมาย</small><strong id="callNumber">รอเรียกคิว</strong></div><div class="call-company-block"><small>บริษัท</small><strong id="callCompany">–</strong></div></div><div class="call-vehicle-meta"><div class="call-meta-item"><small>ทะเบียนรถ</small><b id="callPlate">–</b></div><div class="call-meta-item"><small>จังหวัด</small><b id="callProvince">–</b></div><div id="callDoorWrap" class="call-meta-item call-meta-door"><small>ประตู</small><b id="callDoor">–</b></div></div><div id="callStateRow" class="call-state-row"><span>สถานะการเรียก</span><b id="callStateText">ยังไม่เรียก</b></div></div><div id="callInstructionPanel" class="call-instruction"><span class="arrow-icon" aria-hidden="true"></span><div><small id="callInstructionPrefix">กรุณาเข้ารับการตรวจรับสินค้า</small><strong id="callInstruction">รอเรียกคิว</strong></div></div><aside id="classicQueueVideoPanel" class="queue-video-panel" hidden aria-label="สื่อประชาสัมพันธ์"><video id="classicQueueVideo" playsinline preload="metadata"></video><div id="classicQueueVideoOverlay" class="queue-video-call-overlay" hidden><small>กำลังเรียกคิว</small><strong id="classicQueueVideoNumber">–</strong><div><span id="classicQueueVideoPlate">–</span><b id="classicQueueVideoDoor">–</b></div><em id="classicQueueVideoInstruction">–</em></div></aside></section>
     <section id="summaryCards" class="queue-summary"></section>
     <section id="queueBoard" class="queue-board"><section class="next-panel"><header class="panel-title"><div class="title-with-icon"><span class="title-mark">รอ</span><div><h2>รอเข้าตรวจรับสินค้า</h2><small>รวมรถที่พร้อมเรียกและรถที่เรียกแล้ว</small></div></div><span id="nextPageLabel" class="page-label">ไม่มีคิวรอ</span></header><div class="next-table-head"><span>เลขนัดหมาย</span><span>บริษัท / ทะเบียนรถ</span><span>จังหวัด</span><span>ประตู</span></div><div id="nextQueue" class="next-list"></div></section><section class="work-panel"><header class="panel-title"><div class="title-with-icon"><span class="title-mark">งาน</span><h2>กำลังดำเนินการ</h2></div><span id="workCount" class="page-label">0 คัน</span></header><div id="workGroups" class="work-groups"></div></section><aside id="doorRail" class="door-rail" hidden><header class="door-rail-head"><div><small>ประตูรับสินค้า</small><h2>สถานะประตู</h2></div><div class="door-rail-head-meta"><span id="doorRailStats" class="door-rail-stats">–</span><span id="doorPageLabel" class="door-page-label">–</span></div></header><div id="doorRailList" class="door-rail-list"></div><footer class="door-rail-legend" aria-label="คำอธิบายสถานะประตู"><span><i class="legend-dot is-available"></i>ว่าง</span><span><i class="legend-dot is-called"></i>เรียกเข้า</span><span><i class="legend-dot is-use"></i>กำลังใช้งาน</span><span><i class="legend-dot is-draining"></i>ปิดหลังจบงาน</span></footer></aside></section>
@@ -30,6 +30,6 @@
   <script src="./config.js?v=20260813-r121"></script>
   <script src="./voice-engine.js?v=20260823-r2071"></script>
   <script src="./appointment-public-display.js?v=20260820-r2041"></script>
-  <script src="./queue.js?v=20260823-r2075"></script>
+  <script src="./queue.js?v=20260823-r2078"></script>
 </body>
 </html>
