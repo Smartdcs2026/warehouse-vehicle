@@ -11046,3 +11046,69 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
 .queue-display-choice.queue-display-traffic.is-selected::after{box-shadow:inset 0 0 0 2px #0c1115,0 0 12px rgba(40,163,77,.25)}
 @media(max-width:1120px){.queue-display-mode-options{grid-template-columns:1fr 1fr}.queue-display-choice.queue-display-traffic{grid-column:1/-1}}
 @media(max-width:900px){.queue-display-mode-options{grid-template-columns:1fr}.queue-display-choice.queue-display-traffic{grid-column:auto}}
+
+/* Round 207.20 — Dashboard that explains what to see and what to do next */
+.dashboard-view-shell .r146-generated-content{
+  display:grid!important;
+  grid-template-rows:42px minmax(0,1fr)!important;
+  gap:7px!important;
+}
+.dashboard-view-shell .r20720-page-guide{
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:stretch;
+  gap:7px;
+}
+.dashboard-view-shell .r20720-page-guide>div{
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  padding:6px 10px;
+  border:1px solid var(--dash-line,#d6e0eb);
+  border-radius:10px;
+  background:var(--dash-surface,#fff);
+  box-shadow:0 3px 9px rgba(27,52,88,.035);
+}
+.dashboard-view-shell .r20720-page-guide small{
+  color:var(--dash-muted,#6e8095);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.dashboard-view-shell .r20720-page-guide b{
+  min-width:0;
+  color:var(--dash-text,#10243e);
+  font-size:10.5px;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.dashboard-view-shell .r20720-page-guide>div:nth-child(2){border-left:4px solid #2563eb}
+.dashboard-view-shell .r20720-page-guide>div:nth-child(3){border-left:4px solid #0f9f78}
+.dashboard-view-shell .r20720-page-body,
+.dashboard-view-shell .r20720-page-body>section{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.dashboard-view-shell .r146-generated-overview>.r146-priority-table,
+.dashboard-view-shell .r145-exceptions>.r145-list{
+  border-color:#efb4b4!important;
+  box-shadow:inset 4px 0 0 #dc2626,0 5px 14px rgba(27,52,88,.04)!important;
+}
+@media(max-width:1180px){
+  .dashboard-view-shell .r146-generated-content{display:block!important;overflow:visible!important}
+  .dashboard-view-shell .r20720-page-guide{margin-bottom:8px}
+  .dashboard-view-shell .r20720-page-body,.dashboard-view-shell .r20720-page-body>section{height:auto;overflow:visible}
+}
+@media(max-width:760px){
+  .dashboard-view-shell .r20720-page-guide{grid-template-columns:1fr}
+  .dashboard-view-shell .r20720-page-guide>div{min-height:40px;padding:7px 10px}
+  .dashboard-view-shell .r20720-page-guide small{font-size:10px}
+  .dashboard-view-shell .r20720-page-guide b{font-size:12px;white-space:normal}
+}
