@@ -299,7 +299,8 @@ async function loadQueue(force = false) {
     latestData = data;
     lastSuccessfulLoad = Date.now();
     render(data);
-    setHealth("ok", "พร้อมใช้งาน");
+    if(data.capacity?.truncated)setHealth("capacity",`ข้อมูลไม่ครบ ${Number(data.capacity.returned||0)}/${Number(data.capacity.total||0)} คัน`,`เกินเพดาน ${Number(data.capacity.limit||500)} คัน กรุณาแจ้งผู้ดูแลระบบ`);
+    else setHealth("ok", "พร้อมใช้งาน");
   } catch (error) {
     const message = error?.name === "AbortError" ? "การเชื่อมต่อตอบสนองช้า" : (error?.message || "เชื่อมต่อไม่ได้");
     if (latestData) {
@@ -360,6 +361,7 @@ function normalizeQueueData(raw) {
     doorSettings: raw.doorSettings && typeof raw.doorSettings === "object" ? raw.doorSettings : null,
     queueDisplay: normalizeQueueDisplaySettings(raw.queueDisplay),
     appointmentLive: raw.appointmentLive && typeof raw.appointmentLive === "object" ? raw.appointmentLive : null,
+    capacity: raw.capacity && typeof raw.capacity === "object" ? {limit:Math.max(1,Number(raw.capacity.limit)||500),total:Math.max(0,Number(raw.capacity.total)||0),returned:Math.max(0,Number(raw.capacity.returned)||items.length),truncated:raw.capacity.truncated===true} : null,
     announcementMode: cleanText(raw.announcementMode || "LEGACY"),
     latestAnnouncementSequence: Math.max(0, Number(raw.latestAnnouncementSequence) || 0),
     announcements: Array.isArray(raw.announcements)
@@ -982,14 +984,14 @@ function plateText(item) {
 function setHealth(state, text, detail = "") {
   const el = $("queueHealth");
   if (!el) return;
-  const publicText=state==="ok"?"พร้อมใช้งาน":state==="loading"?"กำลังเตรียมข้อมูล":latestData?"แสดงข้อมูลล่าสุด":"กรุณารอสักครู่";
-  el.classList.remove("error", "stale", "offline", "loading");
+  const publicText=state==="capacity"?text:state==="ok"?"พร้อมใช้งาน":state==="loading"?"กำลังเตรียมข้อมูล":latestData?"แสดงข้อมูลล่าสุด":"กรุณารอสักครู่";
+  el.classList.remove("error", "stale", "offline", "loading", "capacity");
   if (state && state !== "ok") el.classList.add(state);
   el.textContent = publicText;
-  el.removeAttribute("title");
+  if(detail)el.title=detail;else el.removeAttribute("title");
   el.dataset.state = state || "ok";
-  const visual=$("visualQueueHealth");if(visual){visual.textContent=publicText;visual.removeAttribute("title");visual.dataset.state=state||"ok"}
-  const traffic=$("trafficQueueHealth");if(traffic){traffic.textContent=publicText;traffic.removeAttribute("title");traffic.dataset.state=state||"ok"}
+  const visual=$("visualQueueHealth");if(visual){visual.textContent=publicText;if(detail)visual.title=detail;else visual.removeAttribute("title");visual.dataset.state=state||"ok"}
+  const traffic=$("trafficQueueHealth");if(traffic){traffic.textContent=publicText;if(detail)traffic.title=detail;else traffic.removeAttribute("title");traffic.dataset.state=state||"ok"}
 }
 
 function refreshHealthAge() {

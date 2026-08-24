@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.24-round207.15-offline-security";
+const FRONTEND_BUILD="2026.08.24-round207.16-policy-capacity";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -4315,6 +4315,7 @@ async function api(path, options={}) {
       if(method==="GET"&&[429,502,503,504].includes(response.status)&&attempt<maxRetries&&!externalSignal?.aborted){await apiSleep(apiRetryDelay(attempt,response));attempt++;continue}
       const data=await response.json().catch(()=>({success:false,message:"ระบบตอบกลับไม่สมบูรณ์"}));
       if(!response.ok||data.success===false){if(response.status===401&&path!=="/api/auth/login")clearSession();if(response.status>=500)recordClientIssue(`API_${response.status}`,data.message||"ระบบตอบกลับผิดพลาด",path);const error=new Error(data.message||"ดำเนินการไม่สำเร็จ");error.status=response.status;error.data=data;throw error}
+      if(path.startsWith("/api/vehicles/active")&&data.capacity?.truncated){const total=Number(data.capacity.total||0),returned=Number(data.capacity.returned||0),limit=Number(data.capacity.limit||500),banner=$("connectionBanner");if(banner){banner.hidden=false;banner.textContent=`คำเตือน: มีรถปัจจุบัน ${total} คัน แต่หน้าจอแสดง ${returned}/${limit} คัน กรุณาแจ้ง Admin`};if($("syncStatus")){$("syncStatus").textContent=`● ข้อมูลไม่ครบ ${returned}/${total}`;$("syncStatus").style.color="#a82020"}if($("inboundSyncStatus")){$("inboundSyncStatus").textContent=`● ข้อมูลไม่ครบ ${returned}/${total}`;$("inboundSyncStatus").classList.remove("is-online");$("inboundSyncStatus").classList.add("is-offline")}}
       return data
     }catch(error){
       if(timer)clearTimeout(timer);lastError=error;
