@@ -36,6 +36,7 @@ let currentAnnouncement = null;
 let currentDisplayMode = "CLASSIC";
 let currentVisualTheme = "DARK";
 let visualRuntimeFailed = false;
+let trafficRuntimeFailed = false;
 let queueVideoSettings = normalizeQueueDisplaySettings(null);
 let queueVideoActiveElement = null;
 let queueVideoCurrentTime = 0;
@@ -44,6 +45,12 @@ let queueVideoResumeTimer = 0;
 let queueVideoFailureUrl = "";
 let queueVideoFailureAt = 0;
 let workPages = {
+  RECEIVING_IN_PROGRESS: 0,
+  WAITING_DOCUMENT_RETURN: 0,
+  WAITING_GATE_OUT: 0
+};
+let trafficPages = {
+  READY_FOR_RECEIVING: 0,
   RECEIVING_IN_PROGRESS: 0,
   WAITING_DOCUMENT_RETURN: 0,
   WAITING_GATE_OUT: 0
@@ -83,6 +90,12 @@ function init() {
     if(action==="video-sound")void toggleVideoSound();
     if(action==="full")void toggleFull();
   });
+  $("queueTrafficView")?.addEventListener("click", event => {
+    const action=event.target.closest("[data-traffic-action]")?.dataset.trafficAction;
+    if(action==="sound")void toggleSound();
+    if(action==="video-sound")void toggleVideoSound();
+    if(action==="full")void toggleFull();
+  });
 
   let resizeTimer = 0;
   window.addEventListener("resize", () => {
@@ -91,8 +104,9 @@ function init() {
       resetPages();
       applyDensity();
       if (latestData) {
-        renderNext(latestData);
-        renderWork(latestData);
+        if(currentDisplayMode==="TRAFFIC")renderTraffic(latestData);
+        else if(currentDisplayMode==="VISUAL")renderVisual(latestData);
+        else{renderNext(latestData);renderWork(latestData)}
       }
     }, 140);
   });
@@ -117,12 +131,14 @@ function init() {
         : '<span class="ui-full-mark" aria-hidden="true"></span> เต็มหน้าจอ';
     }
     const visualFull=$("visualFullButton");if(visualFull)visualFull.textContent=document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ";
+    const trafficFull=$("trafficFullButton");if(trafficFull)trafficFull.textContent=document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ";
     setTimeout(() => {
       resetPages();
       applyDensity();
       if (latestData) {
-        renderNext(latestData);
-        renderWork(latestData);
+        if(currentDisplayMode==="TRAFFIC")renderTraffic(latestData);
+        else if(currentDisplayMode==="VISUAL")renderVisual(latestData);
+        else{renderNext(latestData);renderWork(latestData)}
       }
     }, 120);
   });
@@ -220,6 +236,7 @@ function resetPages() {
   nextPage = 0;
   doorPage = 0;
   Object.keys(workPages).forEach(key => (workPages[key] = 0));
+  Object.keys(trafficPages).forEach(key => (trafficPages[key] = 0));
   lastRotateAt = Date.now();
 }
 
@@ -240,6 +257,8 @@ function tick() {
   if ($("queueClock")) $("queueClock").textContent = timeText;
   if ($("visualQueueClock")) $("visualQueueClock").textContent = timeText;
   if ($("visualQueueDate")) $("visualQueueDate").textContent = dateText;
+  if ($("trafficQueueClock")) $("trafficQueueClock").textContent = timeText;
+  if ($("trafficQueueDate")) $("trafficQueueDate").textContent = dateText;
 }
 
 async function loadQueue(force = false) {
@@ -422,6 +441,10 @@ function normalizeItem(item) {
     elapsedSeconds: Math.max(0, Number(item.elapsedSeconds ?? item.elapsed_seconds) || 0),
     stageSince: Number(item.stageSince ?? item.stage_since) || 0,
     receivingStartedAt: Number(item.receivingStartedAt ?? item.receiving_started_at) || 0,
+    alertLevel: cleanText(item.alertLevel ?? item.alert_level ?? "NORMAL").toUpperCase() || "NORMAL",
+    alertColor: cleanText(item.alertColor ?? item.alert_color),
+    alertSource: cleanText(item.alertSource ?? item.alert_source).toUpperCase(),
+    totalElapsedSeconds: Math.max(0, Number(item.totalElapsedSeconds ?? item.total_elapsed_seconds) || 0),
     appointmentEnrichment: enrichment,
     appointment_enrichment: enrichment
   };
@@ -459,7 +482,7 @@ function normalizeDoorLive(item){
 function normalizeQueueDisplaySettings(value){
   const raw=value&&typeof value==="object"?value:{},media=raw.video&&typeof raw.video==="object"?raw.video:raw,mode=cleanText(raw.displayMode).toUpperCase(),theme=cleanText(raw.visualTheme).toUpperCase(),font=cleanText(raw.fontFamily).toUpperCase(),videoSize=cleanText(media.videoSize||media.size).toUpperCase();
   const volume=Math.max(0,Math.min(100,Number(media.videoVolume??media.volume??70)||0));
-  return{showDoorPanel:raw.showDoorPanel!==false,doorPanelEnabled:raw.doorPanelEnabled===true,displayMode:mode==="VISUAL"?"VISUAL":"CLASSIC",visualTheme:["LIGHT","DARK","NEON"].includes(theme)?theme:"DARK",fontFamily:["NOTO_SANS_THAI","SARABUN","PROMPT","NOTO_SANS_THAI_LOOPED"].includes(font)?font:"NOTO_SANS_THAI",videoEnabled:media.videoEnabled===true||media.enabled===true,videoUrl:cleanText(media.videoUrl||media.url),videoSize:videoSize==="LARGE"?"LARGE":"STANDARD",videoSoundEnabled:media.videoSoundEnabled!==false&&media.soundEnabled!==false,videoVolume:volume,videoLoop:media.videoLoop!==false&&media.loop!==false,videoAutoplay:media.videoAutoplay!==false&&media.autoplay!==false,videoClassicEnabled:media.videoClassicEnabled!==false&&media.classicEnabled!==false,videoVisualEnabled:media.videoVisualEnabled!==false&&media.visualEnabled!==false};
+  return{showDoorPanel:raw.showDoorPanel!==false,doorPanelEnabled:raw.doorPanelEnabled===true,displayMode:["VISUAL","TRAFFIC"].includes(mode)?mode:"CLASSIC",visualTheme:["LIGHT","DARK","NEON"].includes(theme)?theme:"DARK",fontFamily:["NOTO_SANS_THAI","SARABUN","PROMPT","NOTO_SANS_THAI_LOOPED"].includes(font)?font:"NOTO_SANS_THAI",videoEnabled:media.videoEnabled===true||media.enabled===true,videoUrl:cleanText(media.videoUrl||media.url),videoSize:videoSize==="LARGE"?"LARGE":"STANDARD",videoSoundEnabled:media.videoSoundEnabled!==false&&media.soundEnabled!==false,videoVolume:volume,videoLoop:media.videoLoop!==false&&media.loop!==false,videoAutoplay:media.videoAutoplay!==false&&media.autoplay!==false,videoClassicEnabled:media.videoClassicEnabled!==false&&media.classicEnabled!==false,videoVisualEnabled:media.videoVisualEnabled!==false&&media.visualEnabled!==false,videoTrafficEnabled:media.videoTrafficEnabled!==false&&media.trafficEnabled!==false};
 }
 function cleanText(value) {
   return String(value ?? "").trim();
@@ -493,7 +516,9 @@ function render(data) {
   queueVideoSettings=normalizeQueueDisplaySettings(data.queueDisplay);
   applyQueueDisplayMode(queueVideoSettings);
   syncVoiceSettings(data.voice);
-  if(currentDisplayMode==="VISUAL"){
+  if(currentDisplayMode==="TRAFFIC"){
+    try{renderTraffic(data)}catch(error){trafficRuntimeFailed=true;console.warn("traffic queue render failed",error?.message||error);applyQueueDisplayMode({...queueVideoSettings,displayMode:"CLASSIC"});renderClassic(data);setHealth("error","จอสัญญาณไฟขัดข้อง — ใช้จอเดิม",error?.message||"")}
+  }else if(currentDisplayMode==="VISUAL"){
     try{renderVisual(data)}catch(error){visualRuntimeFailed=true;console.warn("visual queue render failed",error?.message||error);applyQueueDisplayMode({...queueVideoSettings,displayMode:"CLASSIC"});renderClassic(data);setHealth("error","จอ Visual ขัดข้อง — ใช้จอเดิม",error?.message||"")}
   }else renderClassic(data);
   syncQueueVideo(queueVideoSettings);
@@ -506,21 +531,23 @@ function render(data) {
   }
   setStableText($("updatedAt"), "ล่าสุด " + formatTime(data.generatedAt));
   setStableText($("visualUpdatedAt"), "ล่าสุด " + formatTime(data.generatedAt));
+  setStableText($("trafficUpdatedAt"), "ล่าสุด " + formatTime(data.generatedAt));
 }
 function renderClassic(data){renderSummary(data);renderNext(data);renderWork(data);renderDoorRail(data)}
 function queueFontStack(value){return({NOTO_SANS_THAI:'"Noto Sans Thai","Tahoma",system-ui,sans-serif',SARABUN:'"Sarabun","Noto Sans Thai","Tahoma",system-ui,sans-serif',PROMPT:'"Prompt","Noto Sans Thai","Tahoma",system-ui,sans-serif',NOTO_SANS_THAI_LOOPED:'"Noto Sans Thai Looped","Noto Sans Thai","Tahoma",system-ui,sans-serif'})[value]||'"Noto Sans Thai","Tahoma",system-ui,sans-serif'}
 function applyQueueDisplayMode(settings){
-  const normalized=normalizeQueueDisplaySettings(settings),app=$("queueApp"),visual=$("queueVisualView");
-  currentDisplayMode=normalized.displayMode==="VISUAL"&&visualRuntimeFailed?"CLASSIC":normalized.displayMode;currentVisualTheme=normalized.visualTheme;
+  const normalized=normalizeQueueDisplaySettings(settings),app=$("queueApp"),visual=$("queueVisualView"),traffic=$("queueTrafficView");
+  let requested=normalized.displayMode;if(requested==="VISUAL"&&visualRuntimeFailed)requested="CLASSIC";if(requested==="TRAFFIC"&&trafficRuntimeFailed)requested="CLASSIC";currentDisplayMode=requested;currentVisualTheme=normalized.visualTheme;
   document.documentElement.style.setProperty("--queue-font-family",queueFontStack(normalized.fontFamily));document.documentElement.dataset.queueFont=normalized.fontFamily.toLowerCase();
-  if(app){app.classList.toggle("queue-visual-mode",currentDisplayMode==="VISUAL");app.dataset.queueTheme=currentVisualTheme.toLowerCase();app.dataset.queueFont=normalized.fontFamily.toLowerCase()}
+  if(app){app.classList.toggle("queue-visual-mode",currentDisplayMode==="VISUAL");app.classList.toggle("queue-traffic-mode",currentDisplayMode==="TRAFFIC");app.dataset.queueTheme=currentVisualTheme.toLowerCase();app.dataset.queueFont=normalized.fontFamily.toLowerCase()}
   if(visual)visual.hidden=currentDisplayMode!=="VISUAL";
+  if(traffic)traffic.hidden=currentDisplayMode!=="TRAFFIC";
 }
 
-function queueVideoAllowed(settings=queueVideoSettings,mode=currentDisplayMode){const failed=queueVideoFailureUrl&&queueVideoFailureUrl===settings.videoUrl&&Date.now()-queueVideoFailureAt<60000;return settings.videoEnabled===true&&Boolean(settings.videoUrl)&&!failed&&(mode==="VISUAL"?settings.videoVisualEnabled!==false:settings.videoClassicEnabled!==false)}
+function queueVideoAllowed(settings=queueVideoSettings,mode=currentDisplayMode){const failed=queueVideoFailureUrl&&queueVideoFailureUrl===settings.videoUrl&&Date.now()-queueVideoFailureAt<60000;if(!(settings.videoEnabled===true&&Boolean(settings.videoUrl)&&!failed))return false;if(mode==="VISUAL")return settings.videoVisualEnabled!==false;if(mode==="TRAFFIC")return settings.videoTrafficEnabled!==false;return settings.videoClassicEnabled!==false}
 function queueVideoAudioAvailable(){return queueVideoAllowed()&&queueVideoSettings.videoSoundEnabled!==false&&Number(queueVideoSettings.videoVolume||0)>0}
 function queueAudioAvailable(){return voiceAdminEnabled}
-function queueVideoNodes(){return[{mode:"CLASSIC",panel:$("classicQueueVideoPanel"),video:$("classicQueueVideo")},{mode:"VISUAL",panel:$("visualQueueVideoPanel"),video:$("visualQueueVideo")}]}
+function queueVideoNodes(){return[{mode:"CLASSIC",panel:$("classicQueueVideoPanel"),video:$("classicQueueVideo")},{mode:"VISUAL",panel:$("visualQueueVideoPanel"),video:$("visualQueueVideo")},{mode:"TRAFFIC",panel:$("trafficQueueVideoPanel"),video:$("trafficQueueVideo")}]}
 function queueVideoSetSource(video,url,resumeAt=0){if(!video||!url)return;if(video.dataset.queueVideoUrl===url)return;video.pause();video.src=url;video.dataset.queueVideoUrl=url;video.onerror=()=>{if(video.dataset.queueVideoUrl!==url)return;queueVideoFailureUrl=url;queueVideoFailureAt=Date.now();video.pause();video.removeAttribute("src");video.dataset.queueVideoUrl="";video.load();syncQueueVideo(queueVideoSettings)};video.oncanplay=()=>{if(queueVideoFailureUrl===url){queueVideoFailureUrl="";queueVideoFailureAt=0}};video.load();if(resumeAt>0)video.addEventListener("loadedmetadata",()=>{try{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=Math.min(resumeAt,Math.max(0,video.duration-.25))}catch{}},{once:true})}
 function queueVideoPlayback(video){
   if(!video)return;
@@ -542,16 +569,17 @@ function syncQueueVideoAudioState(){
   video.volume=Math.max(0,Math.min(1,Number(queueVideoSettings.videoVolume||0)/100));
   video.muted=!(videoAudioEnabled&&queueVideoAudioAvailable()&&queueVideoVoiceDepth===0);
 }
-function syncQueueVideo(settings){queueVideoSettings=normalizeQueueDisplaySettings(settings);const app=$("queueApp"),classicPanel=$("callPanel"),instruction=$("callInstructionPanel"),visualRoot=$("queueVisualView"),allowed=queueVideoAllowed(queueVideoSettings,currentDisplayMode),size=queueVideoSettings.videoSize==="LARGE"?"large":"standard";
+function syncQueueVideo(settings){queueVideoSettings=normalizeQueueDisplaySettings(settings);const app=$("queueApp"),classicPanel=$("callPanel"),instruction=$("callInstructionPanel"),visualRoot=$("queueVisualView"),trafficRoot=$("queueTrafficView"),allowed=queueVideoAllowed(queueVideoSettings,currentDisplayMode),size=queueVideoSettings.videoSize==="LARGE"?"large":"standard";
   if(app){app.classList.toggle("queue-video-on",allowed);app.classList.toggle("queue-video-large",allowed&&size==="large");app.classList.toggle("queue-video-standard",allowed&&size!=="large")}
   if(classicPanel){classicPanel.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="CLASSIC");classicPanel.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="CLASSIC"&&size==="large");classicPanel.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="CLASSIC"&&size!=="large")}
   if(instruction)instruction.hidden=allowed&&currentDisplayMode==="CLASSIC";
   if(visualRoot){visualRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="VISUAL");visualRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="VISUAL"&&size==="large");visualRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="VISUAL"&&size!=="large")}
+  if(trafficRoot){trafficRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="TRAFFIC");trafficRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="TRAFFIC"&&size==="large");trafficRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="TRAFFIC"&&size!=="large")}
   const nodes=queueVideoNodes();let next=null;for(const node of nodes){const use=allowed&&node.mode===currentDisplayMode;if(node.panel)node.panel.hidden=!use;if(use)next=node.video;else if(node.video){if(node.video===queueVideoActiveElement&&Number.isFinite(node.video.currentTime))queueVideoCurrentTime=node.video.currentTime;node.video.pause()}}
   if(!next){queueVideoActiveElement=null;updateSoundButton();updateVideoSoundButton();return}
   if(queueVideoActiveElement&&queueVideoActiveElement!==next&&Number.isFinite(queueVideoActiveElement.currentTime))queueVideoCurrentTime=queueVideoActiveElement.currentTime;queueVideoActiveElement=next;queueVideoSetSource(next,queueVideoSettings.videoUrl,queueVideoCurrentTime);queueVideoPlayback(next);updateSoundButton();updateVideoSoundButton();syncQueueVideoCallOverlay(currentAnnouncement||latestAnnouncement(latestData||{}));
 }
-function syncQueueVideoCallOverlay(item){const active=Boolean(item?.appointmentNo),instruction=visualCallInstructionText(item||{}),pairs=[{overlay:$("classicQueueVideoOverlay"),number:$("classicQueueVideoNumber"),plate:$("classicQueueVideoPlate"),door:$("classicQueueVideoDoor"),text:$("classicQueueVideoInstruction")},{overlay:$("visualQueueVideoOverlay"),number:$("visualQueueVideoNumber"),plate:$("visualQueueVideoPlate"),door:$("visualQueueVideoDoor"),text:$("visualQueueVideoInstruction")}];for(const row of pairs){if(!row.overlay)continue;row.overlay.hidden=!active;setStableText(row.number,item?.appointmentNo||"–");setStableText(row.plate,item?.vehiclePlate?`${item.vehiclePlate}${item.province?` ${item.province}`:""}`:"–");setStableText(row.door,item?.doorCode?`ประตู ${item.doorCode}`:"เข้าตรวจรับสินค้า");setStableText(row.text,instruction)}}
+function syncQueueVideoCallOverlay(item){const active=Boolean(item?.appointmentNo),instruction=visualCallInstructionText(item||{}),pairs=[{overlay:$("classicQueueVideoOverlay"),number:$("classicQueueVideoNumber"),plate:$("classicQueueVideoPlate"),door:$("classicQueueVideoDoor"),text:$("classicQueueVideoInstruction")},{overlay:$("visualQueueVideoOverlay"),number:$("visualQueueVideoNumber"),plate:$("visualQueueVideoPlate"),door:$("visualQueueVideoDoor"),text:$("visualQueueVideoInstruction")},{overlay:$("trafficQueueVideoOverlay"),number:$("trafficQueueVideoNumber"),plate:$("trafficQueueVideoPlate"),door:$("trafficQueueVideoDoor"),text:$("trafficQueueVideoInstruction")}];for(const row of pairs){if(!row.overlay)continue;row.overlay.hidden=!active;setStableText(row.number,item?.appointmentNo||"–");setStableText(row.plate,item?.vehiclePlate?`${item.vehiclePlate}${item.province?` ${item.province}`:""}`:"–");setStableText(row.door,item?.doorCode?`ประตู ${item.doorCode}`:"เข้าตรวจรับสินค้า");setStableText(row.text,instruction)}}
 
 function latestAnnouncement(data){
   const call=data?.calling||null,notice=data?.noticeCalling||null;
@@ -619,10 +647,12 @@ function doorRailItem(door){
 
 function renderUnavailable() {
   if(!currentAnnouncement)renderCall(null);
-  if(currentDisplayMode==="VISUAL")renderVisual({items:[],counts:{},doors:[],queueDisplay:{displayMode:"VISUAL",visualTheme:currentVisualTheme,doorPanelEnabled:false},generatedAt:Date.now()});
+  if(currentDisplayMode==="TRAFFIC")renderTraffic({items:[],counts:{},doors:[],queueDisplay:{displayMode:"TRAFFIC",visualTheme:currentVisualTheme,doorPanelEnabled:false},generatedAt:Date.now()});
+  else if(currentDisplayMode==="VISUAL")renderVisual({items:[],counts:{},doors:[],queueDisplay:{displayMode:"VISUAL",visualTheme:currentVisualTheme,doorPanelEnabled:false},generatedAt:Date.now()});
   else{renderSummary({ counts: {} });renderNext({ items: [] });renderWork({ items: [] })}
   if ($("updatedAt")) $("updatedAt").textContent = "กรุณารอสักครู่";
   if ($("visualUpdatedAt")) $("visualUpdatedAt").textContent = "กรุณารอสักครู่";
+  if ($("trafficUpdatedAt")) $("trafficUpdatedAt").textContent = "กรุณารอสักครู่";
 }
 
 function renderSummary(data) {
@@ -749,6 +779,7 @@ function renderCall(item) {
     $("callInstructionPrefix").textContent = "กรุณาตรวจสอบสถานะคิว";
     $("callInstruction").textContent = "รอเรียกคิว";
     if(currentDisplayMode==="VISUAL")renderVisualCall(null);
+    if(currentDisplayMode==="TRAFFIC")renderTrafficCall(null);
     syncQueueVideoCallOverlay(null);
     return;
   }
@@ -793,6 +824,7 @@ function renderCall(item) {
     panel.classList.add("flash");
   }
   if(currentDisplayMode==="VISUAL")renderVisualCall(item);
+  if(currentDisplayMode==="TRAFFIC")renderTrafficCall(item);
   syncQueueVideoCallOverlay(item);
 }
 
@@ -906,7 +938,10 @@ function rotatePages() {
   const all=latestData.items||[],pageSize=currentDisplayMode==="VISUAL"?visualStagePageSize():null;
   const ready=readyItems(latestData),nextPages=Math.ceil(ready.length/(pageSize||queuePageSize()));if(nextPages>1)nextPage=(nextPage+1)%nextPages;
   for(const status of Object.keys(workPages)){const pages=Math.ceil(all.filter(item=>item.status===status).length/(pageSize||workPageSize()));if(pages>1)workPages[status]=(workPages[status]+1)%pages}
-  if(currentDisplayMode==="VISUAL"){
+  if(currentDisplayMode==="TRAFFIC"){
+    for(const def of TRAFFIC_STAGE_DEFS){const count=all.filter(item=>item.status===def.status).length,pages=Math.max(1,Math.ceil(count/trafficStagePageSize()));if(pages>1)trafficPages[def.status]=(trafficPages[def.status]+1)%pages}
+    renderTraffic(latestData,true);
+  }else if(currentDisplayMode==="VISUAL"){
     const doorInfo=visualDoorSelection(latestData);if(doorInfo.pages>1)doorPage=(doorPage+1)%doorInfo.pages;renderVisual(latestData,true);
   }else{
     const allDoors=Array.isArray(latestData.doors)?latestData.doors:[],importantDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),availableDoors=allDoors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),availableSlots=Math.max(1,doorPageSize()-importantDoors.length),doorPages=Math.max(1,Math.ceil(availableDoors.length/availableSlots));if(doorPages>1)doorPage=(doorPage+1)%doorPages;
@@ -935,6 +970,7 @@ function setHealth(state, text, detail = "") {
   el.removeAttribute("title");
   el.dataset.state = state || "ok";
   const visual=$("visualQueueHealth");if(visual){visual.textContent=publicText;visual.removeAttribute("title");visual.dataset.state=state||"ok"}
+  const traffic=$("trafficQueueHealth");if(traffic){traffic.textContent=publicText;traffic.removeAttribute("title");traffic.dataset.state=state||"ok"}
 }
 
 function refreshHealthAge() {
@@ -1065,6 +1101,71 @@ function syncVisualControls(){
   tick();updateSoundButton();const source=$("queueHealth"),visual=$("visualQueueHealth");if(source&&visual){setStableText(visual,source.textContent);visual.dataset.state=source.dataset.state||"ok";visual.title=source.title||source.textContent}const visualFull=$("visualFullButton");if(visualFull)setStableText(visualFull,document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ");
 }
 
+
+/* Round 207.12 — Traffic Signal queue display */
+const TRAFFIC_STAGE_DEFS=[
+  {status:"READY_FOR_RECEIVING",number:"1",label:"รอเข้าตรวจรับสินค้า",baseLamp:"green",tone:"green"},
+  {status:"RECEIVING_IN_PROGRESS",number:"2",label:"กำลังตรวจรับสินค้า",baseLamp:"amber",tone:"amber"},
+  {status:"WAITING_DOCUMENT_RETURN",number:"3",label:"รอรับเอกสารคืน",baseLamp:"red",tone:"red"},
+  {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากคลัง",baseLamp:"green",tone:"green"}
+];
+const TRAFFIC_SHELL_VERSION="20712";
+function trafficAlertRank(level){return({NORMAL:0,WATCH:1,WARNING:2,URGENT:3,CRITICAL:4})[String(level||"NORMAL").toUpperCase()]??0}
+function trafficStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<690||w<1120)return 2;return 3}
+function trafficSignalState(items,baseLamp){
+  if(!items.length)return{lamp:"off",motion:"",level:"NORMAL"};
+  let level="NORMAL",rank=0;for(const item of items){const r=trafficAlertRank(item.alertLevel);if(r>rank){rank=r;level=String(item.alertLevel||"NORMAL").toUpperCase()}}
+  if(rank>=3)return{lamp:"red",motion:"blink-fast",level};
+  if(rank===2)return{lamp:"amber",motion:"blink",level};
+  if(rank===1)return{lamp:baseLamp,motion:"pulse",level};
+  return{lamp:baseLamp,motion:"",level};
+}
+function trafficLightHtml(lamp="off",motion="",extra=""){
+  const active=lamp==="red"||lamp==="amber"||lamp==="green"?lamp:"off";
+  return `<div class="traffic-light ${motion?`is-${motion}`:""} ${extra}" data-lamp="${esc(active)}" aria-hidden="true"><i class="lamp-red"></i><i class="lamp-amber"></i><i class="lamp-green"></i><span class="traffic-pole"></span></div>`;
+}
+function trafficStatusLabel(status){return({READY_FOR_RECEIVING:"รอเข้าตรวจรับสินค้า",RECEIVING_IN_PROGRESS:"กำลังตรวจรับสินค้า",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",WAITING_GATE_OUT:"รอออกจากคลัง"})[status]||"กำลังดำเนินการ"}
+function trafficAlertLabel(level){return({WATCH:"เฝ้าระวัง",WARNING:"เตือน",URGENT:"เร่งด่วน",CRITICAL:"วิกฤต"})[String(level||"").toUpperCase()]||""}
+function trafficStageStatic(def){return `<article id="trafficStage_${def.status}" class="traffic-stage traffic-tone-${def.tone}"><header><span>${def.number}</span><div><b>${esc(def.label)}</b><small id="trafficStageMeta_${def.status}">0 คัน</small></div><strong id="trafficStageCount_${def.status}">0</strong><em>คัน</em></header><div class="traffic-stage-body"><div id="trafficSignal_${def.status}" class="traffic-stage-signal">${trafficLightHtml("off")}</div><div id="trafficStageList_${def.status}" class="traffic-stage-list"></div></div><footer id="trafficStageFooter_${def.status}">ไม่มีรถในขั้นตอนนี้</footer></article>`}
+function ensureTrafficShell(root){
+  if(root.dataset.trafficShellVersion===TRAFFIC_SHELL_VERSION&&root.querySelector(".traffic-queue-shell"))return;
+  root.innerHTML=`<div class="traffic-queue-shell">
+    <header class="traffic-header"><div class="traffic-brand"><img src="./icon-192.png" alt=""><div><small>ระบบบริหารรถขนส่งคลังสินค้า</small><h1>สถานะคิวรถขนส่ง</h1></div></div><div class="traffic-head-actions"><div class="traffic-datetime"><b id="trafficQueueClock">--:--:--</b><span id="trafficQueueDate">--</span></div><span id="trafficQueueHealth" class="traffic-health">พร้อมใช้งาน</span><button id="trafficSoundButton" data-traffic-action="sound" type="button">เปิดเสียงคิว</button><button id="trafficVideoSoundButton" data-traffic-action="video-sound" type="button" hidden>เปิดเสียงวิดีโอ</button><button id="trafficFullButton" data-traffic-action="full" type="button">เต็มจอ</button></div></header>
+    <section class="traffic-top"><article id="trafficCallHero" class="traffic-call-hero is-idle"><div id="trafficCallSignal" class="traffic-call-signal">${trafficLightHtml("green","pulse","traffic-light-large")}<b id="trafficCallState">รอเรียกคิว</b></div><div class="traffic-call-main"><small>คิวปัจจุบัน</small><strong id="trafficCallNumber">รอเรียกคิว</strong><b id="trafficCallCompany">–</b><div class="traffic-call-meta"><span><small>ทะเบียนรถ</small><b id="trafficCallPlate">–</b></span><span><small>จังหวัด</small><b id="trafficCallProvince">–</b></span><span><small>ประตู</small><b id="trafficCallDoor">–</b></span></div><em id="trafficCallInstruction">รอเจ้าหน้าที่เรียกคิว</em></div></article>
+      <aside id="trafficQueueVideoPanel" class="traffic-video-panel" hidden aria-label="สื่อประชาสัมพันธ์"><video id="trafficQueueVideo" playsinline preload="metadata" tabindex="-1" aria-hidden="true"></video></aside>
+    </section>
+    <section class="traffic-stage-grid">${TRAFFIC_STAGE_DEFS.map(trafficStageStatic).join("")}</section>
+    <section id="trafficBottomGrid" class="traffic-bottom-grid"><section id="trafficDoorPanel" class="traffic-door-panel"><header><div><small>ประตูรับสินค้า</small><b>สถานะประตู</b></div><span id="trafficDoorMeta">–</span></header><div id="trafficDoorList" class="traffic-door-list"></div><footer><span><i class="door-dot available"></i>ว่าง</span><span><i class="door-dot called"></i>เรียกเข้า</span><span><i class="door-dot inuse"></i>กำลังใช้งาน</span><span><i class="door-dot draining"></i>ปิดหลังจบงาน</span></footer></section><section class="traffic-activity-panel"><header><div><small>หน้างาน</small><b>ความเคลื่อนไหวล่าสุด</b></div></header><div id="trafficActivityList" class="traffic-activity-list"></div></section><section class="traffic-wait-panel"><header><div><small>ติดตามงาน</small><b>รถที่รอนาน</b></div></header><div id="trafficWaitList" class="traffic-wait-list"></div></section></section>
+    <footer class="traffic-footer"><span>โปรดตรวจสอบหมายเลขนัดหมายและประตู</span><b id="trafficUpdatedAt">ล่าสุด –</b><span>ขับขี่ปลอดภัย</span></footer>
+  </div>`;
+  root.dataset.trafficShellVersion=TRAFFIC_SHELL_VERSION;
+}
+function trafficCallSignalFor(item){
+  if(!item?.appointmentNo)return{lamp:"green",motion:"pulse",label:"รอเรียกคิว"};
+  const type=String(item.callType||"").toUpperCase();
+  if(type.startsWith("NOTICE_"))return{lamp:"red",motion:"blink",label:"แจ้งผู้ขับรถ"};
+  if(type==="RECALL"||type==="DOOR_CHANGED")return{lamp:"amber",motion:"blink",label:type==="DOOR_CHANGED"?"เปลี่ยนประตู":"เรียกซ้ำ"};
+  return{lamp:"green",motion:"pulse",label:"กำลังเรียกคิว"};
+}
+function renderTrafficCall(item){
+  const hero=$("trafficCallHero");if(!hero)return;const company=queueCompanyView(item||{}),signal=trafficCallSignalFor(item);hero.classList.toggle("is-idle",!item?.appointmentNo);hero.classList.toggle("is-active",Boolean(item?.appointmentNo));setStableHTML($("trafficCallSignal"),`${trafficLightHtml(signal.lamp,signal.motion,"traffic-light-large")}<b id="trafficCallState">${esc(signal.label)}</b>`);setStableText($("trafficCallNumber"),item?.appointmentNo||"รอเรียกคิว");setStableText($("trafficCallCompany"),company.primary||"–");setStableText($("trafficCallPlate"),item?.vehiclePlate||"–");setStableText($("trafficCallProvince"),item?.province||"–");setStableText($("trafficCallDoor"),item?.doorCode||"–");setStableText($("trafficCallInstruction"),visualCallInstructionText(item||{}));
+}
+function trafficStageItem(item){
+  const company=queueCompanyView(item),door=normalizeQueueDoorCode(item.doorCode),alert=trafficAlertLabel(item.alertLevel),called=Number(item.calledAt||0)>0;
+  return `<article class="traffic-vehicle ${called?"is-called":""} ${alert?"has-alert":""}"><div class="traffic-vehicle-main"><b>${esc(item.appointmentNo||"–")}</b><span>${esc(item.vehiclePlate||"–")}</span></div><strong title="${esc(company.tooltip||company.primary)}">${esc(company.primary||"ไม่ระบุบริษัท")}</strong><div class="traffic-vehicle-foot"><small>${esc(item.province||"–")}</small>${door?`<i>${esc(door)}</i>`:""}<time>${esc(visualWaitText(item))}</time>${alert?`<em>${esc(alert)}</em>`:""}</div></article>`;
+}
+function syncTrafficStage(data,def,animate=false){
+  const items=(data.items||[]).filter(item=>item.status===def.status).sort((a,b)=>trafficAlertRank(b.alertLevel)-trafficAlertRank(a.alertLevel)||Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)),size=trafficStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=trafficPages[def.status]||0;if(page>=pages){page=0;trafficPages[def.status]=0}const shown=items.slice(page*size,page*size+size),signal=trafficSignalState(items,def.baseLamp);setStableText($("trafficStageCount_"+def.status),items.length.toLocaleString("th-TH"));setStableText($("trafficStageMeta_"+def.status),`${items.length.toLocaleString("th-TH")} คัน`);setStableHTML($("trafficSignal_"+def.status),trafficLightHtml(signal.lamp,signal.motion));const list=$("trafficStageList_"+def.status),changed=setStableHTML(list,shown.length?shown.map(trafficStageItem).join(""):'<div class="traffic-stage-empty">ไม่มีรถในขั้นตอนนี้</div>');if(animate&&changed)fadePage(list);const alertLabel=trafficAlertLabel(signal.level);setStableText($("trafficStageFooter_"+def.status),alertLabel?`${alertLabel} · ตามเกณฑ์เวลาที่กำหนด`:items.length?(items.length>shown.length?`อีก ${(items.length-shown.length).toLocaleString("th-TH")} คัน`:`รายการปัจจุบัน`):"ไม่มีรถในขั้นตอนนี้");
+}
+function trafficDoorCard(door){const status=String(door.status||"AVAILABLE"),label={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"}[status]||status,code=normalizeQueueDoorCode(door.doorCode)||"–",count=Math.max(0,Number(door.occupancyCount)||0);return `<article class="traffic-door door-${esc(status.toLowerCase())}"><div><b>${esc(code)}</b><span><i></i>${esc(label)}</span></div><strong>${status==="DRAINING"?"–":count}</strong></article>`}
+function syncTrafficDoors(data){const panel=$("trafficDoorPanel"),bottom=$("trafficBottomGrid"),enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),doors=(Array.isArray(data?.doors)?data.doors:[]).slice().sort(compareQueueDoors);panel.hidden=!enabled;bottom?.classList.toggle("no-doors",!enabled);if(!enabled)return;const important=doors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),available=doors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),shown=[...important,...available].slice(0,8);setStableText($("trafficDoorMeta"),`${important.length?`ใช้งาน ${important.length} · `:""}รวม ${doors.length} ประตู`);setStableHTML($("trafficDoorList"),shown.length?shown.map(trafficDoorCard).join(""):'<div class="traffic-panel-empty">ไม่มีข้อมูลประตู</div>')}
+function trafficActivityItem(item){const status=trafficStatusLabel(item.status),door=item.doorCode?` · ${item.doorCode}`:"";return `<article><time>${esc(formatTime(item.stageSince||Date.now()))}</time><div><b>${esc(item.appointmentNo||"–")}</b><small>${esc(status)}${esc(door)}</small></div><span class="level-${esc(String(item.alertLevel||"NORMAL").toLowerCase())}">${esc(trafficAlertLabel(item.alertLevel)||"ปกติ")}</span></article>`}
+function syncTrafficActivity(data){const items=[...(data.items||[])].filter(item=>item.stageSince).sort((a,b)=>Number(b.stageSince||0)-Number(a.stageSince||0)).slice(0,4);setStableHTML($("trafficActivityList"),items.length?items.map(trafficActivityItem).join(""):'<div class="traffic-panel-empty">ยังไม่มีความเคลื่อนไหว</div>')}
+function trafficWaitItem(item,index){const company=queueCompanyView(item);return `<article><span>${index+1}</span><div><b>${esc(item.appointmentNo||"–")}</b><small>${esc(company.primary||"ไม่ระบุบริษัท")}${item.doorCode?` · ${esc(item.doorCode)}`:""}</small></div><time>${esc(visualWaitText(item))}</time></article>`}
+function syncTrafficWait(data){const items=[...(data.items||[])].sort((a,b)=>Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)).slice(0,4);setStableHTML($("trafficWaitList"),items.length?items.map(trafficWaitItem).join(""):'<div class="traffic-panel-empty">ไม่มีรถค้างในขั้นตอนปัจจุบัน</div>')}
+function syncTrafficControls(){tick();updateSoundButton();updateVideoSoundButton();const source=$("queueHealth"),traffic=$("trafficQueueHealth");if(source&&traffic){setStableText(traffic,source.textContent);traffic.dataset.state=source.dataset.state||"ok"}const full=$("trafficFullButton");if(full)setStableText(full,document.fullscreenElement?"ออกจากเต็มจอ":"เต็มจอ")}
+function renderTraffic(data,animate=false){const root=$("queueTrafficView");if(!root)return;ensureTrafficShell(root);root.hidden=false;renderTrafficCall(currentAnnouncement||latestAnnouncement(data));for(const def of TRAFFIC_STAGE_DEFS)syncTrafficStage(data,def,animate);syncTrafficDoors(data);syncTrafficActivity(data);syncTrafficWait(data);syncTrafficControls()}
+
 function shortDuration(sec) {
   sec = Math.max(0, Math.floor(Number(sec) || 0));
   const h = Math.floor(sec / 3600);
@@ -1136,7 +1237,7 @@ function syncVoiceSettings(settings){
 }
 
 function updateSoundButton(){
-  const button=$("soundButton"),visual=$("visualSoundButton"),available=queueAudioAvailable();
+  const button=$("soundButton"),visual=$("visualSoundButton"),traffic=$("trafficSoundButton"),available=queueAudioAvailable();
   const apply=(target,compact=false)=>{
     if(!target)return;
     if(!available){target.disabled=true;target.classList.remove("sound-on");target.innerHTML=compact?"เสียงคิวปิด":'<span class="ui-sound-mark off" aria-hidden="true"></span> เสียงคิวปิด';target.title="";return}
@@ -1144,7 +1245,7 @@ function updateSoundButton(){
     if(audioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงคิวพร้อม":'<span class="ui-sound-mark on" aria-hidden="true"></span> เสียงคิวพร้อม'}
     else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียงคิว":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียงคิว'}
   };
-  apply(button,false);apply(visual,true);
+  apply(button,false);apply(visual,true);apply(traffic,true);
 }
 
 function updateVideoSoundButton(){
@@ -1158,7 +1259,7 @@ function updateVideoSoundButton(){
     if(videoAudioEnabled){target.classList.add("sound-on");target.innerHTML=compact?"เสียงวิดีโอ":'<span class="ui-sound-mark on" aria-hidden="true"></span> เสียงวิดีโอ'}
     else{target.classList.remove("sound-on");target.innerHTML=compact?"เปิดเสียงวิดีโอ":'<span class="ui-sound-mark off" aria-hidden="true"></span> เปิดเสียงวิดีโอ'}
   };
-  apply($("videoSoundButton"),false);apply($("visualVideoSoundButton"),true);
+  apply($("videoSoundButton"),false);apply($("visualVideoSoundButton"),true);apply($("trafficVideoSoundButton"),true);
 }
 
 async function toggleSound() {

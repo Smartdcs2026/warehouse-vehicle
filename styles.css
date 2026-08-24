@@ -11038,3 +11038,11 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
 .queue-media-upload-status{margin:7px 2px 0;min-height:18px;color:#536b88;font-size:11px;font-weight:800;line-height:1.35}
 .queue-media-upload-status:not([hidden]){display:block}
 .queue-media-upload-progress{height:7px}
+
+/* Round 207.12 — third Queue display mode: Traffic Signal */
+.queue-display-mode-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+.queue-display-choice.queue-display-traffic{position:relative;overflow:hidden}
+.queue-display-choice.queue-display-traffic::after{content:"";width:22px;height:54px;margin-left:auto;flex:0 0 auto;border-radius:8px;background:radial-gradient(circle at 50% 19%,#222 0 5px,#0b0f12 6px 8px,transparent 9px),radial-gradient(circle at 50% 50%,#f0a914 0 5px,#0b0f12 6px 8px,transparent 9px),radial-gradient(circle at 50% 81%,#28a34d 0 5px,#0b0f12 6px 8px,transparent 9px),#1b242c;border:1px solid #41505d;box-shadow:inset 0 0 0 2px #0c1115}
+.queue-display-choice.queue-display-traffic.is-selected::after{box-shadow:inset 0 0 0 2px #0c1115,0 0 12px rgba(40,163,77,.25)}
+@media(max-width:1120px){.queue-display-mode-options{grid-template-columns:1fr 1fr}.queue-display-choice.queue-display-traffic{grid-column:1/-1}}
+@media(max-width:900px){.queue-display-mode-options{grid-template-columns:1fr}.queue-display-choice.queue-display-traffic{grid-column:auto}}
