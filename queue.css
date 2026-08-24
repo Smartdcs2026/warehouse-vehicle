@@ -2851,3 +2851,166 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .traffic-queue-shell{grid-template-rows:52px 190px minmax(175px,1fr) 142px 22px;gap:5px;padding:5px}.traffic-header{padding:5px 9px}.traffic-brand img{width:35px;height:35px}.traffic-brand h1{font-size:17px}.traffic-brand small{font-size:7px}.traffic-datetime b{font-size:20px}.traffic-datetime span{font-size:8px}.traffic-head-actions button,.traffic-health{height:30px;font-size:7.5px}.queue-traffic-view.has-queue-video .traffic-top{grid-template-columns:minmax(0,1fr) minmax(340px,44%)}.queue-traffic-view.has-queue-video.queue-video-large .traffic-top{grid-template-columns:minmax(0,.85fr) minmax(440px,53%)}.traffic-call-hero{grid-template-columns:86px minmax(0,1fr)}.traffic-light-large{width:45px;height:108px;padding:7px}.traffic-call-signal>b{font-size:8px}.traffic-call-main{padding:8px 11px;gap:3px}.traffic-call-main>small{font-size:8px}.traffic-call-main>strong{font-size:clamp(28px,3vw,42px)}.traffic-call-main>b{font-size:11px}.traffic-call-meta>span{padding:4px 6px}.traffic-call-meta small{font-size:6.5px}.traffic-call-meta b{font-size:11px}.traffic-call-main>em{font-size:8px}.traffic-stage{grid-template-rows:36px minmax(0,1fr) 19px}.traffic-stage>header{grid-template-columns:24px minmax(0,1fr) auto auto;padding:3px 6px;gap:5px}.traffic-stage>header>span{width:22px;height:22px;font-size:11px}.traffic-stage>header b{font-size:9.5px}.traffic-stage>header small{font-size:6.5px}.traffic-stage>header strong{font-size:18px}.traffic-stage-body{grid-template-columns:48px minmax(0,1fr);padding:3px}.traffic-light{width:34px;height:82px;padding:5px;gap:3px}.traffic-stage-list{grid-template-rows:repeat(2,minmax(0,1fr));gap:3px}.traffic-vehicle:nth-child(n+3){display:none}.traffic-vehicle-main>b{font-size:9px}.traffic-vehicle-main>span{font-size:7.5px}.traffic-vehicle>strong{font-size:7px}.traffic-vehicle-foot small,.traffic-vehicle-foot time,.traffic-vehicle-foot em,.traffic-vehicle-foot i{font-size:6px}.traffic-bottom-grid{grid-template-columns:minmax(0,1.35fr) minmax(210px,.85fr) minmax(215px,.85fr)}.traffic-door-panel,.traffic-activity-panel,.traffic-wait-panel{grid-template-rows:30px minmax(0,1fr) 18px}.traffic-activity-panel,.traffic-wait-panel{grid-template-rows:30px minmax(0,1fr)}.traffic-door-panel>header b,.traffic-activity-panel>header b,.traffic-wait-panel>header b{font-size:9px}.traffic-door-list{grid-template-columns:repeat(4,minmax(0,1fr));padding:3px}.traffic-door b{font-size:9px}.traffic-door span{font-size:6px}.traffic-activity-list,.traffic-wait-list{grid-template-rows:repeat(3,minmax(0,1fr));padding:3px}.traffic-activity-list article:nth-child(n+4),.traffic-wait-list article:nth-child(n+4){display:none}.traffic-footer{font-size:7px}
 }
 @media(prefers-reduced-motion:reduce){.traffic-light.is-pulse>i,.traffic-light.is-blink>i,.traffic-light.is-blink-fast>i{animation:none!important}}
+
+/* Round 207.13 — Traffic display expert pass: smart VDO frame + collision-safe appointment cards */
+/* The media frame keeps the full source picture. Empty pillar/letter-box space uses the active theme instead of hard black. */
+.queue-traffic-view{
+  --traffic-video-ratio:1.7778;
+  --traffic-video-fill-a:color-mix(in srgb,var(--tq-panel2) 82%,#02070c);
+  --traffic-video-fill-b:color-mix(in srgb,var(--tq-blue) 9%,var(--tq-panel));
+}
+.traffic-video-panel{
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 50% 50%,var(--traffic-video-fill-b),transparent 68%),
+    linear-gradient(135deg,var(--traffic-video-fill-a),var(--tq-panel));
+  border-color:color-mix(in srgb,var(--tq-blue) 25%,var(--tq-line));
+}
+.traffic-video-panel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--tq-panel) 30%,transparent),transparent 18%,transparent 82%,color-mix(in srgb,var(--tq-panel) 30%,transparent));
+}
+.traffic-video-panel video{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:contain!important;
+  object-position:center center;
+  background:transparent!important;
+  pointer-events:none!important;
+}
+.traffic-video-panel video::-webkit-media-controls,
+.traffic-video-panel video::-webkit-media-controls-enclosure,
+.traffic-video-panel video::-webkit-media-controls-panel,
+.traffic-video-panel video::-webkit-media-controls-play-button,
+.traffic-video-panel video::-webkit-media-controls-timeline,
+.traffic-video-panel video::-webkit-media-controls-current-time-display,
+.traffic-video-panel video::-webkit-media-controls-time-remaining-display,
+.traffic-video-panel video::-webkit-media-controls-mute-button,
+.traffic-video-panel video::-webkit-media-controls-fullscreen-button{display:none!important}
+
+/* VDO sizing follows the real source shape. 4:3/portrait media no longer steals a 16:9-sized column. */
+.queue-traffic-view.has-queue-video .traffic-top{grid-template-columns:minmax(0,1fr) minmax(440px,46%)}
+.queue-traffic-view.has-queue-video.queue-video-large .traffic-top{grid-template-columns:minmax(0,1fr) minmax(560px,54%)}
+.queue-traffic-view.has-queue-video[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(390px,42%)}
+.queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(480px,48%)}
+.queue-traffic-view.has-queue-video[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(310px,34%)}
+.queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(390px,40%)}
+.queue-traffic-view.has-queue-video[data-video-aspect="ultrawide"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(520px,50%)}
+.queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="ultrawide"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(650px,57%)}
+.queue-traffic-view.has-queue-video.queue-video-large .traffic-queue-shell{grid-template-rows:66px 305px minmax(230px,1fr) 185px 28px}
+
+/* Current-call panel: every text area owns a row; long names can never push into the metadata strip. */
+.traffic-call-main{
+  grid-template-rows:auto auto auto auto auto;
+  align-content:center;
+  min-width:0;
+  overflow:hidden;
+}
+.traffic-call-main>small,
+.traffic-call-main>strong,
+.traffic-call-main>b,
+.traffic-call-main>em{min-width:0;max-width:100%}
+.traffic-call-main>strong{line-height:1.02}
+.traffic-call-main>b{line-height:1.2}
+.traffic-call-meta{min-width:0;width:100%;align-self:auto}
+.traffic-call-meta>span{min-width:0;overflow:hidden}
+
+/* Appointment cards: explicit three-line layout and independent truncation prevent number/company/plate collisions. */
+.traffic-stage-body{grid-template-columns:64px minmax(0,1fr);gap:6px}
+.traffic-stage-list{
+  grid-template-rows:repeat(3,minmax(54px,1fr));
+  align-content:stretch;
+  gap:5px;
+}
+.traffic-vehicle{
+  grid-template-rows:auto auto auto;
+  align-content:center;
+  gap:3px;
+  min-height:54px;
+  padding:6px 7px;
+  overflow:hidden;
+}
+.traffic-vehicle-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(58px,.46fr);
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+.traffic-vehicle-main>b,
+.traffic-vehicle-main>span{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  line-height:1.15;
+}
+.traffic-vehicle-main>b{font-size:11.5px}
+.traffic-vehicle-main>span{text-align:right;font-size:9.5px}
+.traffic-vehicle-company{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px!important;
+  line-height:1.18;
+}
+.traffic-vehicle-foot{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto auto;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+}
+.traffic-vehicle-province{
+  display:block;
+  min-width:0;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  line-height:1.15;
+}
+.traffic-vehicle-foot i,.traffic-vehicle-foot time,.traffic-vehicle-foot em{margin-left:0;flex:0 0 auto}
+
+/* A single vehicle should be readable, not stretched vertically or squeezed against the traffic light. */
+.traffic-stage-list>.traffic-vehicle:only-child{align-self:start;width:100%;min-height:58px;max-height:68px}
+
+@media(max-width:1450px){
+  .queue-traffic-view.has-queue-video .traffic-top{grid-template-columns:minmax(0,1fr) minmax(370px,44%)}
+  .queue-traffic-view.has-queue-video.queue-video-large .traffic-top{grid-template-columns:minmax(0,1fr) minmax(470px,51%)}
+  .queue-traffic-view.has-queue-video[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(330px,40%)}
+  .queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(410px,46%)}
+  .queue-traffic-view.has-queue-video[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(270px,32%)}
+  .queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(330px,37%)}
+  .queue-traffic-view.has-queue-video.queue-video-large .traffic-queue-shell{grid-template-rows:58px 255px minmax(195px,1fr) 165px 25px}
+  .traffic-stage-list{grid-template-rows:repeat(3,minmax(49px,1fr));gap:4px}
+  .traffic-vehicle{min-height:49px;padding:5px 6px;gap:2px}
+  .traffic-stage-list>.traffic-vehicle:only-child{min-height:52px;max-height:62px}
+}
+@media(max-height:830px){
+  .queue-traffic-view.has-queue-video .traffic-top{grid-template-columns:minmax(0,1fr) minmax(320px,42%)}
+  .queue-traffic-view.has-queue-video.queue-video-large .traffic-top{grid-template-columns:minmax(0,1fr) minmax(410px,49%)}
+  .queue-traffic-view.has-queue-video[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(290px,38%)}
+  .queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="standard"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(360px,44%)}
+  .queue-traffic-view.has-queue-video[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(235px,29%)}
+  .queue-traffic-view.has-queue-video.queue-video-large[data-video-aspect="portrait"] .traffic-top{grid-template-columns:minmax(0,1fr) minmax(290px,34%)}
+  .queue-traffic-view.has-queue-video.queue-video-large .traffic-queue-shell{grid-template-rows:52px 215px minmax(170px,1fr) 138px 22px}
+  .traffic-stage-list{grid-template-rows:repeat(2,minmax(48px,1fr));gap:4px}
+  .traffic-vehicle{min-height:48px;padding:4px 5px;gap:2px}
+  .traffic-vehicle:nth-child(n+3){display:none}
+  .traffic-vehicle-main>b{font-size:10px}
+  .traffic-vehicle-main>span{font-size:8px}
+  .traffic-vehicle-company{font-size:7.8px!important}
+  .traffic-vehicle-foot small,.traffic-vehicle-foot time,.traffic-vehicle-foot em,.traffic-vehicle-foot i{font-size:6.5px}
+  .traffic-stage-list>.traffic-vehicle:only-child{min-height:50px;max-height:58px}
+}

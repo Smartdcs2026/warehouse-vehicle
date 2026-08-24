@@ -548,7 +548,26 @@ function queueVideoAllowed(settings=queueVideoSettings,mode=currentDisplayMode){
 function queueVideoAudioAvailable(){return queueVideoAllowed()&&queueVideoSettings.videoSoundEnabled!==false&&Number(queueVideoSettings.videoVolume||0)>0}
 function queueAudioAvailable(){return voiceAdminEnabled}
 function queueVideoNodes(){return[{mode:"CLASSIC",panel:$("classicQueueVideoPanel"),video:$("classicQueueVideo")},{mode:"VISUAL",panel:$("visualQueueVideoPanel"),video:$("visualQueueVideo")},{mode:"TRAFFIC",panel:$("trafficQueueVideoPanel"),video:$("trafficQueueVideo")}]}
-function queueVideoSetSource(video,url,resumeAt=0){if(!video||!url)return;if(video.dataset.queueVideoUrl===url)return;video.pause();video.src=url;video.dataset.queueVideoUrl=url;video.onerror=()=>{if(video.dataset.queueVideoUrl!==url)return;queueVideoFailureUrl=url;queueVideoFailureAt=Date.now();video.pause();video.removeAttribute("src");video.dataset.queueVideoUrl="";video.load();syncQueueVideo(queueVideoSettings)};video.oncanplay=()=>{if(queueVideoFailureUrl===url){queueVideoFailureUrl="";queueVideoFailureAt=0}};video.load();if(resumeAt>0)video.addEventListener("loadedmetadata",()=>{try{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=Math.min(resumeAt,Math.max(0,video.duration-.25))}catch{}},{once:true})}
+function syncTrafficVideoAspect(video){
+  if(!video||video.id!=="trafficQueueVideo")return;
+  const root=$("queueTrafficView");if(!root)return;
+  const w=Number(video.videoWidth||0),h=Number(video.videoHeight||0),ratio=w>0&&h>0?w/h:0;
+  let kind="wide";
+  if(ratio>0&&ratio<1.05)kind="portrait";
+  else if(ratio>0&&ratio<1.52)kind="standard";
+  else if(ratio>=2.05)kind="ultrawide";
+  root.dataset.videoAspect=kind;
+  if(ratio>0)root.style.setProperty("--traffic-video-ratio",String(Math.max(.7,Math.min(2.4,ratio))));
+}
+function queueVideoSetSource(video,url,resumeAt=0){
+  if(!video||!url)return;
+  if(video.dataset.queueVideoUrl===url){syncTrafficVideoAspect(video);return}
+  video.pause();video.src=url;video.dataset.queueVideoUrl=url;
+  video.onerror=()=>{if(video.dataset.queueVideoUrl!==url)return;queueVideoFailureUrl=url;queueVideoFailureAt=Date.now();video.pause();video.removeAttribute("src");video.dataset.queueVideoUrl="";video.load();syncQueueVideo(queueVideoSettings)};
+  video.oncanplay=()=>{if(queueVideoFailureUrl===url){queueVideoFailureUrl="";queueVideoFailureAt=0}};
+  video.addEventListener("loadedmetadata",()=>{syncTrafficVideoAspect(video);if(resumeAt>0){try{if(Number.isFinite(video.duration)&&video.duration>0)video.currentTime=Math.min(resumeAt,Math.max(0,video.duration-.25))}catch{}}},{once:true});
+  video.load();
+}
 function queueVideoPlayback(video){
   if(!video)return;
   video.loop=queueVideoSettings.videoLoop!==false;
@@ -574,7 +593,7 @@ function syncQueueVideo(settings){queueVideoSettings=normalizeQueueDisplaySettin
   if(classicPanel){classicPanel.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="CLASSIC");classicPanel.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="CLASSIC"&&size==="large");classicPanel.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="CLASSIC"&&size!=="large")}
   if(instruction)instruction.hidden=allowed&&currentDisplayMode==="CLASSIC";
   if(visualRoot){visualRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="VISUAL");visualRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="VISUAL"&&size==="large");visualRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="VISUAL"&&size!=="large")}
-  if(trafficRoot){trafficRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="TRAFFIC");trafficRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="TRAFFIC"&&size==="large");trafficRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="TRAFFIC"&&size!=="large")}
+  if(trafficRoot){trafficRoot.classList.toggle("has-queue-video",allowed&&currentDisplayMode==="TRAFFIC");trafficRoot.classList.toggle("queue-video-large",allowed&&currentDisplayMode==="TRAFFIC"&&size==="large");trafficRoot.classList.toggle("queue-video-standard",allowed&&currentDisplayMode==="TRAFFIC"&&size!=="large");if(!(allowed&&currentDisplayMode==="TRAFFIC")){delete trafficRoot.dataset.videoAspect;trafficRoot.style.removeProperty("--traffic-video-ratio")}}
   const nodes=queueVideoNodes();let next=null;for(const node of nodes){const use=allowed&&node.mode===currentDisplayMode;if(node.panel)node.panel.hidden=!use;if(use)next=node.video;else if(node.video){if(node.video===queueVideoActiveElement&&Number.isFinite(node.video.currentTime))queueVideoCurrentTime=node.video.currentTime;node.video.pause()}}
   if(!next){queueVideoActiveElement=null;updateSoundButton();updateVideoSoundButton();return}
   if(queueVideoActiveElement&&queueVideoActiveElement!==next&&Number.isFinite(queueVideoActiveElement.currentTime))queueVideoCurrentTime=queueVideoActiveElement.currentTime;queueVideoActiveElement=next;queueVideoSetSource(next,queueVideoSettings.videoUrl,queueVideoCurrentTime);queueVideoPlayback(next);updateSoundButton();updateVideoSoundButton();syncQueueVideoCallOverlay(currentAnnouncement||latestAnnouncement(latestData||{}));
@@ -1109,9 +1128,13 @@ const TRAFFIC_STAGE_DEFS=[
   {status:"WAITING_DOCUMENT_RETURN",number:"3",label:"รอรับเอกสารคืน",baseLamp:"red",tone:"red"},
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากคลัง",baseLamp:"green",tone:"green"}
 ];
-const TRAFFIC_SHELL_VERSION="20712";
+const TRAFFIC_SHELL_VERSION="20713";
 function trafficAlertRank(level){return({NORMAL:0,WATCH:1,WARNING:2,URGENT:3,CRITICAL:4})[String(level||"NORMAL").toUpperCase()]??0}
-function trafficStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<690||w<1120)return 2;return 3}
+function trafficStagePageSize(){
+  const h=window.innerHeight||800,w=window.innerWidth||1280;
+  if(h<830||w<1180)return 2;
+  return 3;
+}
 function trafficSignalState(items,baseLamp){
   if(!items.length)return{lamp:"off",motion:"",level:"NORMAL"};
   let level="NORMAL",rank=0;for(const item of items){const r=trafficAlertRank(item.alertLevel);if(r>rank){rank=r;level=String(item.alertLevel||"NORMAL").toUpperCase()}}
@@ -1152,7 +1175,8 @@ function renderTrafficCall(item){
 }
 function trafficStageItem(item){
   const company=queueCompanyView(item),door=normalizeQueueDoorCode(item.doorCode),alert=trafficAlertLabel(item.alertLevel),called=Number(item.calledAt||0)>0;
-  return `<article class="traffic-vehicle ${called?"is-called":""} ${alert?"has-alert":""}"><div class="traffic-vehicle-main"><b>${esc(item.appointmentNo||"–")}</b><span>${esc(item.vehiclePlate||"–")}</span></div><strong title="${esc(company.tooltip||company.primary)}">${esc(company.primary||"ไม่ระบุบริษัท")}</strong><div class="traffic-vehicle-foot"><small>${esc(item.province||"–")}</small>${door?`<i>${esc(door)}</i>`:""}<time>${esc(visualWaitText(item))}</time>${alert?`<em>${esc(alert)}</em>`:""}</div></article>`;
+  const appointment=String(item.appointmentNo||"–"),plate=String(item.vehiclePlate||"–"),province=String(item.province||"–");
+  return `<article class="traffic-vehicle ${called?"is-called":""} ${alert?"has-alert":""}"><div class="traffic-vehicle-main"><b title="${esc(appointment)}">${esc(appointment)}</b><span title="${esc(plate)}">${esc(plate)}</span></div><strong class="traffic-vehicle-company" title="${esc(company.tooltip||company.primary)}">${esc(company.primary||"ไม่ระบุบริษัท")}</strong><div class="traffic-vehicle-foot"><small class="traffic-vehicle-province" title="${esc(province)}">${esc(province)}</small>${door?`<i>${esc(door)}</i>`:""}<time>${esc(visualWaitText(item))}</time>${alert?`<em>${esc(alert)}</em>`:""}</div></article>`;
 }
 function syncTrafficStage(data,def,animate=false){
   const items=(data.items||[]).filter(item=>item.status===def.status).sort((a,b)=>trafficAlertRank(b.alertLevel)-trafficAlertRank(a.alertLevel)||Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)),size=trafficStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=trafficPages[def.status]||0;if(page>=pages){page=0;trafficPages[def.status]=0}const shown=items.slice(page*size,page*size+size),signal=trafficSignalState(items,def.baseLamp);setStableText($("trafficStageCount_"+def.status),items.length.toLocaleString("th-TH"));setStableText($("trafficStageMeta_"+def.status),`${items.length.toLocaleString("th-TH")} คัน`);setStableHTML($("trafficSignal_"+def.status),trafficLightHtml(signal.lamp,signal.motion));const list=$("trafficStageList_"+def.status),changed=setStableHTML(list,shown.length?shown.map(trafficStageItem).join(""):'<div class="traffic-stage-empty">ไม่มีรถในขั้นตอนนี้</div>');if(animate&&changed)fadePage(list);const alertLabel=trafficAlertLabel(signal.level);setStableText($("trafficStageFooter_"+def.status),alertLabel?`${alertLabel} · ตามเกณฑ์เวลาที่กำหนด`:items.length?(items.length>shown.length?`อีก ${(items.length-shown.length).toLocaleString("th-TH")} คัน`:`รายการปัจจุบัน`):"ไม่มีรถในขั้นตอนนี้");
