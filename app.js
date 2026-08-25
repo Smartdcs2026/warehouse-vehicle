@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.25-round207.21-dashboard-no-clipping";
+const FRONTEND_BUILD="2026.08.25-round207.22-dashboard-responsive-guard";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1316,7 +1316,7 @@ const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const appointmentUploadState={config:null,result:null,preview:null,worker:null,busy:false,mappingNeeded:null};
 const appointmentCenterState={status:null,tab:(()=>{try{return localStorage.getItem("wvf_appointment_center_tab")||"overview"}catch{return"overview"}})(),planSub:(()=>{try{return localStorage.getItem("wvf_appointment_plan_sub")||"timing"}catch{return"timing"}})(),partnerSub:(()=>{try{return localStorage.getItem("wvf_appointment_partner_sub")||"vendor"}catch{return"vendor"}})(),overviewBusy:false,volumeDays:1,volumeBusy:false,volumeData:null};
 const appointmentAdminFileProbe={worker:null,result:null,fileName:"",busy:false};
-const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, dataIdentity:"", busy:false, reloadRequested:false, lastLoadedAt:0, error:"", cacheState:"", analyticsBusy:false, analyticsSeq:0, analyticsController:null, analyticsError:"", analyticsLastLoadedAt:0, calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0, retryTimer:0, staleRecoveryTimer:0, staleRecoveryAttempts:0, failures:0, snapshotLoaded:false };
+const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, dataIdentity:"", busy:false, reloadRequested:false, lastLoadedAt:0, error:"", cacheState:"", analyticsBusy:false, analyticsSeq:0, analyticsController:null, analyticsError:"", analyticsLastLoadedAt:0, calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0, retryTimer:0, staleRecoveryTimer:0, staleRecoveryAttempts:0, failures:0, snapshotLoaded:false, layoutTimer:0 };
 const DASHBOARD_THEME_OPTIONS=[
   {id:"blue",label:"น้ำเงิน"},
   {id:"slate",label:"เทา"},
@@ -1366,8 +1366,8 @@ document.addEventListener("DOMContentLoaded", init);
 window.addEventListener("online", () => { setConnection(true); checkInboundLiveUpdates(true); if(state.view==="dashboard"){dashboardState.failures=0;dashboardState.lastLoadedAt=0;void loadDashboard(!dashboardState.data,true)}else if(state.view==="operations"){void refreshLiveData()}else if(state.view==="datatable"){void refreshDatatableAll()}else if(state.view==="admin"&&adminState.tab==="health"){void renderAdminDiagnostics(true)} });
 window.addEventListener("offline", () => setConnection(false));
 window.addEventListener("focus",()=>checkInboundLiveUpdates(true));
-window.addEventListener("resize",()=>{syncUserResponsiveAccess();if(state.view!=="dashboard")return;closeDashboardMobileMenu();const popover=$("dashboardCalendarPopover");if(popover&&window.innerWidth>980)popover.hidden=true});
-window.addEventListener("orientationchange",()=>setTimeout(()=>syncUserResponsiveAccess(),120));
+window.addEventListener("resize",()=>{syncUserResponsiveAccess();if(state.view!=="dashboard")return;closeDashboardMobileMenu();const popover=$("dashboardCalendarPopover");if(popover&&window.innerWidth>980)popover.hidden=true;scheduleDashboardLayoutCheck()});
+window.addEventListener("orientationchange",()=>setTimeout(()=>{syncUserResponsiveAccess();scheduleDashboardLayoutCheck()},120));
 document.addEventListener("visibilitychange", () => { if (!document.hidden && scannerState.active) $("qrVideo")?.play().catch(() => undefined); if(!document.hidden){checkInboundLiveUpdates(true);if(state.view==="operations")void refreshLiveData();else if(state.view==="datatable")void refreshDatatableAll();else if(state.view==="dashboard"&&Date.now()-Number(dashboardState.lastLoadedAt||0)>15000)void loadDashboard(false,true)} });
 
 async function init() {
@@ -1376,7 +1376,7 @@ async function init() {
   $("logoutButton").addEventListener("click", confirmLogout);
   $("mobileLogoutButton")?.addEventListener("click", confirmLogout);
   $("togglePassword").addEventListener("click", togglePassword);
-  document.addEventListener("fullscreenchange",()=>{if(state.view==="datatable"&&!document.fullscreenElement&&datatableState.nativeFullscreen){datatableState.nativeFullscreen=false;datatableState.immersive=false}updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell()});
+  document.addEventListener("fullscreenchange",()=>{if(state.view==="datatable"&&!document.fullscreenElement&&datatableState.nativeFullscreen){datatableState.nativeFullscreen=false;datatableState.immersive=false}updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell();scheduleDashboardLayoutCheck()});
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
@@ -2665,12 +2665,15 @@ function renderDashboardData(data){
   document.querySelectorAll("[data-dashboard-tab]").forEach(button=>button.addEventListener("click",()=>{dashboardState.tab=button.dataset.dashboardTab;renderDashboardTabOnly(dashboardState.data||data);if(!dashboardState.data?.analyticsReady&&dashboardState.tab!=="overview"&&!dashboardState.analyticsBusy)void loadDashboardAnalytics()}));
   $("dashboardTabContent")?.addEventListener("click",event=>{if(event.target.closest("[data-dashboard-analytics-retry]")&&!dashboardState.analyticsBusy){dashboardState.analyticsLastLoadedAt=0;void loadDashboardAnalytics(dashboardState.range,dashboardState.date,dashboardState.shiftId,dashboardSnapshotIdentity(),true)}});
   document.querySelector("[data-appointment-lineage]")?.addEventListener("click",()=>showDashboardAppointmentLineage(data));
+  scheduleDashboardLayoutCheck();
 }
 function dashboardTabs(){return[["overview","ภาพรวม"],["handover","กะและส่งต่อ"],["comparison","เปรียบเทียบ"],["performance","เวลาทำงาน"],["capacity","การใช้ประตู"],["exceptions","ต้องตรวจ"]]}
 function dashboardTabIcon(id){const icons={overview:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5z"/></svg>`,handover:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3m3 3-3 3M17 17H6l3 3m-3-3 3-3"/></svg>`,comparison:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9m7 10V5m7 14v-7"/></svg>`,performance:`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>`,capacity:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h14v17M8 8h3m2 0h3M8 12h3m2 0h3M8 16h3m2 0h3"/></svg>`,exceptions:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 20H2z"/><path d="M12 9v5m0 3h.01"/></svg>`};return icons[id]||""}
 function dashboardPageTitle(tab=dashboardState.tab){return({overview:"ภาพรวมคลังสินค้า",handover:"งานค้างและส่งต่อ",comparison:"เทียบช่วงก่อน",performance:"เวลาทำงาน",capacity:"ประตู",exceptions:"จุดที่ต้องรีบแก้"})[tab]||"ภาพรวมคลังสินค้า"}
 function dashboardUpdatePageTitle(){const title=$("dashboardPageTitle");if(title)title.textContent="Dashboard"}
-function renderDashboardTabOnly(data){document.querySelectorAll("[data-dashboard-tab]").forEach(item=>item.classList.toggle("active",item.dataset.dashboardTab===dashboardState.tab));const kpis=$("dashboardKpis");if(kpis)kpis.innerHTML=dashboardKpiSet(data,dashboardState.tab);const content=$("dashboardTabContent");if(content)content.innerHTML=dashboardTabContent(data);dashboardUpdatePageTitle()}
+function renderDashboardTabOnly(data){document.querySelectorAll("[data-dashboard-tab]").forEach(item=>item.classList.toggle("active",item.dataset.dashboardTab===dashboardState.tab));const kpis=$("dashboardKpis");if(kpis)kpis.innerHTML=dashboardKpiSet(data,dashboardState.tab);const content=$("dashboardTabContent");if(content)content.innerHTML=dashboardTabContent(data);dashboardUpdatePageTitle();scheduleDashboardLayoutCheck()}
+function scheduleDashboardLayoutCheck(){clearTimeout(dashboardState.layoutTimer);dashboardState.layoutTimer=setTimeout(dashboardRefreshLayoutHints,80)}
+function dashboardRefreshLayoutHints(){if(state.view!=="dashboard")return;const root=$("dashboardTabContent");if(!root)return;const areas=[...root.querySelectorAll(".opsdash-chart-scroll,.r146-stage-flow-board .opsdash-panel-body,.r146-hourly-board .opsdash-panel-body,.r146-priority-table .opsdash-panel-body,.r145-list .opsdash-panel-body,.r145-heatmap .opsdash-panel-body")];for(const area of areas){const wide=area.scrollWidth>area.clientWidth+6;area.classList.toggle("has-horizontal-overflow",wide);if(wide){area.dataset.scrollHint="เลื่อนซ้าย–ขวาเพื่อดูข้อมูลทั้งหมด";area.tabIndex=0;area.setAttribute("role","region");area.setAttribute("aria-label","ข้อมูลส่วนนี้เลื่อนซ้ายและขวาได้")}else{delete area.dataset.scrollHint;if(area.getAttribute("aria-label")==="ข้อมูลส่วนนี้เลื่อนซ้ายและขวาได้"){area.removeAttribute("aria-label");area.removeAttribute("role");area.removeAttribute("tabindex")}}}}
 function dashboardUrgentCount(data){const levels=data.alertLevels||{};return Number(data.metrics?.warningNow??(Number(levels.WARNING||0)+Number(levels.URGENT||0)+Number(levels.CRITICAL||0)))}
 function dashboardQualityTotal(data){const q=data.dataQuality||{};return Number(q.missing_appointment||0)+Number(q.missing_plate||0)+Number(q.missing_shift||0)+Number(q.missing_required_door||0)}
 function dashboardDoorStats(data){const rows=(data.doors||[]).filter(row=>String(row.label||"").trim()),used=rows.filter(row=>Number(row.total||0)>0),busiest=[...used].sort((a,b)=>Number(b.total||0)-Number(a.total||0))[0]||null,slowest=[...used].filter(row=>Number(row.avg_seconds||0)>0).sort((a,b)=>Number(b.avg_seconds||0)-Number(a.avg_seconds||0))[0]||null;return{used:used.length,busiest,slowest}}

@@ -7942,6 +7942,49 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   }
 }
 
+/* Round 207.22 — show when a Dashboard area can be moved left and right */
+.dashboard-view-shell .has-horizontal-overflow{
+  position:relative!important;
+  scrollbar-color:#7ba5d7 #eaf0f7;
+  scrollbar-width:thin;
+}
+.dashboard-view-shell .has-horizontal-overflow::after{
+  content:attr(data-scroll-hint);
+  position:sticky;
+  left:100%;
+  bottom:2px;
+  z-index:5;
+  display:block;
+  width:max-content;
+  max-width:170px;
+  margin:-23px 4px 3px auto;
+  padding:3px 7px;
+  border:1px solid #b9cee6;
+  border-radius:999px;
+  background:rgba(248,251,255,.96);
+  color:#315d8f;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.25;
+  pointer-events:none;
+  box-shadow:0 2px 7px rgba(30,64,104,.08);
+}
+.dashboard-view-shell[data-dashboard-theme="dark"] .has-horizontal-overflow::after{
+  border-color:#46617f;
+  background:rgba(20,40,62,.96);
+  color:#d7e8fa;
+}
+.dashboard-view-shell .has-horizontal-overflow:focus-visible{
+  outline:3px solid rgba(37,99,235,.28)!important;
+  outline-offset:-3px;
+}
+@media(max-width:760px){
+  .dashboard-view-shell .has-horizontal-overflow::after{
+    max-width:145px;
+    font-size:8.5px;
+  }
+}
+
 /* Round 157: configurable appointment validation */
 .appointment-rule-form{display:grid;gap:12px}
 .appointment-rule-switch{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}
