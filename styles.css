@@ -11112,3 +11112,104 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
   .dashboard-view-shell .r20720-page-guide small{font-size:10px}
   .dashboard-view-shell .r20720-page-guide b{font-size:12px;white-space:normal}
 }
+
+/* Round 207.21 — never cut Dashboard charts, tables, or text */
+.dashboard-view-shell .r2042-panel>.opsdash-panel-body{
+  max-width:100%!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.dashboard-view-shell .opsdash-chart-scroll{
+  max-width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:thin;
+}
+.dashboard-view-shell .r146-stage-flow-board .opsdash-panel-body,
+.dashboard-view-shell .r146-hourly-board .opsdash-panel-body,
+.dashboard-view-shell .r146-priority-table .opsdash-panel-body,
+.dashboard-view-shell .r145-list .opsdash-panel-body{
+  overflow:auto!important;
+}
+.dashboard-view-shell .r146-stage-pipeline{min-width:650px}
+.dashboard-view-shell .r146-hourly-chart{min-width:560px}
+.dashboard-view-shell .door-heat{min-width:720px}
+@media(min-width:761px){
+  .dashboard-view-shell .action-table-head,
+  .dashboard-view-shell .action-table-row{min-width:680px}
+}
+
+@media(min-width:1181px){
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody:not(.loading),
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody.has-appointment-plan:not(.loading){
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    grid-template-rows:auto auto auto auto auto!important;
+    overflow:visible!important;
+    padding-bottom:12px!important;
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-content{
+    display:grid!important;
+    grid-template-rows:42px auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body>section,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-overview,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-grid{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-overview,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-grid{
+    grid-auto-rows:minmax(260px,auto)!important;
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-overview>.r2042-panel,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-grid>.r2042-panel{
+    height:auto!important;
+    min-height:260px!important;
+    max-height:none!important;
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r2042-panel>.opsdash-panel-body{
+    height:auto!important;
+    min-height:190px!important;
+    max-height:none!important;
+  }
+}
+
+:fullscreen .dashboard-fullscreen-shell .r146-generated-content{
+  overflow:auto!important;
+  scrollbar-width:thin;
+}
+:fullscreen .dashboard-fullscreen-shell .r20720-page-body{
+  min-height:0!important;
+  overflow:auto!important;
+}
+
+@media(max-width:1180px){
+  .dashboard-view-shell #dashboardBody:not(.loading),
+  .dashboard-view-shell #dashboardBody.has-appointment-plan:not(.loading){
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  .dashboard-view-shell .r146-generated-overview>.r2042-panel,
+  .dashboard-view-shell .r145-grid>.r2042-panel{
+    height:auto!important;
+    min-height:240px!important;
+    max-height:none!important;
+  }
+  .dashboard-view-shell .r2042-panel>.opsdash-panel-body{
+    height:auto!important;
+    min-height:170px!important;
+    max-height:none!important;
+  }
+}
