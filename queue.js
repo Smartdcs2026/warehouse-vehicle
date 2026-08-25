@@ -199,13 +199,16 @@ async function loginQueue(event) {
   error.hidden = true;
   button.disabled = true;
   button.textContent = "กำลังเข้าสู่ระบบ…";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     const base = String(cfg.apiBaseUrl || "").replace(/\/$/, "");
     if (!base) throw new Error("ไม่พบที่อยู่ระบบ");
     const response = await fetch(base + "/api/auth/login", {
       method: "POST",
       headers: { "content-type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ name: username, password })
+      body: JSON.stringify({ name: username, password }),
+      signal: controller.signal
     });
     const raw = await response.json().catch(() => null);
     if (!response.ok || !raw?.success || !raw?.token) throw new Error(raw?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
@@ -218,8 +221,9 @@ async function loginQueue(event) {
     startQueueRuntime();
     loadQueue(true);
   } catch (err) {
-    showQueueLogin(err?.message || "เข้าสู่ระบบไม่สำเร็จ");
+    showQueueLogin(err?.name === "AbortError" ? "ระบบตอบสนองช้า กรุณาลองใหม่" : (err?.message || "เข้าสู่ระบบไม่สำเร็จ"));
   } finally {
+    clearTimeout(timeout);
     button.disabled = false;
     button.textContent = "เข้าสู่จอคิว";
   }
