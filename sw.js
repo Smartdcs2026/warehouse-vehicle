@@ -1,5 +1,5 @@
 const CACHE_PREFIX="wvf-static-";
-const CACHE="wvf-static-round20722-dashboard-responsive-guard";
+const CACHE="wvf-static-round20723-production-readiness-gate";
 const CORE=["./","./index.html","./styles.css","./config.js","./app.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest"];
 const OPTIONAL=["./favicon.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./track.html","./track.css","./track.js","./queue.html","./queue.css","./queue.js","./voice-engine.js","./appointment-excel-worker.js","./appointment-public-display.js","./appointment-dev/index.html"];
 
