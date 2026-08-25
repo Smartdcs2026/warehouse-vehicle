@@ -7985,6 +7985,23 @@ body.datatable-fullscreen-active .dt-detail-swal-r116{pointer-events:auto!import
   }
 }
 
+/* Round 207.24 — visible evidence for each real-site test */
+.production-uat-item .uat-evidence{
+  display:block;
+  margin-top:4px;
+  padding:5px 7px;
+  border:1px solid #cbe3d3;
+  border-radius:7px;
+  background:#edf8f1;
+  color:#236c42;
+  font-size:8px;
+  font-style:normal;
+  font-weight:750;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+@media(max-width:560px){.production-uat-item .uat-evidence{font-size:9px}}
+
 /* Round 157: configurable appointment validation */
 .appointment-rule-form{display:grid;gap:12px}
 .appointment-rule-switch{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}
