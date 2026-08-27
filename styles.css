@@ -11437,3 +11437,67 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
 @media(prefers-reduced-motion:reduce){
   .mobile-nav,.mobile-nav-liquid{transition:none!important}
 }
+
+/* =========================================================
+   ROUND 207.29 — Dashboard single vertical scroller
+   Mobile section tabs move to the top; only wide charts pan.
+   ========================================================= */
+@media(max-width:980px){
+  html{scroll-behavior:auto!important;overscroll-behavior-y:auto!important}
+  body:not(.mobile-more-open){height:auto!important;min-height:100%!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .content>.topbar{background:#fff!important;backdrop-filter:none!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell),
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell)>.content,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .page-content,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-content,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body>section,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r2042-panel,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r2042-panel>.opsdash-panel-body{
+    max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important;touch-action:pan-y!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody:not(.loading){
+    display:flex!important;flex-direction:column!important;gap:9px!important;height:auto!important;min-height:0!important;padding-bottom:8px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-command-strip{order:1!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r2042-appointment-band{order:2!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-bottom-tabs{order:3!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-generated-kpis{order:4!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-generated-content{order:5!important}
+
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs{
+    position:sticky!important;top:58px!important;bottom:auto!important;z-index:18!important;
+    display:flex!important;grid-template-columns:none!important;justify-content:flex-start!important;gap:6px!important;
+    width:100%!important;height:48px!important;min-height:48px!important;margin:0!important;padding:5px!important;
+    border:1px solid #d8e3ef!important;border-radius:13px!important;background:rgba(255,255,255,.97)!important;
+    box-shadow:0 4px 13px rgba(18,48,83,.09)!important;overflow-x:auto!important;overflow-y:hidden!important;
+    scroll-snap-type:x proximity!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
+    touch-action:pan-x pan-y!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs::-webkit-scrollbar{display:none!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs button{
+    flex:0 0 auto!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:6px!important;
+    width:auto!important;min-width:max-content!important;min-height:36px!important;height:36px!important;padding:0 11px!important;
+    border:1px solid transparent!important;border-radius:9px!important;background:#f3f6fa!important;color:#60738c!important;
+    font-size:9px!important;font-weight:900!important;scroll-snap-align:center!important;box-shadow:none!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs button svg{width:16px!important;height:16px!important;flex:0 0 16px!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs button.active{
+    border-color:#2168cb!important;background:#2168cb!important;color:#fff!important;box-shadow:0 3px 8px rgba(33,104,203,.20)!important
+  }
+
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-chart-scroll,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-stage-flow-board .opsdash-panel-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-hourly-board .opsdash-panel-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-heatmap .opsdash-panel-body{
+    max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important;overscroll-behavior:auto!important;
+    touch-action:pan-x pan-y!important;-webkit-overflow-scrolling:touch!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-priority-table .opsdash-panel-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-list .opsdash-panel-body{
+    overflow:visible!important;touch-action:pan-y!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r2042-panel{box-shadow:0 2px 8px rgba(18,48,83,.045)!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell)>.mobile-nav{transform:translate3d(0,0,0)!important;backface-visibility:hidden!important}
+}

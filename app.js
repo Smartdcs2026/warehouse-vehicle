@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.27-round207.28-mobile-navigation-motion-fix";
+const FRONTEND_BUILD="2026.08.27-round207.29-dashboard-mobile-scroll-tabs";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1316,7 +1316,7 @@ const doorEditorState = { items:[], search:"", group:"ALL", status:"ALL" };
 const appointmentUploadState={config:null,result:null,preview:null,worker:null,busy:false,mappingNeeded:null};
 const appointmentCenterState={status:null,tab:(()=>{try{return localStorage.getItem("wvf_appointment_center_tab")||"overview"}catch{return"overview"}})(),planSub:(()=>{try{return localStorage.getItem("wvf_appointment_plan_sub")||"timing"}catch{return"timing"}})(),partnerSub:(()=>{try{return localStorage.getItem("wvf_appointment_partner_sub")||"vendor"}catch{return"vendor"}})(),overviewBusy:false,volumeDays:1,volumeBusy:false,volumeData:null};
 const appointmentAdminFileProbe={worker:null,result:null,fileName:"",busy:false};
-const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, dataIdentity:"", busy:false, reloadRequested:false, lastLoadedAt:0, error:"", cacheState:"", analyticsBusy:false, analyticsSeq:0, analyticsController:null, analyticsError:"", analyticsLastLoadedAt:0, calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0, retryTimer:0, staleRecoveryTimer:0, staleRecoveryAttempts:0, failures:0, snapshotLoaded:false, layoutTimer:0 };
+const dashboardState = { range:"today", date:"", shiftId:"", shiftAutoDate:false, tab:"overview", data:null, dataIdentity:"", busy:false, reloadRequested:false, lastLoadedAt:0, error:"", cacheState:"", analyticsBusy:false, analyticsSeq:0, analyticsController:null, analyticsError:"", analyticsLastLoadedAt:0, calendarMonth:"", calendarMetric:"gateIn", calendarData:null, theme:localStorage.getItem("wvf_dashboard_theme")||"blue", requestSeq:0, requestController:null, slowTimer:0, retryTimer:0, staleRecoveryTimer:0, staleRecoveryAttempts:0, failures:0, snapshotLoaded:false, layoutTimer:0, userScrollingUntil:0, pendingRenderData:null, pendingRenderTimer:0 };
 const DASHBOARD_THEME_OPTIONS=[
   {id:"blue",label:"น้ำเงิน"},
   {id:"slate",label:"เทา"},
@@ -1366,6 +1366,7 @@ document.addEventListener("DOMContentLoaded", init);
 window.addEventListener("online", () => { setConnection(true); checkInboundLiveUpdates(true); if(state.view==="dashboard"){dashboardState.failures=0;dashboardState.lastLoadedAt=0;void loadDashboard(!dashboardState.data,true)}else if(state.view==="operations"){void refreshLiveData()}else if(state.view==="datatable"){void refreshDatatableAll()}else if(state.view==="admin"&&adminState.tab==="health"){void renderAdminDiagnostics(true)} });
 window.addEventListener("offline", () => setConnection(false));
 window.addEventListener("focus",()=>checkInboundLiveUpdates(true));
+window.addEventListener("scroll",()=>{if(state.view==="dashboard")dashboardState.userScrollingUntil=Date.now()+220},{passive:true});
 window.addEventListener("resize",()=>{syncUserResponsiveAccess();if(state.view!=="dashboard")return;closeDashboardMobileMenu();const popover=$("dashboardCalendarPopover");if(popover&&window.innerWidth>980)popover.hidden=true;scheduleDashboardLayoutCheck()});
 window.addEventListener("orientationchange",()=>setTimeout(()=>{syncUserResponsiveAccess();scheduleDashboardLayoutCheck()},120));
 document.addEventListener("visibilitychange", () => { if (!document.hidden && scannerState.active) $("qrVideo")?.play().catch(() => undefined); if(!document.hidden){checkInboundLiveUpdates(true);if(state.view==="operations")void refreshLiveData();else if(state.view==="datatable")void refreshDatatableAll();else if(state.view==="dashboard"&&Date.now()-Number(dashboardState.lastLoadedAt||0)>15000)void loadDashboard(false,true)} });
@@ -1383,7 +1384,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20728",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20729",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -2704,7 +2705,13 @@ async function loadDashboardAnalytics(requestRange=dashboardState.range,requestD
 }
 function dashboardAnalyticsPending(){const failed=Boolean(dashboardState.analyticsError);return`<div class="dashboard-load-state ${failed?"is-slow":""}"><span class="dashboard-load-spinner" aria-hidden="true"></span><b>${failed?"ข้อมูลหน้านี้ยังไม่พร้อม":"กำลังเตรียมข้อมูลหน้านี้"}</b><small>${failed?"ข้อมูลหลักยังใช้งานได้ตามปกติ":"ข้อมูลหลักแสดงก่อน ส่วนที่เหลือจะตามมาอัตโนมัติ"}</small>${failed?`<button type="button" class="outline-button" data-dashboard-analytics-retry>ลองใหม่</button>`:""}</div>`}
 
-function renderDashboardData(data){
+function renderDashboardData(data,forceAfterScroll=false){
+  if(!forceAfterScroll&&state.view==="dashboard"&&Date.now()<Number(dashboardState.userScrollingUntil||0)){
+    dashboardState.pendingRenderData=data;clearTimeout(dashboardState.pendingRenderTimer);
+    dashboardState.pendingRenderTimer=setTimeout(()=>{const pending=dashboardState.pendingRenderData;dashboardState.pendingRenderData=null;if(pending&&state.view==="dashboard")renderDashboardData(pending,true)},Math.max(80,Number(dashboardState.userScrollingUntil||0)-Date.now()+50));
+    return;
+  }
+  dashboardState.pendingRenderData=null;clearTimeout(dashboardState.pendingRenderTimer);dashboardState.pendingRenderTimer=0;
   if(state.view!=="dashboard"||!$("dashboardBody"))return;syncDashboardRangeButtons();$("dashboardBody").classList.remove("loading");
   $("dashboardRangeLabel").textContent=`${formatDate(data.from)} – ${formatDate(data.to-1)} · อัปเดต ${formatDate(data.generatedAt)}`;
   const dashboardDateLabel=$("dashboardDateButtonLabel"),dashboardDateKey=data.selectedDate||dashboardState.date;if(dashboardDateLabel){dashboardDateLabel.textContent=formatDashboardDateKey(dashboardDateKey);dashboardDateLabel.dataset.mobileLabel=formatDashboardCompactDateKey(dashboardDateKey)}
