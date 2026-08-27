@@ -22,7 +22,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=20260825-r20726">
+  <link rel="stylesheet" href="./styles.css?v=20260827-r20727">
 </head>
 <body>
   <div id="connectionBanner" class="connection-banner" hidden>การเชื่อมต่อขัดข้อง กำลังลองใหม่</div>
@@ -46,16 +46,23 @@
     </aside>
 
     <section class="content">
-      <header class="topbar"><button id="menuButton" class="menu-button" aria-label="เปิดเมนู">☰</button><div class="topbar-title"><h1 id="pageTitle">งานรับสินค้า</h1><p id="headerClock">--/--/---- --:--:--</p></div><span id="syncStatus" class="sync-status">● พร้อมใช้งาน</span><div id="mobileAccount" class="mobile-account" aria-label="บัญชีผู้ใช้งาน"><span class="mobile-account-user" title="ผู้ใช้งาน"><i aria-hidden="true">U</i><b id="mobileAccountName">-</b></span><button id="mobileLogoutButton" class="mobile-logout-button" type="button" aria-label="ออกจากระบบ" title="ออกจากระบบ"><span aria-hidden="true">↪</span><em>ออก</em></button></div></header>
+      <header class="topbar"><button id="menuButton" class="menu-button" aria-label="เปิดเมนูเพิ่มเติม">☰</button><div class="topbar-title"><h1 id="pageTitle">งานรับสินค้า</h1><p id="headerClock">--/--/---- --:--:--</p></div><span id="syncStatus" class="sync-status">● พร้อมใช้งาน</span><div id="mobileAccount" class="mobile-account"><button id="mobileAccountButton" class="mobile-account-button" type="button" aria-label="เปิดบัญชีและเมนูเพิ่มเติม" title="บัญชีผู้ใช้งาน"><i aria-hidden="true">U</i><span class="mobile-account-copy"><b id="mobileAccountName">-</b><small>บัญชี</small></span></button></div></header>
       <div id="pageContent" class="page-content" aria-live="polite"></div>
     </section>
     <nav id="mobileNav" class="mobile-nav"></nav>
+    <div id="mobileMoreSheet" class="mobile-more-sheet" hidden>
+      <button class="mobile-more-backdrop" type="button" data-mobile-more-close aria-label="ปิดเมนู"></button>
+      <section class="mobile-more-panel" role="dialog" aria-modal="true" aria-labelledby="mobileMoreTitle">
+        <header><div><small>เมนูและบัญชี</small><b id="mobileMoreTitle">เพิ่มเติม</b></div><button type="button" data-mobile-more-close aria-label="ปิด">×</button></header>
+        <div id="mobileMoreMenu" class="mobile-more-menu"></div>
+      </section>
+    </div>
   </div>
 
   <div id="toast" class="toast" role="status" hidden><b>✓</b><span></span></div>
   <script src="./sweetalert2.all.min.js"></script>
   <script src="./jsqr.js"></script>
   <script src="./config.js?v=20260818-r178c"></script>
-  <script src="./app.js?v=20260825-r20726"></script>
+  <script src="./app.js?v=20260827-r20727"></script>
 </body>
 </html>

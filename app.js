@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.25-round207.26-full-audit";
+const FRONTEND_BUILD="2026.08.27-round207.27-mobile-liquid-navigation";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1374,13 +1374,16 @@ async function init() {
   $("brandName").textContent = cfg.appName;
   $("loginForm").addEventListener("submit", login);
   $("logoutButton").addEventListener("click", confirmLogout);
-  $("mobileLogoutButton")?.addEventListener("click", confirmLogout);
+  $("mobileAccountButton")?.addEventListener("click",()=>toggleMobileMore(true));
+  $("menuButton")?.addEventListener("click",()=>toggleMobileMore(true));
+  document.querySelectorAll("[data-mobile-more-close]").forEach(button=>button.addEventListener("click",()=>toggleMobileMore(false)));
+  document.addEventListener("keydown",event=>{if(event.key==="Escape")toggleMobileMore(false)});
   $("togglePassword").addEventListener("click", togglePassword);
   document.addEventListener("fullscreenchange",()=>{if(state.view==="datatable"&&!document.fullscreenElement&&datatableState.nativeFullscreen){datatableState.nativeFullscreen=false;datatableState.immersive=false}updateFullscreenButton();syncDashboardFullscreenShell();syncDatatableFullscreenShell();scheduleDashboardLayoutCheck()});
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260823-r20702",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20727",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -1422,6 +1425,36 @@ function openApp() {
   state.view = state.user.accessRights === "INBOUND" ? "inbound" : "operations"; userCompactModeLast=userCompactScreen(); renderNavigation(); navigate(state.view);
 }
 
+function mobileNavigationIcon(view){
+  const icons={
+    operations:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5 12 4l8 4.5v10L12 21l-8-2.5z"/><path d="m4 8.5 8 4.5 8-4.5M12 13v8"/></svg>',
+    appointmentUpload:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4m8-4v4M4 10h16"/></svg>',
+    inbound:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM9 4v16m6-16v16"/><path d="m11 11 2 2 3-4"/></svg>',
+    dashboard:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h7V4H4zm9 7h7V9h-7zM4 20h7v-5H4zm9-13h7V4h-7z"/></svg>',
+    datatable:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M4 14h16M9 4v16"/></svg>',
+    admin:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.4-2.6h-4L10 6a8 8 0 0 0-1.5 1.1l-2.4-1-2 3.4L6.2 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A8 8 0 0 0 10 18l.5 2.6h4L15 18a8 8 0 0 0 1.5-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>',
+    more:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
+    logout:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4m4-4H9"/></svg>'
+  };
+  return icons[view]||icons.more;
+}
+function toggleMobileMore(force){
+  const sheet=$("mobileMoreSheet");if(!sheet)return;
+  const open=typeof force==="boolean"?force:sheet.hidden;
+  sheet.hidden=!open;document.body.classList.toggle("mobile-more-open",open);
+  if(open)setTimeout(()=>sheet.querySelector(".mobile-more-panel [data-view],.mobile-more-panel [data-mobile-more-close]")?.focus(),30);
+}
+function syncMobileNavigation(view=state.view){
+  const nav=$("mobileNav");if(!nav)return;
+  const direct=[...nav.querySelectorAll("button[data-mobile-slot]")];
+  const isDirect=direct.some(button=>button.dataset.view===view);
+  direct.forEach(button=>button.classList.toggle("active",button.dataset.view===view||(!isDirect&&button.dataset.mobileMore==="1")));
+  const activeIndex=Math.max(0,direct.findIndex(button=>button.classList.contains("active")));
+  nav.style.setProperty("--mobile-active-index",String(activeIndex));
+  nav.style.setProperty("--mobile-nav-count",String(Math.max(1,direct.length)));
+  nav.style.setProperty("--mobile-active-left",`${((activeIndex+.5)/Math.max(1,direct.length))*100}%`);
+  $("mobileMoreMenu")?.querySelectorAll("[data-view]").forEach(button=>button.classList.toggle("active",button.dataset.view===view));
+}
 function renderNavigation() {
   const role = state.user.accessRights;
   const items = [];
@@ -1437,8 +1470,19 @@ function renderNavigation() {
     if (role === "ADMIN") items.push(["admin","⚙","ตั้งค่าระบบ"]);
   }
   $("sideNav").innerHTML = items.map(i => `<button class="nav-button" data-view="${i[0]}">${i[1]} ${i[2]}</button>`).join("");
-  $("mobileNav").innerHTML = items.map(i => `<button data-view="${i[0]}">${i[1]}<small>${i[2]}</small></button>`).join("");
-  document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.view)));
+  const primaryKeys=["operations","appointmentUpload","inbound","dashboard"];
+  const primary=primaryKeys.map(key=>items.find(item=>item[0]===key)).filter(Boolean).slice(0,4);
+  const extras=items.filter(item=>!primary.some(main=>main[0]===item[0]));
+  const shortLabels={operations:"รับสินค้า",appointmentUpload:"นัดหมาย",inbound:"Inbound",dashboard:"Dashboard"};
+  $("mobileNav").innerHTML=`<span class="mobile-nav-liquid" aria-hidden="true"></span>${primary.map((item,index)=>`<button type="button" data-mobile-slot="${index}" data-view="${item[0]}" aria-label="${item[2]}"><span class="mobile-nav-icon">${mobileNavigationIcon(item[0])}</span><small>${shortLabels[item[0]]||item[2]}</small></button>`).join("")}<button type="button" data-mobile-slot="${primary.length}" data-mobile-more="1" aria-label="เปิดเมนูเพิ่มเติม"><span class="mobile-nav-icon">${mobileNavigationIcon("more")}</span><small>เพิ่มเติม</small></button>`;
+  const accountName=escapeHtml(state.user?.name||"ผู้ใช้งาน");
+  $("mobileMoreMenu").innerHTML=`<div class="mobile-more-user"><i aria-hidden="true">U</i><span><small>ผู้ใช้งาน</small><b>${accountName}</b></span></div>${extras.map(item=>`<button type="button" data-view="${item[0]}"><span>${mobileNavigationIcon(item[0])}</span><b>${item[2]}</b><i aria-hidden="true">›</i></button>`).join("")}<button type="button" class="mobile-more-logout" data-mobile-logout><span>${mobileNavigationIcon("logout")}</span><b>ออกจากระบบ</b><i aria-hidden="true">›</i></button>`;
+  $("sideNav").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>navigate(button.dataset.view)));
+  $("mobileNav").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);navigate(button.dataset.view)}));
+  $("mobileNav").querySelector("[data-mobile-more]")?.addEventListener("click",()=>toggleMobileMore(true));
+  $("mobileMoreMenu").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);navigate(button.dataset.view)}));
+  $("mobileMoreMenu").querySelector("[data-mobile-logout]")?.addEventListener("click",()=>{toggleMobileMore(false);confirmLogout()});
+  syncMobileNavigation();
 }
 
 async function navigate(view,options={}) {
@@ -1453,7 +1497,7 @@ async function navigate(view,options={}) {
   stopCamera();
   state.view = view;setDashboardShell(view);if(view==="inbound")inboundLiveState.version=""; const titles = { operations:"งานรับสินค้า", appointmentUpload:"ข้อมูลนัดหมาย", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", datatable:"Datatable", admin:"ตั้งค่าระบบ" };
   $("appView").classList.toggle("compact-inbound-header", view==="inbound");
-  $("pageTitle").textContent = titles[view]; document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  $("pageTitle").textContent = titles[view]; document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));syncMobileNavigation(view);toggleMobileMore(false);
   $("pageContent").innerHTML = `<div class="loading">กำลังโหลดข้อมูล</div>`;
   if (view === "admin") return renderAdmin();
   if (view === "appointmentUpload") return renderAppointmentUpload();
