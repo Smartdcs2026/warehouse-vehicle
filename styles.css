@@ -11680,3 +11680,132 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
   .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r2042-panel{box-shadow:0 2px 8px rgba(18,48,83,.045)!important}
   .dashboard-view-shell:not(.dashboard-fullscreen-shell)>.mobile-nav{transform:translate3d(0,0,0)!important;backface-visibility:hidden!important}
 }
+
+/* =========================================================
+   ROUND 207.32 — Native mobile Inbound shell
+   Final mobile authority: one viewport, one app bar, no clipped content.
+   ========================================================= */
+@media(max-width:760px){
+  html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
+  .app-shell.compact-inbound-header,
+  .app-shell.compact-inbound-header>.content,
+  .app-shell.compact-inbound-header .page-content,
+  .app-shell.compact-inbound-header .inbound-workspace-r88,
+  .app-shell.compact-inbound-header .inbound-main-stack,
+  .app-shell.compact-inbound-header .inbound-list-card{
+    width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important
+  }
+  .app-shell.compact-inbound-header{display:block!important;overflow-x:hidden!important;background:#f4f7fb!important}
+  .app-shell.compact-inbound-header>.content{display:block!important;overflow:visible!important}
+
+  /* Same installed-app header for both permissions. */
+  .app-shell.compact-inbound-header .content>.topbar{
+    position:sticky!important;top:0!important;z-index:40!important;display:flex!important;align-items:center!important;gap:8px!important;
+    width:100%!important;height:56px!important;min-height:56px!important;padding:6px 10px!important;
+    border-bottom:1px solid #dde6f0!important;background:rgba(255,255,255,.98)!important;
+    box-shadow:0 2px 9px rgba(20,48,82,.055)!important;backdrop-filter:blur(12px)!important
+  }
+  .app-shell.compact-inbound-header .topbar-title{display:block!important;flex:1 1 auto!important;min-width:0!important}
+  .app-shell.compact-inbound-header .topbar-title h1{margin:0!important;overflow:hidden!important;color:#132943!important;font-size:17px!important;line-height:1.2!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+  .app-shell.compact-inbound-header .topbar-title p,
+  .app-shell.compact-inbound-header .sync-status{display:none!important}
+  .app-shell.compact-inbound-header .mobile-account{display:flex!important;flex:0 0 auto!important}
+  .app-shell.compact-inbound-header .mobile-account-button{display:flex!important;align-items:center!important;justify-content:center!important;width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border-radius:50%!important}
+  .app-shell.compact-inbound-header .mobile-account-button>span:not(:first-child),
+  .app-shell.compact-inbound-header .mobile-account-button>b{display:none!important}
+  .app-shell.compact-inbound-header .menu-button{flex:0 0 36px!important;width:36px!important;height:40px!important;padding:0!important}
+  .app-shell.compact-inbound-header.inbound-kiosk-shell .menu-button{display:none!important}
+  .app-shell.compact-inbound-header .page-content{
+    margin:0!important;padding:7px 8px calc(18px + env(safe-area-inset-bottom))!important;overflow-x:hidden!important
+  }
+  .app-shell.compact-inbound-header:not(.inbound-kiosk-shell) .page-content{
+    padding-bottom:calc(84px + env(safe-area-inset-bottom))!important
+  }
+
+  /* Compact task switcher: two destinations and one account action. */
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar{
+    position:sticky!important;top:56px!important;z-index:30!important;
+    display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 46px!important;gap:4px!important;
+    width:100%!important;max-width:100%!important;height:52px!important;margin:0 0 7px!important;padding:4px!important;
+    border:1px solid #dce5ef!important;border-radius:14px!important;background:rgba(255,255,255,.98)!important;
+    box-shadow:0 4px 13px rgba(20,48,82,.08)!important;overflow:hidden!important
+  }
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar button{
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;
+    min-width:0!important;width:100%!important;min-height:42px!important;height:42px!important;padding:0 7px!important;
+    border-radius:10px!important;font-size:11px!important;line-height:1!important;white-space:nowrap!important;box-shadow:none!important
+  }
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar button>span{font-size:13px!important}
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar button>b{overflow:hidden!important;text-overflow:ellipsis!important}
+  .app-shell.compact-inbound-header .inbound-mobile-count{min-width:20px!important;height:20px!important;font-size:9px!important}
+  .app-shell.compact-inbound-header .inbound-mobile-logout{width:42px!important;min-width:42px!important;padding:0!important}
+  .app-shell.compact-inbound-header .inbound-mobile-logout b{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important}
+
+  /* One summary surface with equal cells; it can never widen the viewport. */
+  .app-shell.compact-inbound-header .inbound-metrics-r88,
+  .app-shell.compact-inbound-header .inbound-metrics-r88.is-three,
+  .app-shell.compact-inbound-header .inbound-metrics-r88.is-four{
+    display:grid!important;grid-template-columns:repeat(var(--metric-count,4),minmax(0,1fr))!important;
+    width:100%!important;max-width:100%!important;gap:0!important;margin:0 0 7px!important;padding:0!important;
+    border:1px solid #dce5ef!important;border-radius:13px!important;background:#fff!important;overflow:hidden!important;
+    box-shadow:0 2px 8px rgba(20,48,82,.045)!important
+  }
+  .app-shell.compact-inbound-header .inbound-metrics-r88.is-three{--metric-count:3}
+  .app-shell.compact-inbound-header .inbound-metrics-r88.is-four{--metric-count:4}
+  .app-shell.compact-inbound-header .inbound-metric{
+    position:relative!important;display:grid!important;place-items:center!important;align-content:center!important;
+    width:auto!important;max-width:100%!important;min-width:0!important;height:62px!important;min-height:62px!important;
+    margin:0!important;padding:5px 3px!important;border:0!important;border-right:1px solid #e5ebf2!important;border-radius:0!important;
+    background:#fff!important;box-shadow:none!important;text-align:center!important;overflow:hidden!important
+  }
+  .app-shell.compact-inbound-header .inbound-metric:last-child{border-right:0!important}
+  .app-shell.compact-inbound-header .inbound-metric::before{inset:0 0 auto!important;width:auto!important;height:3px!important}
+  .app-shell.compact-inbound-header .inbound-metric::after{display:none!important}
+  .app-shell.compact-inbound-header .inbound-metric-icon{display:none!important}
+  .app-shell.compact-inbound-header .inbound-metric-copy{display:grid!important;justify-items:center!important;gap:3px!important;width:100%!important;min-width:0!important}
+  .app-shell.compact-inbound-header .inbound-metric-copy small{
+    display:-webkit-box!important;width:100%!important;min-height:21px!important;overflow:hidden!important;color:#687a90!important;
+    font-size:9px!important;font-weight:800!important;line-height:1.15!important;white-space:normal!important;text-overflow:ellipsis!important;
+    -webkit-box-orient:vertical!important;-webkit-line-clamp:2!important
+  }
+  .app-shell.compact-inbound-header .inbound-metric-copy b{margin:0!important;font-size:19px!important;line-height:1!important}
+
+  /* Section title above swipeable chips, like a regular mobile list. */
+  .app-shell.compact-inbound-header .inbound-list-card{height:auto!important;min-height:0!important;max-height:none!important;padding:7px!important;overflow:hidden!important;border-radius:13px!important}
+  .app-shell.compact-inbound-header .inbound-list-head-r88{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:stretch!important;gap:6px!important;
+    width:100%!important;min-width:0!important;padding:2px 1px 7px!important
+  }
+  .app-shell.compact-inbound-header .inbound-list-head-r88>div{
+    display:flex!important;align-items:baseline!important;justify-content:space-between!important;gap:8px!important;width:100%!important;min-width:0!important
+  }
+  .app-shell.compact-inbound-header .inbound-list-head-r88 h2{min-width:0!important;font-size:15px!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+  .app-shell.compact-inbound-header #inboundListCount{flex:0 0 auto!important;font-size:9px!important}
+  .app-shell.compact-inbound-header .inbound-stage-tabs{
+    display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;gap:4px!important;margin:0!important;padding:0 0 2px!important;
+    overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x proximity!important;scrollbar-width:none!important;
+    overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-x pan-y!important
+  }
+  .app-shell.compact-inbound-header .inbound-stage-tabs::-webkit-scrollbar{display:none!important}
+  .app-shell.compact-inbound-header .inbound-stage-tabs button{
+    flex:0 0 auto!important;width:auto!important;min-width:max-content!important;height:34px!important;min-height:34px!important;
+    padding:5px 8px!important;border-radius:9px!important;font-size:9px!important;scroll-snap-align:start!important
+  }
+  .app-shell.compact-inbound-header .inbound-stage-tabs button b{min-width:19px!important;height:19px!important;font-size:8px!important}
+  .app-shell.compact-inbound-header #inboundRows{width:100%!important;max-width:100%!important;min-width:0!important;overflow:visible!important}
+  .app-shell.compact-inbound-header .list-row.status-row{width:100%!important;max-width:100%!important;min-width:0!important}
+
+  /* Bottom tabs stay clear of the last record. */
+  .app-shell.compact-inbound-header:not(.inbound-kiosk-shell)>.mobile-nav{
+    left:8px!important;right:8px!important;bottom:calc(7px + env(safe-area-inset-bottom))!important;
+    width:auto!important;height:64px!important;min-height:64px!important;border-radius:19px!important
+  }
+  .app-shell.compact-inbound-header:not(.inbound-kiosk-shell)>.mobile-nav button[data-mobile-slot]{height:59px!important;min-height:59px!important;grid-template-rows:32px 16px!important;padding-bottom:3px!important}
+}
+@media(max-width:360px){
+  .app-shell.compact-inbound-header .page-content{padding-left:6px!important;padding-right:6px!important}
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 43px!important}
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar button{padding-inline:5px!important;font-size:10px!important}
+  .app-shell.compact-inbound-header .inbound-metric-copy small{font-size:8px!important}
+  .app-shell.compact-inbound-header .inbound-metric-copy b{font-size:17px!important}
+}
