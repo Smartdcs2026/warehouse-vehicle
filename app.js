@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.27-round207.32-inbound-native-mobile";
+const FRONTEND_BUILD="2026.08.27-round207.33-inbound-header-flow";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1385,7 +1385,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20732",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20733",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -1505,7 +1505,7 @@ async function navigate(view,options={}) {
   if(state.view==="appointmentUpload"&&view!=="appointmentUpload")appointmentStopWorker();
   if(!viewEnabled(view)){const message=view==="dashboard"?"Dashboard ถูกปิดการแสดงผลโดยผู้ดูแลระบบ":view==="datatable"?"Datatable ถูกปิดการแสดงผลโดยผู้ดูแลระบบ":"ขณะนี้ปิดโมดูลข้อมูลนัดหมาย";await showNotice("info",message);view="operations"}
   stopCamera();
-  state.view = view;setDashboardShell(view);if(view==="inbound")inboundLiveState.version=""; const titles = { operations:"งานรับสินค้า", appointmentUpload:"ข้อมูลนัดหมาย", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", datatable:"Datatable", admin:"ตั้งค่าระบบ" };
+  state.view = view;window.scrollTo({top:0,left:0,behavior:"auto"});setDashboardShell(view);if(view==="inbound")inboundLiveState.version=""; const titles = { operations:"งานรับสินค้า", appointmentUpload:"ข้อมูลนัดหมาย", inbound:"แผนก Inbound", dashboard:"ภาพรวมการปฏิบัติงาน", datatable:"Datatable", admin:"ตั้งค่าระบบ" };
   $("appView").classList.toggle("compact-inbound-header", view==="inbound");
   $("pageTitle").textContent = titles[view]; document.querySelectorAll("[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === view));syncMobileNavigation(view);toggleMobileMore(false);
   $("pageContent").innerHTML = `<div class="loading">กำลังโหลดข้อมูล</div>`;

@@ -11809,3 +11809,14 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
   .app-shell.compact-inbound-header .inbound-metric-copy small{font-size:8px!important}
   .app-shell.compact-inbound-header .inbound-metric-copy b{font-size:17px!important}
 }
+
+/* ROUND 207.33 — One sticky layer only: the app bar. */
+@media(max-width:760px){
+  .app-shell.compact-inbound-header .inbound-mobile-sectionbar{
+    position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+    z-index:1!important;transform:none!important;margin-top:0!important
+  }
+  .app-shell.compact-inbound-header .inbound-metrics-r88{
+    position:relative!important;z-index:0!important;clear:both!important
+  }
+}
