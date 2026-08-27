@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.27-round207.27-mobile-liquid-navigation";
+const FRONTEND_BUILD="2026.08.27-round207.28-mobile-navigation-motion-fix";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1383,7 +1383,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20727",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20728",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -1444,6 +1444,12 @@ function toggleMobileMore(force){
   sheet.hidden=!open;document.body.classList.toggle("mobile-more-open",open);
   if(open)setTimeout(()=>sheet.querySelector(".mobile-more-panel [data-view],.mobile-more-panel [data-mobile-more-close]")?.focus(),30);
 }
+let mobileNavigationMotionTimer=0;
+function startMobileNavigationMotion(){
+  const nav=$("mobileNav");if(!nav)return;
+  clearTimeout(mobileNavigationMotionTimer);nav.classList.add("is-moving");
+  mobileNavigationMotionTimer=setTimeout(()=>nav.classList.remove("is-moving"),620);
+}
 function syncMobileNavigation(view=state.view){
   const nav=$("mobileNav");if(!nav)return;
   const direct=[...nav.querySelectorAll("button[data-mobile-slot]")];
@@ -1453,6 +1459,8 @@ function syncMobileNavigation(view=state.view){
   nav.style.setProperty("--mobile-active-index",String(activeIndex));
   nav.style.setProperty("--mobile-nav-count",String(Math.max(1,direct.length)));
   nav.style.setProperty("--mobile-active-left",`${((activeIndex+.5)/Math.max(1,direct.length))*100}%`);
+  const activeButton=direct[activeIndex],liquid=nav.querySelector(".mobile-nav-liquid");
+  if(liquid)liquid.innerHTML=activeButton?.querySelector(".mobile-nav-icon")?.innerHTML||mobileNavigationIcon("more");
   $("mobileMoreMenu")?.querySelectorAll("[data-view]").forEach(button=>button.classList.toggle("active",button.dataset.view===view));
 }
 function renderNavigation() {
@@ -1478,9 +1486,9 @@ function renderNavigation() {
   const accountName=escapeHtml(state.user?.name||"ผู้ใช้งาน");
   $("mobileMoreMenu").innerHTML=`<div class="mobile-more-user"><i aria-hidden="true">U</i><span><small>ผู้ใช้งาน</small><b>${accountName}</b></span></div>${extras.map(item=>`<button type="button" data-view="${item[0]}"><span>${mobileNavigationIcon(item[0])}</span><b>${item[2]}</b><i aria-hidden="true">›</i></button>`).join("")}<button type="button" class="mobile-more-logout" data-mobile-logout><span>${mobileNavigationIcon("logout")}</span><b>ออกจากระบบ</b><i aria-hidden="true">›</i></button>`;
   $("sideNav").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>navigate(button.dataset.view)));
-  $("mobileNav").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);navigate(button.dataset.view)}));
+  $("mobileNav").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);startMobileNavigationMotion();navigate(button.dataset.view)}));
   $("mobileNav").querySelector("[data-mobile-more]")?.addEventListener("click",()=>toggleMobileMore(true));
-  $("mobileMoreMenu").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);navigate(button.dataset.view)}));
+  $("mobileMoreMenu").querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{toggleMobileMore(false);startMobileNavigationMotion();navigate(button.dataset.view)}));
   $("mobileMoreMenu").querySelector("[data-mobile-logout]")?.addEventListener("click",()=>{toggleMobileMore(false);confirmLogout()});
   syncMobileNavigation();
 }

@@ -11341,3 +11341,99 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
     max-height:none!important;
   }
 }
+
+/* =========================================================
+   ROUND 207.28 — final mobile nav motion / notch / scroll fix
+   Kept last so Dashboard themes cannot repaint the main nav.
+   ========================================================= */
+@property --mobile-active-left{syntax:"<percentage>";inherits:true;initial-value:10%}
+@media(max-width:980px){
+  body:not(.mobile-more-open){overflow-x:hidden!important;overflow-y:auto!important}
+  .app-shell.dashboard-view-shell:not(.dashboard-fullscreen-shell){height:auto!important;min-height:100dvh!important;max-height:none!important;overflow:visible!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell)>.content,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .page-content{
+    height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;touch-action:pan-y!important;overscroll-behavior-y:auto!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody:not(.loading),
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody.has-appointment-plan:not(.loading),
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-content,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r20720-page-body>section,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-overview,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-grid{
+    height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-overview>.r2042-panel,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r145-grid>.r2042-panel{
+    height:auto!important;max-height:none!important
+  }
+
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav{
+    --mobile-active-left:10%;
+    position:fixed!important;inset:auto 10px calc(8px + env(safe-area-inset-bottom))!important;z-index:90!important;
+    display:flex!important;align-items:flex-end!important;justify-content:stretch!important;
+    width:auto!important;height:70px!important;min-height:70px!important;padding:0 5px 5px!important;
+    border:0!important;border-radius:20px!important;background:transparent!important;
+    box-shadow:0 13px 32px rgba(5,18,38,.28)!important;backdrop-filter:none!important;overflow:visible!important;
+    transition:--mobile-active-left .44s cubic-bezier(.22,.8,.2,1)!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav::before,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav::before{display:none!important}
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav::after,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav::after{
+    content:""!important;position:absolute!important;inset:0!important;z-index:0!important;display:block!important;
+    border-radius:20px!important;background:#07152b!important;
+    -webkit-mask-image:radial-gradient(circle 25px at var(--mobile-active-left) 0,transparent 24px,#000 25px)!important;
+    mask-image:radial-gradient(circle 25px at var(--mobile-active-left) 0,transparent 24px,#000 25px)!important;
+    pointer-events:none!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav.is-moving::after,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav.is-moving::after{
+    -webkit-mask-image:radial-gradient(circle 34px at var(--mobile-active-left) 0,transparent 33px,#000 34px)!important;
+    mask-image:radial-gradient(circle 34px at var(--mobile-active-left) 0,transparent 33px,#000 34px)!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav .mobile-nav-liquid,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav .mobile-nav-liquid{
+    position:absolute!important;left:var(--mobile-active-left)!important;top:0!important;z-index:4!important;
+    display:grid!important;place-items:center!important;width:42px!important;height:42px!important;
+    transform:translateX(-50%)!important;border:3px solid #fff!important;border-radius:50%!important;
+    background:#fff!important;color:#216bdd!important;box-shadow:0 4px 11px rgba(4,18,40,.22),0 0 0 2px rgba(44,121,232,.20)!important;
+    transition:left .44s cubic-bezier(.22,.8,.2,1),top .34s cubic-bezier(.22,.8,.2,1),width .34s cubic-bezier(.22,.8,.2,1),height .34s cubic-bezier(.22,.8,.2,1),box-shadow .28s ease!important;
+    pointer-events:none!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav.is-moving .mobile-nav-liquid,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav.is-moving .mobile-nav-liquid{
+    top:-18px!important;width:56px!important;height:56px!important;box-shadow:0 9px 20px rgba(4,18,40,.28),0 0 0 3px rgba(44,121,232,.25)!important
+  }
+  .mobile-nav-liquid svg{width:23px!important;height:23px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .mobile-nav.is-moving .mobile-nav-liquid svg{width:27px!important;height:27px!important}
+
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav button[data-mobile-slot],
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav button[data-mobile-slot]{
+    position:relative!important;z-index:2!important;display:grid!important;flex:1 1 0!important;
+    grid-template-rows:36px 17px!important;place-items:center!important;align-content:end!important;gap:1px!important;
+    min-width:0!important;max-width:none!important;height:65px!important;padding:0 2px 4px!important;
+    border:0!important;background:transparent!important;color:#aebbd0!important;transform:none!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav button[data-mobile-slot].active,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav button[data-mobile-slot].active{color:#fff!important;transform:none!important}
+  .mobile-nav button[data-mobile-slot] .mobile-nav-icon{width:34px!important;height:34px!important;background:transparent!important;color:inherit!important;box-shadow:none!important;opacity:1!important;transition:opacity .18s ease!important}
+  .mobile-nav button[data-mobile-slot].active .mobile-nav-icon{opacity:0!important}
+  .mobile-nav button[data-mobile-slot] .mobile-nav-icon svg{width:22px!important;height:22px!important}
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav button[data-mobile-slot] small,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav button[data-mobile-slot] small{
+    display:block!important;max-width:100%!important;margin:0!important;overflow:hidden!important;
+    color:inherit!important;font-size:9px!important;font-weight:850!important;line-height:1.1!important;
+    text-overflow:ellipsis!important;white-space:nowrap!important
+  }
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav button[data-mobile-slot].active small,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav button[data-mobile-slot].active small{color:#eef5ff!important;font-size:9.3px!important}
+}
+@media(max-width:380px){
+  .app-shell:not(.inbound-kiosk-shell)>.mobile-nav,
+  .app-shell.dashboard-view-shell[data-dashboard-theme]>.mobile-nav{left:6px!important;right:6px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-nav,.mobile-nav-liquid{transition:none!important}
+}
