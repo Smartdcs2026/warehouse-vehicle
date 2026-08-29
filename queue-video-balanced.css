@@ -291,3 +291,158 @@ body[data-video-layout="20260829-r20744-proportional"] .queue-traffic-view.has-q
     display:none!important;
   }
 }
+
+/* Round 207.45 — Classic waiting cards use one stable information map in both
+   VDO states. Explicit grid placement prevents plate/province/door fields from
+   falling into legacy table columns when VDO is disabled. */
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-panel{
+  grid-template-rows:46px minmax(0,1fr)!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-table-head{
+  display:none!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-list{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  grid-template-rows:none!important;
+  grid-auto-rows:76px!important;
+  align-content:start!important;
+  gap:7px!important;
+  padding-top:7px!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-item{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 88px!important;
+  grid-template-rows:18px 32px 14px!important;
+  column-gap:10px!important;
+  row-gap:0!important;
+  align-items:center!important;
+  width:100%!important;
+  height:76px!important;
+  min-width:0!important;
+  min-height:0!important;
+  padding:6px 9px!important;
+  overflow:hidden!important;
+  border:1px solid #d7e2ef!important;
+  border-left:4px solid #1b67c9!important;
+  border-radius:9px!important;
+  background:#fff!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-item.is-called{
+  background:linear-gradient(90deg,#eef5ff,#fff)!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-appt{
+  grid-column:1!important;
+  grid-row:1!important;
+  min-width:0!important;
+  font-size:17px!important;
+  line-height:18px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-vehicle{
+  grid-column:1!important;
+  grid-row:2!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-vehicle>.queue-company-line{
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:nowrap!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-vehicle>.queue-company-line b{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  font-size:11px!important;
+  line-height:15px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-vehicle>small{
+  display:block!important;
+  min-width:0!important;
+  margin-top:1px!important;
+  font-size:9px!important;
+  line-height:13px!important;
+  color:#526b89!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-province{
+  grid-column:1!important;
+  grid-row:3!important;
+  min-width:0!important;
+  font-size:9px!important;
+  line-height:14px!important;
+  color:#526b89!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-status{
+  grid-column:2!important;
+  grid-row:1/4!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  min-width:0!important;
+  gap:5px!important;
+  overflow:hidden!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-status small{
+  display:block!important;
+  max-width:82px!important;
+  font-size:8px!important;
+  line-height:11px!important;
+  text-align:right!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-door-badge{
+  flex:0 0 auto!important;
+  min-width:48px!important;
+  padding:4px 8px!important;
+  font-size:11px!important;
+  line-height:15px!important;
+}
+
+@media (max-height:850px){
+  body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-list{
+    grid-auto-rows:68px!important;
+    gap:6px!important;
+  }
+  body[data-queue-cards="20260829-r20745-stable"] .queue-shell:not(.queue-visual-mode):not(.queue-traffic-mode) .next-item{
+    height:68px!important;
+    grid-template-rows:17px 27px 12px!important;
+    padding:5px 8px!important;
+  }
+}
