@@ -786,9 +786,13 @@ function queueCompanyInline(item) {
 function renderCall(item) {
   const panel = $("callPanel");
   const num = $("callNumber");
+  const tagText = panel?.querySelector(".call-tag>b");
+  const tagIcon = panel?.querySelector(".call-icon");
 
   if (!item || !item.appointmentNo) {
     panel.classList.add("idle");
+    if (tagText) tagText.textContent = "สถานะคิว";
+    if (tagIcon) tagIcon.textContent = "รอ";
     num.textContent = "รอเรียกคิว";
     fitAppointmentNumber(num, "รอเรียกคิว");
     $("callCompany").textContent = "–";
@@ -810,6 +814,8 @@ function renderCall(item) {
   }
 
   panel.classList.remove("idle");
+  if (tagText) tagText.textContent = "กำลังเรียกคิว";
+  if (tagIcon) tagIcon.textContent = "เรียก";
   const appt = item.appointmentNo || "–";
   num.textContent = appt;
   fitAppointmentNumber(num, appt);
@@ -1019,8 +1025,8 @@ const VISUAL_STAGE_DEFS=[
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
 ];
 let visualStatusSnapshot=new Map();
-const VISUAL_SHELL_VERSION="20742";
-function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<680||w<1050)return 2;if(h>=980&&w>=1700)return 4;return 3}
+const VISUAL_SHELL_VERSION="20743";
+function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<680||w<1050)return 2;if(h>=850&&w>=1500)return 4;return 3}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
 function visualStageItems(data,status){return(data.items||[]).filter(item=>item.status===status).sort((a,b)=>(a.stageSince||0)-(b.stageSince||0))}
@@ -1073,7 +1079,7 @@ function visualDoorSelection(data){
   }
   return{all:doors,shown,pages,occupiedPages:occupiedDoors.length?pages:0,showingOccupied,occupiedCount:occupiedDoors.length,filledEmpty};
 }
-function visualDoorBay(door){const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังตรวจรับ",DRAINING:"ปิดหลังจบงาน"},occupied=Math.max(0,Number(door.occupancyCount)||0),primary=door.items?.[0]||door;return `<article class="visual-door-bay door-${esc(status.toLowerCase())}"><div class="visual-garage"><span class="visual-garage-code">${esc(door.doorCode||"–")}</span><span class="visual-garage-status">${esc(labels[status]||status)}</span>${occupied?`<span class="visual-garage-truck">${visualRearTruckSvg()}<small>${esc(primary.appointmentNo||"")} ${esc(primary.vehiclePlate||"")}</small></span>`:""}</div><div class="visual-door-bay-foot"><b>${esc(labels[status]||status)}</b><small>${status==="DRAINING"?"ปิดหลังจบงาน":`${occupied} คัน`}</small></div></article>`}
+function visualDoorBay(door){const status=String(door.status||"AVAILABLE"),labels={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังตรวจรับ",DRAINING:"ปิดหลังจบงาน"},occupied=Math.max(0,Number(door.occupancyCount)||0),primary=door.items?.[0]||door,detail=occupied?[primary.appointmentNo,primary.vehiclePlate].filter(Boolean).join(" · "):status==="AVAILABLE"?"พร้อมใช้งาน":"รอปิดหลังจบงาน";return `<article class="visual-door-bay door-${esc(status.toLowerCase())}"><span class="visual-door-state-dot" aria-hidden="true"></span><div><b>${esc(door.doorCode||"–")}</b><small>${esc(labels[status]||status)}</small></div><p>${esc(detail||"–")}</p><strong>${status==="DRAINING"?"–":occupied}</strong></article>`}
 function visualSummaryStatic(def){return `<article class="visual-summary-card tone-${def.tone}"><span class="visual-summary-icon">${def.number}</span><div><small>${esc(def.label)}</small><b id="visualSummary_${def.status}">0</b><em>คัน</em></div></article>`}
 function ensureVisualShell(root){
   if(root.dataset.visualShellVersion===VISUAL_SHELL_VERSION&&root.querySelector(".visual-queue-shell"))return;
@@ -1088,7 +1094,7 @@ function ensureVisualShell(root){
   root.dataset.visualShellVersion=VISUAL_SHELL_VERSION;
 }
 function createVisualVehicleElement(item,tone){
-  const article=document.createElement("article");article.className=`visual-vehicle-card tone-${tone}`;article.innerHTML=`<div class="visual-vehicle-icon">${visualTruckSvg()}</div><div class="visual-vehicle-copy"><div class="visual-vehicle-top"><b data-role="appointment">–</b><span data-role="plate">–</span></div><strong data-role="company">–</strong><small><span data-role="province"></span><i data-role="door" hidden></i></small></div><time data-role="wait">–</time>`;return article;
+  const article=document.createElement("article");article.className=`visual-vehicle-card tone-${tone}`;article.innerHTML=`<div class="visual-vehicle-copy"><div class="visual-vehicle-top"><b data-role="appointment">–</b><span data-role="plate">–</span></div><strong data-role="company">–</strong><small><span data-role="province"></span><i data-role="door" hidden></i></small></div><time data-role="wait">–</time>`;return article;
 }
 function updateVisualVehicleElement(article,item,tone,changed=false){
   const company=queueCompanyView(item),door=normalizeQueueDoorCode(item.doorCode),key=item.autoId||item.appointmentNo||`${item.vehiclePlate||""}:${item.stageSince||0}`;
@@ -1097,12 +1103,12 @@ function updateVisualVehicleElement(article,item,tone,changed=false){
   if(changed&&!article.classList.contains("is-transitioning")){article.classList.add("is-transitioning");setTimeout(()=>article.classList.remove("is-transitioning"),700)}
 }
 function syncVisualStage(data,def,changedAutos){
-  const items=visualStageItems(data,def.status),size=visualStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=visualPageFor(def.status);if(page>=pages){page=0;visualSetPage(def.status,0)}const shown=items.slice(page*size,page*size+size),list=$("visualLaneList_"+def.status),meta=$("visualLaneMeta_"+def.status),footer=$("visualLaneFooter_"+def.status);if(!list)return;
+  const items=visualStageItems(data,def.status),size=visualStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=visualPageFor(def.status);if(page>=pages){page=0;visualSetPage(def.status,0)}const shown=items.slice(page*size,page*size+size),list=$("visualLaneList_"+def.status),meta=$("visualLaneMeta_"+def.status),footer=$("visualLaneFooter_"+def.status),lane=$("visualLane_"+def.status);if(!list)return;lane?.classList.toggle("is-empty",items.length===0);
   setStableText(meta,`${items.length.toLocaleString("th-TH")} คัน${pages>1?` · ${page+1}/${pages}`:""}`);
   const existing=new Map([...list.querySelectorAll(".visual-vehicle-card")].map(el=>[el.dataset.visualKey,el]));let empty=list.querySelector(".visual-stage-empty");if(shown.length&&empty)empty.remove();
   const keep=new Set();for(const item of shown){const key=item.autoId||item.appointmentNo||`${item.vehiclePlate||""}:${item.stageSince||0}`;keep.add(key);let card=existing.get(key);if(!card){card=createVisualVehicleElement(item,def.tone);list.appendChild(card)}updateVisualVehicleElement(card,item,def.tone,changedAutos.has(item.autoId));list.appendChild(card)}
-  for(const [key,el] of existing)if(!keep.has(key))el.remove();if(!shown.length&&!list.querySelector(".visual-stage-empty")){const div=document.createElement("div");div.className="visual-stage-empty";div.innerHTML=`<span>${def.number}</span><b>ไม่มีรถในขั้นตอนนี้</b>`;list.appendChild(div)}
-  const remaining=Math.max(0,items.length-shown.length);footer.classList.toggle("is-clear",remaining===0);setStableText(footer,remaining?`+ อีก ${remaining.toLocaleString("th-TH")} คัน`:items.length?"แสดงรายการปัจจุบัน":"ไม่มีรถในขั้นตอนนี้");
+  for(const [key,el] of existing)if(!keep.has(key))el.remove();if(!shown.length&&!list.querySelector(".visual-stage-empty")){const div=document.createElement("div");div.className="visual-stage-empty";div.innerHTML=`<b>ไม่มีรายการ</b><span>ขั้นตอนนี้ยังไม่มีรถ</span>`;list.appendChild(div)}
+  const remaining=Math.max(0,items.length-shown.length);footer.classList.toggle("is-clear",remaining===0);setStableText(footer,remaining?`ยังมีอีก ${remaining.toLocaleString("th-TH")} คัน`:items.length?`แสดงครบ ${items.length.toLocaleString("th-TH")} คัน`:"");
 }
 function syncVisualDoors(data){
   const panel=$("visualDoorPanel"),grid=$("visualDoorGrid"),meta=$("visualDoorMeta"),footer=$("visualDoorFooter"),doorInfo=visualDoorSelection(data),show=Boolean(data?.queueDisplay?.doorPanelEnabled)&&doorInfo.all.length>0;if(panel)panel.hidden=!show;if(!show)return;
@@ -1134,12 +1140,12 @@ const TRAFFIC_STAGE_DEFS=[
   {status:"WAITING_DOCUMENT_RETURN",number:"3",label:"รอรับเอกสารคืน",baseLamp:"red",tone:"red"},
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",baseLamp:"green",tone:"green"}
 ];
-const TRAFFIC_SHELL_VERSION="20742";
+const TRAFFIC_SHELL_VERSION="20743";
 function trafficAlertRank(level){return({NORMAL:0,WATCH:1,WARNING:2,URGENT:3,CRITICAL:4})[String(level||"NORMAL").toUpperCase()]??0}
 function trafficStagePageSize(){
   const h=window.innerHeight||800,w=window.innerWidth||1280;
   if(h<760||w<1180)return 2;
-  if(h>=980&&w>=1600)return 4;
+  if(h>=850&&w>=1500)return 4;
   return 3;
 }
 function trafficSignalState(items,baseLamp){

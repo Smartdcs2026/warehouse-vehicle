@@ -1,7 +1,7 @@
 const CACHE_PREFIX="wvf-static-";
-const CACHE="wvf-static-round20742-enterprise-queue-standard";
+const CACHE="wvf-static-round20743-enterprise-layout-rebuild";
 const CORE=["./","./index.html","./styles.css","./config.js","./app.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest"];
-const OPTIONAL=["./favicon.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./track.html","./track.css","./track.js","./queue.html","./queue.css","./queue.js","./voice-engine.js","./appointment-excel-worker.js","./appointment-public-display.js","./appointment-dev/index.html"];
+const OPTIONAL=["./favicon.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./track.html","./track.css","./track.js","./queue.html","./queue.css","./queue-enterprise.css","./queue.js","./voice-engine.js","./appointment-excel-worker.js","./appointment-public-display.js","./appointment-dev/index.html"];
 
 async function cacheOne(cache,url){try{await cache.add(url);return true}catch(error){console.warn("sw_cache_failed",url,String(error?.message||error));return false}}
 async function networkWithTimeout(request,timeoutMs=5000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);try{return await fetch(request,{cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}}
