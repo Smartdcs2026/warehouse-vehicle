@@ -1019,8 +1019,8 @@ const VISUAL_STAGE_DEFS=[
   {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",tone:"out"}
 ];
 let visualStatusSnapshot=new Map();
-const VISUAL_SHELL_VERSION="20710";
-function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280,videoOn=$("queueVisualView")?.classList.contains("has-queue-video");if(videoOn){if(h<680||w<1050)return 2;if(h>=980&&w>=1700)return 4;return 3}if(h<680||w<1050)return 4;if(h>=980&&w>=1700)return 8;return 6}
+const VISUAL_SHELL_VERSION="20742";
+function visualStagePageSize(){const h=window.innerHeight||800,w=window.innerWidth||1280;if(h<680||w<1050)return 2;if(h>=980&&w>=1700)return 4;return 3}
 function visualPageFor(status){return status==="READY_FOR_RECEIVING"?nextPage:(workPages[status]||0)}
 function visualSetPage(status,value){if(status==="READY_FOR_RECEIVING")nextPage=value;else workPages[status]=value}
 function visualStageItems(data,status){return(data.items||[]).filter(item=>item.status===status).sort((a,b)=>(a.stageSince||0)-(b.stageSince||0))}
@@ -1132,13 +1132,14 @@ const TRAFFIC_STAGE_DEFS=[
   {status:"READY_FOR_RECEIVING",number:"1",label:"รอเข้าตรวจรับสินค้า",baseLamp:"green",tone:"green"},
   {status:"RECEIVING_IN_PROGRESS",number:"2",label:"กำลังตรวจรับสินค้า",baseLamp:"amber",tone:"amber"},
   {status:"WAITING_DOCUMENT_RETURN",number:"3",label:"รอรับเอกสารคืน",baseLamp:"red",tone:"red"},
-  {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากคลัง",baseLamp:"green",tone:"green"}
+  {status:"WAITING_GATE_OUT",number:"4",label:"รอออกจากพื้นที่",baseLamp:"green",tone:"green"}
 ];
-const TRAFFIC_SHELL_VERSION="20713";
+const TRAFFIC_SHELL_VERSION="20742";
 function trafficAlertRank(level){return({NORMAL:0,WATCH:1,WARNING:2,URGENT:3,CRITICAL:4})[String(level||"NORMAL").toUpperCase()]??0}
 function trafficStagePageSize(){
   const h=window.innerHeight||800,w=window.innerWidth||1280;
-  if(h<830||w<1180)return 2;
+  if(h<760||w<1180)return 2;
+  if(h>=980&&w>=1600)return 4;
   return 3;
 }
 function trafficSignalState(items,baseLamp){
@@ -1153,9 +1154,10 @@ function trafficLightHtml(lamp="off",motion="",extra=""){
   const active=lamp==="red"||lamp==="amber"||lamp==="green"?lamp:"off";
   return `<div class="traffic-light ${motion?`is-${motion}`:""} ${extra}" data-lamp="${esc(active)}" aria-hidden="true"><i class="lamp-red"></i><i class="lamp-amber"></i><i class="lamp-green"></i><span class="traffic-pole"></span></div>`;
 }
-function trafficStatusLabel(status){return({READY_FOR_RECEIVING:"รอเข้าตรวจรับสินค้า",RECEIVING_IN_PROGRESS:"กำลังตรวจรับสินค้า",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",WAITING_GATE_OUT:"รอออกจากคลัง"})[status]||"กำลังดำเนินการ"}
+function trafficStatusLabel(status){return({READY_FOR_RECEIVING:"รอเข้าตรวจรับสินค้า",RECEIVING_IN_PROGRESS:"กำลังตรวจรับสินค้า",WAITING_DOCUMENT_RETURN:"รอรับเอกสารคืน",WAITING_GATE_OUT:"รอออกจากพื้นที่"})[status]||"กำลังดำเนินการ"}
 function trafficAlertLabel(level){return({WATCH:"เฝ้าระวัง",WARNING:"เตือน",URGENT:"เร่งด่วน",CRITICAL:"วิกฤต"})[String(level||"").toUpperCase()]||""}
-function trafficStageStatic(def){return `<article id="trafficStage_${def.status}" class="traffic-stage traffic-tone-${def.tone}"><header><span>${def.number}</span><div><b>${esc(def.label)}</b><small id="trafficStageMeta_${def.status}">0 คัน</small></div><strong id="trafficStageCount_${def.status}">0</strong><em>คัน</em></header><div class="traffic-stage-body"><div id="trafficSignal_${def.status}" class="traffic-stage-signal">${trafficLightHtml("off")}</div><div id="trafficStageList_${def.status}" class="traffic-stage-list"></div></div><footer id="trafficStageFooter_${def.status}">ไม่มีรถในขั้นตอนนี้</footer></article>`}
+function trafficRiskBadgeHtml(level="NORMAL",count=0){const code=String(level||"NORMAL").toUpperCase(),label=trafficAlertLabel(code)||"ปกติ";return `<div class="traffic-risk-badge risk-${esc(code.toLowerCase())}"><small>ระดับเวลา</small><i aria-hidden="true"></i><b>${esc(label)}</b><span>${Number(count||0).toLocaleString("th-TH")} คัน</span></div>`}
+function trafficStageStatic(def){return `<article id="trafficStage_${def.status}" class="traffic-stage traffic-tone-${def.tone}"><header><span>${def.number}</span><div><b>${esc(def.label)}</b><small id="trafficStageMeta_${def.status}">0 คัน</small></div><strong id="trafficStageCount_${def.status}">0</strong><em>คัน</em></header><div class="traffic-stage-body"><div id="trafficSignal_${def.status}" class="traffic-stage-signal">${trafficRiskBadgeHtml("NORMAL",0)}</div><div id="trafficStageList_${def.status}" class="traffic-stage-list"></div></div><footer id="trafficStageFooter_${def.status}">ไม่มีรถในขั้นตอนนี้</footer></article>`}
 function ensureTrafficShell(root){
   if(root.dataset.trafficShellVersion===TRAFFIC_SHELL_VERSION&&root.querySelector(".traffic-queue-shell"))return;
   root.innerHTML=`<div class="traffic-queue-shell">
@@ -1170,7 +1172,7 @@ function ensureTrafficShell(root){
   root.dataset.trafficShellVersion=TRAFFIC_SHELL_VERSION;
 }
 function trafficCallSignalFor(item){
-  if(!item?.appointmentNo)return{lamp:"green",motion:"pulse",label:"รอเรียกคิว"};
+  if(!item?.appointmentNo)return{lamp:"off",motion:"",label:"รอเรียกคิว"};
   const type=String(item.callType||"").toUpperCase();
   if(type.startsWith("NOTICE_"))return{lamp:"red",motion:"blink",label:"แจ้งผู้ขับรถ"};
   if(type==="RECALL"||type==="DOOR_CHANGED")return{lamp:"amber",motion:"blink",label:type==="DOOR_CHANGED"?"เปลี่ยนประตู":"เรียกซ้ำ"};
@@ -1185,10 +1187,10 @@ function trafficStageItem(item){
   return `<article class="traffic-vehicle ${called?"is-called":""} ${alert?"has-alert":""}"><div class="traffic-vehicle-main"><b title="${esc(appointment)}">${esc(appointment)}</b><span title="${esc(plate)}">${esc(plate)}</span></div><strong class="traffic-vehicle-company" title="${esc(company.tooltip||company.primary)}">${esc(company.primary||"ไม่ระบุบริษัท")}</strong><div class="traffic-vehicle-foot"><small class="traffic-vehicle-province" title="${esc(province)}">${esc(province)}</small>${door?`<i>${esc(door)}</i>`:""}<time>${esc(visualWaitText(item))}</time>${alert?`<em>${esc(alert)}</em>`:""}</div></article>`;
 }
 function syncTrafficStage(data,def,animate=false){
-  const items=(data.items||[]).filter(item=>item.status===def.status).sort((a,b)=>trafficAlertRank(b.alertLevel)-trafficAlertRank(a.alertLevel)||Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)),size=trafficStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=trafficPages[def.status]||0;if(page>=pages){page=0;trafficPages[def.status]=0}const shown=items.slice(page*size,page*size+size),signal=trafficSignalState(items,def.baseLamp);setStableText($("trafficStageCount_"+def.status),items.length.toLocaleString("th-TH"));setStableText($("trafficStageMeta_"+def.status),`${items.length.toLocaleString("th-TH")} คัน`);setStableHTML($("trafficSignal_"+def.status),trafficLightHtml(signal.lamp,signal.motion));const list=$("trafficStageList_"+def.status),changed=setStableHTML(list,shown.length?shown.map(trafficStageItem).join(""):'<div class="traffic-stage-empty">ไม่มีรถในขั้นตอนนี้</div>');if(animate&&changed)fadePage(list);const alertLabel=trafficAlertLabel(signal.level);setStableText($("trafficStageFooter_"+def.status),alertLabel?`${alertLabel} · ตามเกณฑ์เวลาที่กำหนด`:items.length?(items.length>shown.length?`อีก ${(items.length-shown.length).toLocaleString("th-TH")} คัน`:`รายการปัจจุบัน`):"ไม่มีรถในขั้นตอนนี้");
+  const items=(data.items||[]).filter(item=>item.status===def.status).sort((a,b)=>trafficAlertRank(b.alertLevel)-trafficAlertRank(a.alertLevel)||Number(b.elapsedSeconds||0)-Number(a.elapsedSeconds||0)),size=trafficStagePageSize(),pages=Math.max(1,Math.ceil(items.length/size));let page=trafficPages[def.status]||0;if(page>=pages){page=0;trafficPages[def.status]=0}const shown=items.slice(page*size,page*size+size),signal=trafficSignalState(items,def.baseLamp);setStableText($("trafficStageCount_"+def.status),items.length.toLocaleString("th-TH"));setStableText($("trafficStageMeta_"+def.status),pages>1?`${items.length.toLocaleString("th-TH")} คัน · หน้า ${page+1}/${pages}`:`${items.length.toLocaleString("th-TH")} คัน`);setStableHTML($("trafficSignal_"+def.status),trafficRiskBadgeHtml(signal.level,items.length));const list=$("trafficStageList_"+def.status),changed=setStableHTML(list,shown.length?shown.map(trafficStageItem).join(""):'<div class="traffic-stage-empty">ไม่มีรถในขั้นตอนนี้</div>');if(animate&&changed)fadePage(list);const alertLabel=trafficAlertLabel(signal.level);setStableText($("trafficStageFooter_"+def.status),items.length?(alertLabel?`ระดับสูงสุด: ${alertLabel}`:pages>1?`แสดง ${shown.length} จาก ${items.length} คัน`:`สถานะเวลาปกติ`):"ไม่มีรถในขั้นตอนนี้");
 }
 function trafficDoorCard(door){const status=String(door.status||"AVAILABLE"),label={AVAILABLE:"ว่าง",CALLED:"เรียกเข้า",IN_USE:"กำลังใช้งาน",DRAINING:"ปิดหลังจบงาน"}[status]||status,code=normalizeQueueDoorCode(door.doorCode)||"–",count=Math.max(0,Number(door.occupancyCount)||0);return `<article class="traffic-door door-${esc(status.toLowerCase())}"><div><b>${esc(code)}</b><span><i></i>${esc(label)}</span></div><strong>${status==="DRAINING"?"–":count}</strong></article>`}
-function syncTrafficDoors(data){const panel=$("trafficDoorPanel"),bottom=$("trafficBottomGrid"),enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),doors=(Array.isArray(data?.doors)?data.doors:[]).slice().sort(compareQueueDoors);panel.hidden=!enabled;bottom?.classList.toggle("no-doors",!enabled);if(!enabled)return;const important=doors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),available=doors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),shown=[...important,...available].slice(0,8);setStableText($("trafficDoorMeta"),`${important.length?`ใช้งาน ${important.length} · `:""}รวม ${doors.length} ประตู`);setStableHTML($("trafficDoorList"),shown.length?shown.map(trafficDoorCard).join(""):'<div class="traffic-panel-empty">ไม่มีข้อมูลประตู</div>')}
+function syncTrafficDoors(data){const panel=$("trafficDoorPanel"),bottom=$("trafficBottomGrid"),enabled=Boolean(data?.queueDisplay?.doorPanelEnabled),doors=(Array.isArray(data?.doors)?data.doors:[]).slice().sort(compareQueueDoors);panel.hidden=!enabled;bottom?.classList.toggle("no-doors",!enabled);if(!enabled)return;const important=doors.filter(d=>String(d.status||"AVAILABLE")!=="AVAILABLE"),available=doors.filter(d=>String(d.status||"AVAILABLE")==="AVAILABLE"),shown=[...important,...available].slice(0,8);setStableText($("trafficDoorMeta"),`แสดง ${shown.length}/${doors.length} ประตู · มีงาน ${important.length} · ว่าง ${available.length}`);setStableHTML($("trafficDoorList"),shown.length?shown.map(trafficDoorCard).join(""):'<div class="traffic-panel-empty">ไม่มีข้อมูลประตู</div>')}
 function trafficActivityItem(item){const status=trafficStatusLabel(item.status),door=item.doorCode?` · ${item.doorCode}`:"";return `<article><time>${esc(formatTime(item.stageSince||Date.now()))}</time><div><b>${esc(item.appointmentNo||"–")}</b><small>${esc(status)}${esc(door)}</small></div><span class="level-${esc(String(item.alertLevel||"NORMAL").toLowerCase())}">${esc(trafficAlertLabel(item.alertLevel)||"ปกติ")}</span></article>`}
 function syncTrafficActivity(data){const items=[...(data.items||[])].filter(item=>item.stageSince).sort((a,b)=>Number(b.stageSince||0)-Number(a.stageSince||0)).slice(0,4);setStableHTML($("trafficActivityList"),items.length?items.map(trafficActivityItem).join(""):'<div class="traffic-panel-empty">ยังไม่มีความเคลื่อนไหว</div>')}
 function trafficWaitItem(item,index){const company=queueCompanyView(item);return `<article><span>${index+1}</span><div><b>${esc(item.appointmentNo||"–")}</b><small>${esc(company.primary||"ไม่ระบุบริษัท")}${item.doorCode?` · ${esc(item.doorCode)}`:""}</small></div><time>${esc(visualWaitText(item))}</time></article>`}

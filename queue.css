@@ -3014,3 +3014,195 @@ html[data-queue-density="wide"] .call-plan-item b{font-size:11.5px}
   .traffic-vehicle-foot small,.traffic-vehicle-foot time,.traffic-vehicle-foot em,.traffic-vehicle-foot i{font-size:6.5px}
   .traffic-stage-list>.traffic-vehicle:only-child{min-height:50px;max-height:58px}
 }
+
+/* Round 207.42 — enterprise presentation standard
+   Final cascade: one information hierarchy, readable 1920x1080 output,
+   unambiguous status colors and media that fills its assigned region. */
+:root{
+  --enterprise-blue:#1456a0;
+  --enterprise-navy:#0b284d;
+  --enterprise-line:#d7e2ef;
+  --enterprise-muted:#60748d;
+  --enterprise-shadow:0 4px 16px rgba(25,58,96,.075);
+}
+
+/* Shared public-screen controls */
+.queue-header,.visual-queue-header,.traffic-header{box-shadow:var(--enterprise-shadow)!important}
+.queue-actions button,.visual-head-actions button,.traffic-head-actions button{min-width:0;font-weight:850;letter-spacing:0}
+.health,.visual-health,.traffic-health{font-weight:900}
+.queue-footer,.visual-queue-footer,.traffic-footer{letter-spacing:.05px}
+
+/* Media policy: a corporate display must use the full media region.
+   Admin still controls standard/large size; no playback controls are exposed. */
+.queue-video-panel video,
+.visual-queue-video-panel video,
+.traffic-video-panel video{
+  object-fit:cover!important;
+  object-position:center center!important;
+  background:#07111d!important;
+}
+.queue-video-panel,.visual-queue-video-panel,.traffic-video-panel{
+  background:#07111d!important;
+  border-color:rgba(113,139,170,.42)!important;
+  box-shadow:var(--enterprise-shadow)!important;
+}
+
+/* Call overlay becomes a compact lower-third instead of duplicating a second hero. */
+.queue-video-call-overlay,
+.visual-video-call-overlay{
+  inset:auto 12px 12px 12px!important;
+  min-height:92px;
+  align-content:center;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  grid-template-rows:auto auto;
+  gap:3px 12px!important;
+  padding:12px 16px!important;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  background:linear-gradient(100deg,rgba(4,20,39,.96),rgba(8,37,70,.92))!important;
+  backdrop-filter:blur(8px);
+}
+.queue-video-call-overlay>small{grid-column:1;grid-row:1;font-size:11px!important}
+.queue-video-call-overlay>strong{grid-column:1;grid-row:2;font-size:34px!important}
+.queue-video-call-overlay>div{grid-column:2;grid-row:1/3;align-self:center;font-size:13px!important}
+.queue-video-call-overlay>em{grid-column:3;grid-row:1/3;align-self:center;font-size:15px!important;text-align:right}
+
+/* CLASSIC — balanced two-zone top, legible cards and stable rows. */
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode){
+  grid-template-rows:74px 322px minmax(0,1fr) 30px!important;
+  gap:8px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-top-zone{
+  height:322px!important;
+  grid-template-columns:minmax(0,58fr) minmax(560px,42fr)!important;
+  grid-template-rows:234px 80px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode).queue-video-large .queue-top-zone{
+  grid-template-columns:minmax(0,54fr) minmax(650px,46fr)!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-top-zone>.queue-video-panel{
+  aspect-ratio:auto!important;
+  border-radius:14px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-top-zone>.call-panel{
+  grid-template-columns:104px minmax(0,1fr)!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .call-panel.has-queue-video .call-center{
+  padding:15px 18px!important;
+  grid-template-rows:minmax(0,1fr) 52px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .call-panel.has-queue-video .call-number-block strong{font-size:clamp(36px,3vw,52px)!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .call-panel.has-queue-video .call-company-block strong{font-size:clamp(18px,1.45vw,26px)!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary article{
+  min-height:80px;
+  padding:8px 11px!important;
+  grid-template-columns:36px minmax(0,1fr) auto auto!important;
+  border-radius:12px;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary small{font-size:12px!important;line-height:1.2;white-space:normal}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary b{font-size:28px!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-board.has-door-rail{
+  grid-template-columns:minmax(420px,.86fr) minmax(560px,1.14fr) minmax(280px,330px)!important;
+  gap:8px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .next-list{
+  grid-template-columns:1fr!important;
+  grid-auto-rows:64px!important;
+  gap:5px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .next-item{
+  height:64px!important;
+  grid-template-columns:minmax(0,1fr) 88px!important;
+  padding:6px 9px!important;
+  border:1px solid var(--enterprise-line)!important;
+  border-radius:9px!important;
+}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .next-appt{font-size:17px!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .next-vehicle>.queue-company-line b{font-size:11px!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .work-group{grid-template-rows:36px minmax(0,1fr)!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .work-body{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .work-item b{font-size:14px!important}
+.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .door-rail-list{grid-auto-rows:39px!important}
+
+/* VISUAL — keep media at the upper right; all four lanes and lower panels stay visible. */
+.queue-visual-view.has-queue-video .visual-queue-shell,
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{
+  grid-template-columns:minmax(0,1fr) minmax(520px,43%)!important;
+  grid-template-rows:66px 300px minmax(245px,1fr) 180px 28px!important;
+  gap:8px!important;
+}
+.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(620px,48%)!important}
+.queue-visual-view.has-queue-video .visual-top,
+.queue-visual-view.has-queue-video.queue-video-large .visual-top{
+  grid-template-columns:1fr!important;
+  grid-template-rows:minmax(0,1fr) 72px;
+}
+.queue-visual-view.has-queue-video .visual-call-hero{
+  grid-template-columns:92px minmax(230px,1fr) minmax(130px,.42fr) minmax(110px,.34fr)!important;
+}
+.queue-visual-view.has-queue-video .visual-summary-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.queue-visual-view.has-queue-video .visual-summary-card{grid-template-columns:32px minmax(0,1fr)!important;padding:6px 8px!important}
+.queue-visual-view.has-queue-video .visual-summary-card>span{width:28px;height:28px;font-size:14px}
+.queue-visual-view.has-queue-video .visual-summary-card b{font-size:22px!important}
+.queue-visual-view.has-queue-video .visual-summary-card small{font-size:9px}
+.queue-visual-view.has-queue-video .visual-queue-video-panel{
+  grid-column:2!important;
+  grid-row:2!important;
+  width:100%!important;
+  height:300px!important;
+  aspect-ratio:auto!important;
+}
+.queue-visual-view.has-queue-video .visual-stage-wrap{grid-column:1/-1!important;grid-row:3!important}
+.queue-visual-view.has-queue-video .visual-lower-grid{grid-column:1/-1!important;grid-row:4!important;grid-template-columns:minmax(0,2fr) minmax(320px,.8fr)!important}
+.queue-visual-view.has-queue-video .visual-queue-footer{grid-column:1/-1!important;grid-row:5!important}
+.queue-visual-view.has-queue-video .visual-wait-panel{display:grid!important}
+.queue-visual-view.has-queue-video .visual-stage-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+.queue-visual-view.has-queue-video .visual-flow-arrow{display:none!important}
+.queue-visual-view.has-queue-video .visual-stage-lane{grid-template-rows:48px minmax(0,1fr) 25px!important}
+.queue-visual-view.has-queue-video .visual-stage-list{grid-template-rows:repeat(3,minmax(58px,1fr))!important;gap:5px!important}
+.queue-visual-view.has-queue-video .visual-vehicle-card{grid-template-columns:42px minmax(0,1fr) auto!important;padding:5px 7px!important}
+.queue-visual-view.has-queue-video .visual-vehicle-icon{width:38px!important;height:31px!important}
+.queue-visual-view.has-queue-video .visual-vehicle-top>b{font-size:12px!important}
+.queue-visual-view.has-queue-video .visual-vehicle-copy>strong{font-size:9px!important}
+.queue-visual-view.has-queue-video .visual-vehicle-copy>small,.queue-visual-view.has-queue-video .visual-vehicle-card>time{font-size:8px!important}
+
+/* TRAFFIC — the large signal is reserved for driver instruction.
+   Stage columns use a distinct SLA badge, never a second traffic light. */
+.traffic-call-hero.is-idle .traffic-light-large{filter:saturate(.35);opacity:.58}
+.traffic-stage-body{grid-template-columns:76px minmax(0,1fr)!important;gap:6px!important}
+.traffic-stage-signal{border-right:1px solid var(--tq-line);padding:6px!important;align-content:start!important}
+.traffic-risk-badge{
+  width:100%;min-height:96px;padding:8px 4px;border:1px solid var(--risk-line,#b9c8d9);border-radius:10px;
+  display:grid;justify-items:center;align-content:center;gap:5px;background:var(--risk-bg,rgba(126,145,168,.08));
+  color:var(--risk-color,#718097);text-align:center;
+}
+.traffic-risk-badge small{font-size:7px;color:var(--tq-muted);font-weight:850;white-space:nowrap}
+.traffic-risk-badge i{width:13px;height:13px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 13%,transparent)}
+.traffic-risk-badge b{font-size:10px;line-height:1.1}
+.traffic-risk-badge span{font-size:8px;color:var(--tq-muted);font-weight:800}
+.traffic-risk-badge.risk-watch{--risk-color:#3182ce;--risk-line:#9bc7ec;--risk-bg:#edf7ff}
+.traffic-risk-badge.risk-warning{--risk-color:#d08a00;--risk-line:#efd28b;--risk-bg:#fff9e9}
+.traffic-risk-badge.risk-urgent{--risk-color:#e06619;--risk-line:#f0b58e;--risk-bg:#fff3ec}
+.traffic-risk-badge.risk-critical{--risk-color:#d43838;--risk-line:#efa4a4;--risk-bg:#fff0f0}
+.traffic-stage-list{grid-template-rows:repeat(4,minmax(50px,1fr))!important;gap:5px!important}
+.traffic-vehicle{min-height:50px!important;padding:5px 7px!important}
+.traffic-vehicle:nth-child(n+3){display:grid!important}
+.traffic-vehicle-main>b{font-size:11px!important}
+.traffic-vehicle-main>span{font-size:9px!important}
+.traffic-vehicle-company{font-size:8.5px!important}
+.traffic-vehicle-foot small,.traffic-vehicle-foot time,.traffic-vehicle-foot em,.traffic-vehicle-foot i{font-size:7px!important}
+.traffic-video-panel video{object-fit:cover!important}
+.traffic-door-panel>header>span{font-size:8px!important;white-space:nowrap}
+
+@media(max-width:1450px), (max-height:850px){
+  .queue-video-call-overlay,.visual-video-call-overlay{min-height:72px;inset:auto 8px 8px 8px!important;padding:8px 11px!important}
+  .queue-video-call-overlay>strong{font-size:27px!important}.queue-video-call-overlay>em{font-size:12px!important}
+  .queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode){grid-template-rows:62px 270px minmax(0,1fr) 25px!important}
+  .queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-top-zone{height:270px!important;grid-template-rows:202px 60px!important;grid-template-columns:minmax(0,60fr) minmax(430px,40fr)!important}
+  .queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary article{min-height:60px;padding:5px 7px!important}.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary small{font-size:9px!important}.queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-summary b{font-size:22px!important}
+  .queue-visual-view.has-queue-video .visual-queue-shell,.queue-visual-view.has-queue-video.queue-video-large .visual-queue-shell{grid-template-columns:minmax(0,1fr) minmax(420px,42%)!important;grid-template-rows:58px 240px minmax(195px,1fr) 148px 25px!important}
+  .queue-visual-view.has-queue-video .visual-queue-video-panel{height:240px!important}
+  .queue-visual-view.has-queue-video .visual-top{grid-template-rows:minmax(0,1fr) 60px!important}
+  .queue-visual-view.has-queue-video .visual-stage-list{grid-template-rows:repeat(3,minmax(48px,1fr))!important}
+  .traffic-risk-badge{min-height:76px;padding:5px 3px}.traffic-stage-list{grid-template-rows:repeat(3,minmax(46px,1fr))!important}.traffic-vehicle:nth-child(n+4){display:none!important}
+}
