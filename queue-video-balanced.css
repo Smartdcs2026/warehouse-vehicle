@@ -264,6 +264,95 @@ body[data-video-layout="20260829-r20744-proportional"] .queue-traffic-view.has-q
   }
 }
 
+/* Round 207.46 — Visual mode without VDO.
+   Round 207.43 assigned children to the six-row VDO grid globally. When media
+   was disabled the shell reverted to its legacy four-row grid, creating
+   implicit rows and a large blank band. This restores an explicit five-row
+   no-media layout and resets the top section's children to local placement. */
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-queue-shell{
+  height:100%!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:68px 190px minmax(280px,1fr) 170px 28px!important;
+  gap:8px!important;
+  padding:8px!important;
+  overflow:hidden!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-queue-header{
+  grid-column:1!important;
+  grid-row:1!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-top{
+  grid-column:1!important;
+  grid-row:2!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.45fr) minmax(500px,.55fr)!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  gap:8px!important;
+  min-width:0!important;
+  min-height:0!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-call-hero{
+  grid-column:1!important;
+  grid-row:1!important;
+  min-width:0!important;
+  min-height:0!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-summary-grid{
+  grid-column:2!important;
+  grid-row:1!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  min-width:0!important;
+  min-height:0!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-queue-video-panel{
+  display:none!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-stage-wrap{
+  grid-column:1!important;
+  grid-row:3!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-lower-grid{
+  grid-column:1!important;
+  grid-row:4!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-queue-footer{
+  grid-column:1!important;
+  grid-row:5!important;
+  min-width:0!important;
+}
+
+@media (max-width:1450px){
+  body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-top{
+    grid-template-columns:minmax(0,1.35fr) minmax(430px,.65fr)!important;
+  }
+}
+
+@media (max-height:850px){
+  body[data-visual-no-video="20260829-r20746-stable"] .queue-visual-view:not(.has-queue-video) .visual-queue-shell{
+    grid-template-rows:58px 160px minmax(240px,1fr) 142px 24px!important;
+    gap:6px!important;
+    padding:6px!important;
+  }
+}
+
 @media (max-width:1450px){
   body[data-video-layout="20260829-r20744-proportional"] .queue-shell.queue-video-on:not(.queue-visual-mode):not(.queue-traffic-mode) .queue-top-zone,
   body[data-video-layout="20260829-r20744-proportional"] .queue-visual-view.has-queue-video .visual-queue-shell,
