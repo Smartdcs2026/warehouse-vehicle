@@ -11856,3 +11856,65 @@ body.datatable-fullscreen-active .dt-detail-swal-r206{pointer-events:auto!import
     position:relative!important;z-index:0!important;clear:both!important
   }
 }
+
+/* =========================================================
+   ROUND 207.35 — Dashboard mobile order and spacing authority
+   ========================================================= */
+@media(max-width:760px){
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .page-content{
+    padding:6px 6px calc(104px + env(safe-area-inset-bottom))!important;
+    scroll-padding-top:108px!important;
+    scroll-padding-bottom:calc(104px + env(safe-area-inset-bottom))!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-head{
+    min-height:0!important;margin:0 0 6px!important;padding:5px!important;border-radius:13px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-generated-head .opsdash-filter{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px!important;
+    grid-template-rows:34px 34px!important;gap:4px!important;padding:4px!important;border-radius:11px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-filter .calendar-button,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-filter #dashboardShift,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-filter .range-buttons,
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-filter .range-buttons button{
+    height:34px!important;min-height:34px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .opsdash-filter .dashboard-more-button{
+    width:40px!important;min-width:40px!important;height:72px!important;min-height:72px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody:not(.loading){
+    display:flex!important;flex-direction:column!important;gap:7px!important;
+    height:auto!important;min-height:0!important;padding:0!important;overflow:visible!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody::after{content:none!important;display:none!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-bottom-tabs{order:1!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-command-strip{order:2!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r2042-appointment-band{order:3!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-generated-kpis{order:4!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) #dashboardBody>.r146-generated-content{order:5!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs{
+    position:sticky!important;top:58px!important;z-index:18!important;
+    height:44px!important;min-height:44px!important;margin:0!important;padding:4px!important;
+    border-radius:11px!important;gap:4px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-bottom-tabs button{
+    height:34px!important;min-height:34px!important;padding:0 9px!important;gap:5px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-command-strip{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-command-card{
+    min-height:68px!important;padding:8px 9px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-command-card:nth-child(3){
+    grid-column:1/-1!important;grid-template-columns:34px minmax(0,1fr)!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-data-health{
+    grid-column:1/-1!important;min-height:76px!important;padding:5px 7px!important
+  }
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-data-health>div{padding:5px 6px!important}
+}
+@media(max-width:380px){
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-command-strip{grid-template-columns:1fr!important}
+  .dashboard-view-shell:not(.dashboard-fullscreen-shell) .r146-command-card:nth-child(3){grid-column:auto!important}
+}
