@@ -1267,7 +1267,7 @@ global.WVQRCode={toSvg};
 "use strict";
 
 const cfg = window.APP_CONFIG;
-const FRONTEND_BUILD="2026.08.27-round207.33-inbound-header-flow";
+const FRONTEND_BUILD="2026.08.29-round207.34-mobile-release-candidate";
 const CLIENT_HEALTH_KEY="wvf_client_health_v1";
 function readClientIssues(){try{const rows=JSON.parse(localStorage.getItem(CLIENT_HEALTH_KEY)||"[]");return Array.isArray(rows)?rows:[]}catch{return[]}}
 function recordClientIssue(type,message,source=""){try{const now=Date.now(),cleanMessage=String(message||"ไม่ทราบสาเหตุ").slice(0,240),cleanSource=String(source||"").split("?")[0].slice(0,160),rows=readClientIssues().filter(item=>now-Number(item.at||0)<7*86400000);const last=rows[0];if(last&&last.type===type&&last.message===cleanMessage&&last.source===cleanSource&&now-Number(last.at||0)<60000)return;rows.unshift({at:now,type:String(type||"ERROR").slice(0,40),message:cleanMessage,source:cleanSource});localStorage.setItem(CLIENT_HEALTH_KEY,JSON.stringify(rows.slice(0,20)))}catch{}}
@@ -1385,7 +1385,7 @@ async function init() {
   setInterval(updateClocks, 1000); updateClocks(); setConnection(navigator.onLine);
   setInterval(refreshLiveData, Math.max(15, Number(cfg.refreshSeconds) || 30) * 1000);
   setInterval(()=>checkInboundLiveUpdates(false),5000);
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260827-r20733",{updateViaCache:"none"}).catch(() => undefined);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=20260829-r20734",{updateViaCache:"none"}).catch(() => undefined);
   if (state.token) { try { const me = await api("/api/auth/me"); state.user = me.user; state.display=normalizeDisplaySettings(me.display); state.appointment=normalizeAppointmentAccess(me.appointment); openApp(); } catch { clearSession(); } }
 }
 
@@ -2968,7 +2968,7 @@ function appointmentBindPlanActualCenter(autoLoad=false){
 }
 function appointmentImportHistoryHtml(data){
   if(!data?.ready)return`<section class="appointment-import-history-card"><header><div><b>ประวัติไฟล์นำเข้า</b><small>${escapeHtml(data?.message||"ยังอ่านประวัติไม่ได้")}</small></div></header></section>`;
-  const rows=(data.items||[]).map(row=>`<tr><td><b>${escapeHtml(row.fileName||"-")}</b><small>${escapeHtml(row.sourceSheet||"-")}</small></td><td>${row.snapshotDate?escapeHtml(appointmentDisplaySnapshot(row.snapshotDate,row.snapshotTime)):"-"}</td><td>${Number(row.totalAppointments||0).toLocaleString("th-TH")}</td><td><span class="appointment-import-status ${String(row.status||"").toLowerCase()}">${escapeHtml(row.status==="COMPLETE"?"สำเร็จ":row.status==="OPEN"?"กำลังนำเข้า":row.status==="FAILED"?"ไม่สำเร็จ":row.status||"-")}</span></td><td>${Number(row.inserted||0)}</td><td>${Number(row.updated||0)}</td><td>${Number(row.unchanged||0)}</td></tr>`).join("");
+  const rows=(data.items||[]).map(row=>`<tr><td data-label="ไฟล์ / ชีท"><b>${escapeHtml(row.fileName||"-")}</b><small>${escapeHtml(row.sourceSheet||"-")}</small></td><td data-label="วันที่เวลาชุดข้อมูล">${row.snapshotDate?escapeHtml(appointmentDisplaySnapshot(row.snapshotDate,row.snapshotTime)):"-"}</td><td data-label="นัดหมาย">${Number(row.totalAppointments||0).toLocaleString("th-TH")}</td><td data-label="สถานะ"><span class="appointment-import-status ${String(row.status||"").toLowerCase()}">${escapeHtml(row.status==="COMPLETE"?"สำเร็จ":row.status==="OPEN"?"กำลังนำเข้า":row.status==="FAILED"?"ไม่สำเร็จ":row.status||"-")}</span></td><td data-label="เพิ่ม">${Number(row.inserted||0)}</td><td data-label="ปรับ">${Number(row.updated||0)}</td><td data-label="เดิม">${Number(row.unchanged||0)}</td></tr>`).join("");
   return`<section class="appointment-import-history-card"><header><div><b>ประวัติไฟล์นำเข้า</b><small>แสดง 20 ชุดล่าสุด เก็บไว้สำหรับตรวจสอบย้อนหลัง</small></div><span>${Number((data.items||[]).length)} ชุด</span></header>${rows?`<div class="appointment-import-history-wrap"><table><thead><tr><th>ไฟล์ / ชีท</th><th>วันที่เวลาชุดข้อมูล</th><th>นัดหมาย</th><th>สถานะ</th><th>เพิ่ม</th><th>ปรับ</th><th>เดิม</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="appointment-center-empty compact"><span>ยังไม่มีประวัติการนำเข้า</span></div>`}</section>`
 }
 async function appointmentRenderFileImportTab(){
