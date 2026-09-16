@@ -356,7 +356,7 @@ async function loadQueue(force = false, requestedVersion = "") {
 
     const data = normalizeQueueData(raw);
     latestData = data;
-    queueVersion = requestedVersion || String(raw.queueVersion || queueVersion);
+    queueVersion = String(raw.queueVersion || requestedVersion || queueVersion);
     versionFailures = 0;
     nextVersionAttemptAt = 0;
     lastSuccessfulLoad = Date.now();
