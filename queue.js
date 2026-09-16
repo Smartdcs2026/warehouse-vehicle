@@ -350,6 +350,11 @@ async function loadQueue(force = false, requestedVersion = "") {
       expireQueueSession(raw?.message || "กรุณาเข้าสู่ระบบอีกครั้ง");
       return;
     }
+    if (response.status === 409 && raw?.code === "QUEUE_CHANGED_DURING_SNAPSHOT") {
+      queueVersion = "";
+      setTimeout(() => checkQueueVersion(true), 250);
+      return;
+    }
     if (!response.ok || !raw || raw.success === false) {
       throw new Error(raw?.message || "โหลดข้อมูลไม่สำเร็จ");
     }
@@ -361,7 +366,8 @@ async function loadQueue(force = false, requestedVersion = "") {
     nextVersionAttemptAt = 0;
     lastSuccessfulLoad = Date.now();
     render(data);
-    if(data.capacity?.truncated)setHealth("capacity",`ข้อมูลไม่ครบ ${Number(data.capacity.returned||0)}/${Number(data.capacity.total||0)} คัน`,`เกินเพดาน ${Number(data.capacity.limit||500)} คัน กรุณาแจ้งผู้ดูแลระบบ`);
+    if(raw.degraded===true)setHealth("error","D1 ขัดข้อง — แสดงข้อมูลสำรอง",`ข้อมูลสำรองล่าสุด · จะตรวจสอบใหม่อัตโนมัติ`);
+    else if(data.capacity?.truncated)setHealth("capacity",`ข้อมูลไม่ครบ ${Number(data.capacity.returned||0)}/${Number(data.capacity.total||0)} คัน`,`เกินเพดาน ${Number(data.capacity.limit||500)} คัน กรุณาแจ้งผู้ดูแลระบบ`);
     else setHealth("ok", "พร้อมใช้งาน");
   } catch (error) {
     versionFailures += 1;
