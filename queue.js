@@ -1,7 +1,9 @@
 "use strict";
 
 const cfg = window.APP_CONFIG || {};
-const POLL_MS = 3000;
+const VERSION_POLL_MS = 3000;
+const SNAPSHOT_MAX_AGE_MS = 60000;
+const RETRY_MAX_MS = 120000;
 const FETCH_TIMEOUT_MS = 4500;
 const ROTATE_MS = 10000;
 const CALL_HOLD_MS = 20000;
@@ -22,6 +24,10 @@ let voiceAdminEnabled = false;
 const VOICE_SEEN_STORAGE = "queueVoiceSeenCallsR74";
 let voiceSeenCalls = loadVoiceSeenCalls();
 let loading = false;
+let versionLoading = false;
+let queueVersion = "";
+let versionFailures = 0;
+let nextVersionAttemptAt = 0;
 let latestData = null;
 let lastRotateAt = Date.now();
 let holdRotationUntil = 0;
@@ -113,7 +119,7 @@ function init() {
 
   window.addEventListener("online", () => {
     setHealth("loading", "กำลังเชื่อมต่อ");
-    loadQueue(true);
+    checkQueueVersion(true);
   });
 
   window.addEventListener("offline", () => {
@@ -121,7 +127,7 @@ function init() {
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) loadQueue(true);
+    if (!document.hidden) checkQueueVersion(true);
   });
 
   document.addEventListener("fullscreenchange", () => {
@@ -161,8 +167,8 @@ function startQueueRuntime() {
     refreshHealthAge();
   }, 1000);
 
-  loadQueue(true);
-  setInterval(() => loadQueue(false), POLL_MS);
+  checkQueueVersion(true);
+  setInterval(() => checkQueueVersion(false), VERSION_POLL_MS);
   setInterval(() => {
     if (
       latestData &&
@@ -219,7 +225,6 @@ async function loginQueue(event) {
     $("queueLoginPassword").value = "";
     showQueueApp();
     startQueueRuntime();
-    loadQueue(true);
   } catch (err) {
     showQueueLogin(err?.name === "AbortError" ? "ระบบตอบสนองช้า กรุณาลองใหม่" : (err?.message || "เข้าสู่ระบบไม่สำเร็จ"));
   } finally {
@@ -265,9 +270,58 @@ function tick() {
   if ($("trafficQueueDate")) $("trafficQueueDate").textContent = dateText;
 }
 
-async function loadQueue(force = false) {
+function queueRetryDelay() {
+  if (!versionFailures) return 0;
+  return Math.min(RETRY_MAX_MS, VERSION_POLL_MS * Math.pow(2, Math.min(versionFailures, 6)));
+}
+
+async function checkQueueVersion(force = false) {
+  if (!queueToken || versionLoading || loading) return;
+  if (document.hidden && !force) return;
+  if (!navigator.onLine) return;
+  if (!force && Date.now() < nextVersionAttemptAt) return;
+
+  versionLoading = true;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const base = String(cfg.apiBaseUrl || "").replace(/\/$/, "");
+    if (!base) throw new Error("ไม่พบที่อยู่ระบบ");
+    const response = await fetch(base + "/api/vehicles/active-version", {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json", Authorization: `Bearer ${queueToken}` }
+    });
+    const raw = await response.json().catch(() => null);
+    if (response.status === 401 || response.status === 403) {
+      expireQueueSession(raw?.message || "กรุณาเข้าสู่ระบบอีกครั้ง");
+      return;
+    }
+    if (!response.ok || !raw || raw.success === false || !raw.version) {
+      throw new Error(raw?.message || "ตรวจสอบการเปลี่ยนแปลงไม่สำเร็จ");
+    }
+    versionFailures = 0;
+    nextVersionAttemptAt = 0;
+    const nextVersion = String(raw.version);
+    const snapshotExpired = !lastSuccessfulLoad || Date.now() - lastSuccessfulLoad >= SNAPSHOT_MAX_AGE_MS;
+    if (force || !latestData || nextVersion !== queueVersion || snapshotExpired) {
+      await loadQueue(force, nextVersion);
+    }
+  } catch (error) {
+    versionFailures += 1;
+    nextVersionAttemptAt = Date.now() + queueRetryDelay();
+    const message = error?.name === "AbortError" ? "การเชื่อมต่อตอบสนองช้า" : (error?.message || "เชื่อมต่อไม่ได้");
+    setHealth("error", latestData ? "เชื่อมต่อไม่ได้ — แสดงข้อมูลล่าสุด" : "เชื่อมต่อไม่ได้", message);
+  } finally {
+    clearTimeout(timeout);
+    versionLoading = false;
+  }
+}
+
+async function loadQueue(force = false, requestedVersion = "") {
   if (!queueToken) return;
-  if (loading && !force) return;
+  if (loading) return;
+  if (document.hidden && !force) return;
   if (!navigator.onLine) {
     setHealth("offline", latestData ? "เครือข่ายขัดข้อง — แสดงข้อมูลล่าสุด" : "เครือข่ายขัดข้อง");
     return;
@@ -284,8 +338,9 @@ async function loadQueue(force = false) {
     const queueUrl = new URL(base + "/api/public/queue");
     if (announcementCursor === null) queueUrl.searchParams.set("bootstrap", "1");
     else queueUrl.searchParams.set("afterSequence", String(announcementCursor));
+    if (requestedVersion) queueUrl.searchParams.set("version", requestedVersion);
     const response = await fetch(queueUrl.toString(), {
-      cache: "no-store",
+      cache: "default",
       signal: controller.signal,
       headers: { Accept: "application/json", Authorization: `Bearer ${queueToken}` }
     });
@@ -301,11 +356,16 @@ async function loadQueue(force = false) {
 
     const data = normalizeQueueData(raw);
     latestData = data;
+    queueVersion = requestedVersion || String(raw.queueVersion || queueVersion);
+    versionFailures = 0;
+    nextVersionAttemptAt = 0;
     lastSuccessfulLoad = Date.now();
     render(data);
     if(data.capacity?.truncated)setHealth("capacity",`ข้อมูลไม่ครบ ${Number(data.capacity.returned||0)}/${Number(data.capacity.total||0)} คัน`,`เกินเพดาน ${Number(data.capacity.limit||500)} คัน กรุณาแจ้งผู้ดูแลระบบ`);
     else setHealth("ok", "พร้อมใช้งาน");
   } catch (error) {
+    versionFailures += 1;
+    nextVersionAttemptAt = Date.now() + queueRetryDelay();
     const message = error?.name === "AbortError" ? "การเชื่อมต่อตอบสนองช้า" : (error?.message || "เชื่อมต่อไม่ได้");
     if (latestData) {
       setHealth("error", "เชื่อมต่อไม่ได้ — แสดงข้อมูลล่าสุด", message);
