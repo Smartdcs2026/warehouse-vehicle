@@ -1,8 +1,8 @@
 "use strict";
 
 const cfg = window.APP_CONFIG || {};
-const VERSION_POLL_MS = 3000;
-const SNAPSHOT_MAX_AGE_MS = 60000;
+const VERSION_POLL_MS = 5000;
+const SNAPSHOT_MAX_AGE_MS = 300000;
 const RETRY_MAX_MS = 120000;
 const FETCH_TIMEOUT_MS = 4500;
 const ROTATE_MS = 10000;
