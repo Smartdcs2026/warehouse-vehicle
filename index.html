@@ -60,6 +60,45 @@
   </div>
 
   <div id="toast" class="toast" role="status" hidden><b>✓</b><span></span></div>
+  <script>
+    (()=>{
+      function installLogoutCredentialClear(){
+        const loginView=document.getElementById("loginView");
+        const appView=document.getElementById("appView");
+        const form=document.getElementById("loginForm");
+        const nameInput=document.getElementById("loginName");
+        const passwordInput=document.getElementById("loginPassword");
+        const toggle=document.getElementById("togglePassword");
+        if(!loginView||!appView||!form||!nameInput||!passwordInput)return;
+        let appWasVisible=!appView.hidden;
+        const clearCredentials=()=>{
+          form.reset();
+          nameInput.value="";
+          passwordInput.value="";
+          passwordInput.type="password";
+          if(toggle)toggle.textContent="ดู";
+          form.setAttribute("autocomplete","off");
+          nameInput.setAttribute("autocomplete","off");
+          passwordInput.setAttribute("autocomplete","off");
+        };
+        const observer=new MutationObserver(()=>{
+          const appVisible=!appView.hidden;
+          const loginVisible=!loginView.hidden;
+          if(appWasVisible&&!appVisible&&loginVisible){
+            clearCredentials();
+            requestAnimationFrame(clearCredentials);
+            setTimeout(clearCredentials,120);
+            setTimeout(()=>{clearCredentials();try{nameInput.focus({preventScroll:true})}catch{}},500);
+          }
+          appWasVisible=appVisible;
+        });
+        observer.observe(appView,{attributes:true,attributeFilter:["hidden"]});
+        observer.observe(loginView,{attributes:true,attributeFilter:["hidden"]});
+      }
+      if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installLogoutCredentialClear,{once:true});
+      else installLogoutCredentialClear();
+    })();
+  </script>
   <script src="./sweetalert2.all.min.js"></script>
   <script src="./jsqr.js"></script>
   <script src="./config.js?v=20260818-r178c"></script>
