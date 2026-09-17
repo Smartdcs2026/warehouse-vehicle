@@ -4,6 +4,7 @@
   const TOKEN_KEY="wvf_token";
   const DATA_USAGE_CACHE_KEY="wvf_admin_data_usage_cache_r20748";
   const DATA_USAGE_TTL_MS=10*60*1000;
+  const ADMIN_HISTORY_TTL_MS=60*1000;
   const VERSION_TIMEOUT_MS=4500;
   const ACTIVE_FALLBACK_MS=5*60*1000;
   const cfg=window.APP_CONFIG||{};
@@ -12,6 +13,8 @@
   const originalSetInterval=window.setInterval.bind(window);
   const operationsGate={version:"",pendingVersion:"",checking:false,lastFullAt:0,failures:0,nextAttemptAt:0,token:""};
   let forceDataUsageUntil=0;
+  let forceAdminHistoryUntil=0;
+  const adminHistoryCache=new Map();
 
   function readToken(){
     let token="";
@@ -26,6 +29,8 @@
   function activeDataRequest(url,method){return method==="GET"&&url&&url.origin===new URL(base||location.origin,location.href).origin&&/\/api\/vehicles\/active(?:\?|$)/.test(url.pathname+url.search)&&!url.pathname.endsWith("/active-version")}
   function dataUsageRequest(url,method){return method==="GET"&&url&&url.pathname==="/api/admin/data-usage"}
   function authBoundaryRequest(url,method){return method==="POST"&&url&&["/api/auth/login","/api/auth/logout"].includes(url.pathname)}
+  function adminHistoryRequest(url,method){return method==="GET"&&url&&["/api/admin/archive-history","/api/admin/cleanup-history"].includes(url.pathname)}
+  function adminHistoryMutation(url,method){return method!=="GET"&&url&&(/^\/api\/admin\/archive(?:-|\/)/.test(url.pathname)||/^\/api\/admin\/cleanup(?:-|\/)/.test(url.pathname))}
   function readDataUsageCache(){
     try{
       const row=JSON.parse(sessionStorage.getItem(DATA_USAGE_CACHE_KEY)||"null");
@@ -37,11 +42,15 @@
     try{sessionStorage.setItem(DATA_USAGE_CACHE_KEY,JSON.stringify({at:Date.now(),body,status:response.status,statusText:response.statusText,contentType:response.headers.get("content-type")||"application/json"}))}catch{}
   }
   function clearDataUsageCache(){try{sessionStorage.removeItem(DATA_USAGE_CACHE_KEY)}catch{}}
+  function readAdminHistoryCache(url){const row=adminHistoryCache.get(url.href);if(!row||Date.now()-row.at>ADMIN_HISTORY_TTL_MS){adminHistoryCache.delete(url.href);return null}return row}
+  function clearAdminHistoryCache(){adminHistoryCache.clear()}
   function cachedResponse(row){return new Response(row.body,{status:Number(row.status)||200,statusText:row.statusText||"OK",headers:{"content-type":row.contentType||"application/json","x-wvf-runtime-cache":"admin-data-usage"}})}
 
   window.fetch=async function(input,init){
     const url=urlOf(input),method=methodOf(input,init);
-    if(authBoundaryRequest(url,method)){clearDataUsageCache();operationsGate.version="";operationsGate.pendingVersion="";operationsGate.lastFullAt=0;operationsGate.token=""}
+    if(authBoundaryRequest(url,method)){clearDataUsageCache();clearAdminHistoryCache();operationsGate.version="";operationsGate.pendingVersion="";operationsGate.lastFullAt=0;operationsGate.token=""}
+    if(adminHistoryMutation(url,method))clearAdminHistoryCache();
+    if(adminHistoryRequest(url,method)&&Date.now()>=forceAdminHistoryUntil){const cached=readAdminHistoryCache(url);if(cached)return cachedResponse(cached)}
     if(dataUsageRequest(url,method)&&Date.now()>=forceDataUsageUntil){
       const cached=readDataUsageCache();
       if(cached)return cachedResponse(cached);
@@ -54,6 +63,7 @@
     if(dataUsageRequest(url,method)&&response.ok){
       try{const body=await response.clone().text();if(body)writeDataUsageCache(response,body)}catch{}
     }
+    if(adminHistoryRequest(url,method)&&response.ok){try{const body=await response.clone().text();if(body)adminHistoryCache.set(url.href,{at:Date.now(),body,status:response.status,statusText:response.statusText,contentType:response.headers.get("content-type")||"application/json"})}catch{}}
     return response;
   };
 
@@ -62,6 +72,7 @@
       clearDataUsageCache();
       forceDataUsageUntil=Date.now()+6000;
     }
+    if(event.target?.closest?.("#archiveHistoryRefresh")){clearAdminHistoryCache();forceAdminHistoryUntil=Date.now()+6000}
   },true);
 
   function isOperationsView(){return String(document.getElementById("pageTitle")?.textContent||"").trim()==="งานรับสินค้า"}
@@ -100,5 +111,5 @@
     return originalSetInterval(callback,delay,...args);
   };
 
-  window.WVF_D1_RUNTIME_GUARD={build:BUILD,clearAdminDataUsageCache:clearDataUsageCache,status:()=>({operationsVersion:operationsGate.version,lastFullAt:operationsGate.lastFullAt,dataUsageCached:Boolean(readDataUsageCache())})};
+  window.WVF_D1_RUNTIME_GUARD={build:BUILD,clearAdminDataUsageCache:clearDataUsageCache,clearAdminHistoryCache,status:()=>({operationsVersion:operationsGate.version,lastFullAt:operationsGate.lastFullAt,dataUsageCached:Boolean(readDataUsageCache()),adminHistoryCacheEntries:adminHistoryCache.size})};
 })();
