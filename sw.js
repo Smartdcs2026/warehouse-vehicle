@@ -1,6 +1,6 @@
 const CACHE_PREFIX="wvf-static-";
-const CACHE="wvf-static-round20747-d1-free-plan-optimization";
-const CORE=["./","./index.html","./styles.css","./config.js","./app.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest"];
+const CACHE="wvf-static-round20748-d1-runtime-guard";
+const CORE=["./","./index.html","./styles.css","./config.js","./app.js","./d1-runtime-guard.js","./sweetalert2.all.min.js","./jsqr.js","./manifest.webmanifest"];
 const OPTIONAL=["./favicon.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./track.html","./track.css","./track.js","./queue.html","./queue.css","./queue-enterprise.css","./queue-video-balanced.css","./queue.js","./voice-engine.js","./appointment-excel-worker.js","./appointment-public-display.js","./appointment-dev/index.html"];
 
 async function cacheOne(cache,url){try{await cache.add(url);return true}catch(error){console.warn("sw_cache_failed",url,String(error?.message||error));return false}}
