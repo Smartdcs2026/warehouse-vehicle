@@ -27,8 +27,9 @@
 - D1 schema ไม่มี migration ใหม่ใน R5
 
 ## Cloudflare state ที่ต้องรักษาระหว่างทดสอบ
-- Production เดิมต้องคงรับ traffic 100%
+- หน้า Deployments ยืนยันว่า Production เดิมยังเป็น deployment แยกจาก Candidate version-only
 - Candidate R3/R4 ที่เป็น version-only ห้าม Promote
+- Production เดิมต้องคงรับ traffic 100%
 - R5 ต้องสร้างเป็น Version-only ก่อน และทดสอบผ่าน Preview URL / version target ก่อนสร้าง deployment
 
 ## Gate ก่อน Queue pilot
