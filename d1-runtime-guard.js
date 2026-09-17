@@ -10,7 +10,7 @@
   const base=String(cfg.apiBaseUrl||"").replace(/\/$/,"");
   const originalFetch=window.fetch.bind(window);
   const originalSetInterval=window.setInterval.bind(window);
-  const operationsGate={version:"",pendingVersion:"",checking:false,lastFullAt:0,failures:0,nextAttemptAt:0};
+  const operationsGate={version:"",pendingVersion:"",checking:false,lastFullAt:0,failures:0,nextAttemptAt:0,token:""};
   let forceDataUsageUntil=0;
 
   function readToken(){
@@ -25,6 +25,7 @@
   function methodOf(input,init){return String(init?.method||input?.method||"GET").toUpperCase()}
   function activeDataRequest(url,method){return method==="GET"&&url&&url.origin===new URL(base||location.origin,location.href).origin&&/\/api\/vehicles\/active(?:\?|$)/.test(url.pathname+url.search)&&!url.pathname.endsWith("/active-version")}
   function dataUsageRequest(url,method){return method==="GET"&&url&&url.pathname==="/api/admin/data-usage"}
+  function authBoundaryRequest(url,method){return method==="POST"&&url&&["/api/auth/login","/api/auth/logout"].includes(url.pathname)}
   function readDataUsageCache(){
     try{
       const row=JSON.parse(sessionStorage.getItem(DATA_USAGE_CACHE_KEY)||"null");
@@ -40,6 +41,7 @@
 
   window.fetch=async function(input,init){
     const url=urlOf(input),method=methodOf(input,init);
+    if(authBoundaryRequest(url,method)){clearDataUsageCache();operationsGate.version="";operationsGate.pendingVersion="";operationsGate.lastFullAt=0;operationsGate.token=""}
     if(dataUsageRequest(url,method)&&Date.now()>=forceDataUsageUntil){
       const cached=readDataUsageCache();
       if(cached)return cachedResponse(cached);
@@ -67,6 +69,7 @@
   async function checkOperationsVersion(){
     if(!base||document.hidden||!navigator.onLine||operationsGate.checking||Date.now()<operationsGate.nextAttemptAt)return false;
     const token=readToken();if(!token)return false;
+    if(operationsGate.token!==token){operationsGate.token=token;operationsGate.version="";operationsGate.pendingVersion="";operationsGate.lastFullAt=0}
     operationsGate.checking=true;
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),VERSION_TIMEOUT_MS);
     try{
