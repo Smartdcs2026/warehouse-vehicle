@@ -33,3 +33,6 @@
 
 ## Gate ก่อน Queue pilot
 ต้องผ่าน `/api/health/revision`, login, active-version, queue call/recall/notice, inbound, receiving, gate sync และดู D1 rows_read ก่อนเปิด Queue pilot 1 จอ 30–60 นาที
+
+## สถานะ Round 20752
+พร้อมสำหรับขั้น “สร้าง R5 เป็น Version-only” แต่ยังไม่พร้อม Promote/Deploy Production
