@@ -11,11 +11,14 @@
 ### วิธี A — Dashboard
 Cloudflare docs: Edit code -> แก้โค้ด -> ลูกศรข้าง Deploy -> Save เพื่อสร้าง Version โดยไม่ deploy ถ้า UI ใช้งานได้
 
-### วิธี B — Wrangler fallback
-ใช้ `wrangler versions upload` กับไฟล์ R5 เพื่อสร้าง Version-only ไม่ใช่ `wrangler deploy`
+### วิธี B — API/Wrangler fallback
+ถ้า Dashboard Save ใช้ไม่ได้ ต้องรักษา Bindings ของ Worker เดิมให้ครบก่อนสร้าง R5 version เพราะ Version เก็บทั้ง code, bindings และ compatibility settings
 
-ตัวอย่าง:
-`npx wrangler versions upload warehouse-vehicle-flow-api_v160_candidate_r5_round20751.js --name warehouse-vehicle-flow-api --message "Candidate R5 Round20751 constant-size active-version"`
+ก่อน upload ให้ตรวจหน้า Cloudflare > Worker > Bindings และจดชื่อ bindings ที่ใช้งานจริง โดย source R5 อ้างชื่อที่เป็นไปได้ เช่น `DB`, `VOICE_BUCKET`, `QUEUE_MEDIA_BUCKET`, `ARCHIVE_BUCKET`, `SYNC_SECRET`, `ALLOWED_ORIGINS`, `TRACKING_TOKEN_SECRET` และ optional appointment/secondary DB bindings
+
+Cloudflare Version Upload API รองรับ binding ชนิด `inherit` และ `bindings_inherit=strict` เพื่อให้ version ใหม่ inherit binding จาก version ก่อนหน้าและ fail แทนการสร้าง version ที่ binding ขาด
+
+ไม่ควรใช้คำสั่ง upload แบบไม่มี binding/config จนกว่าจะยืนยัน bindings จริงของ Worker นี้
 
 ## หลัง Upload สำเร็จ
 1. Version ใหม่ต้องปรากฏใน Version History แต่ Active deployment เดิมยัง 100%
